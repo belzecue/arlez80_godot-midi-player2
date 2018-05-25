@@ -12,9 +12,15 @@ var smf = smf_reader.read_file( "path/to/smf.mid" )
 print( smf )
 ```
 
-### MidiPlayer.tscn / MidiPlayer.gd
+### MidiPlayer.tscn
 
-かきかけとちゅう / todo
+TODO / かきかけ
+
+## TODO
+
+* soundfont
+* ADSR
+* Drums
 
 ## License
 
