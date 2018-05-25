@@ -2,8 +2,12 @@
 	SMF reader by Yui Kinomoto @arlez80
 """
 
-var input
 var last_event_type
+
+const control_number_modulation = 0x01
+const control_number_volume = 0x07
+const control_number_pan = 0x0A
+const control_number_expression = 0x0B
 
 enum MIDIEventType {
 	note_off,					# 8*
@@ -45,13 +49,18 @@ enum MIDISystemEventType {
 """
 func read_file( path ):
 	var f = File.new( )
+
+	if not f.file_exists( path ):
+		print( "file %s is not found" % path )
+		breakpoint
+
 	f.open( path, f.READ )
-	self.input = StreamPeerBuffer.new( )
-	self.input.set_data_array( f.get_buffer( f.get_len( ) ) )
-	self.input.big_endian = true
+	var stream = StreamPeerBuffer.new( )
+	stream.set_data_array( f.get_buffer( f.get_len( ) ) )
+	stream.big_endian = true
 	f.close( )
-	var smf = self.read( )
-	return smf
+
+	return self.read( stream )
 
 """
 	配列から読み込み
@@ -59,17 +68,18 @@ func read_file( path ):
 	@return	smf
 """
 func read_data( data ):
-	self.input = StreamPeerBuffer.new( )
-	self.input.set_data_array( data )
-	self.input.big_endian = true
-	return self.read( )
+	var stream = StreamPeerBuffer.new( )
+	stream.set_data_array( data )
+	stream.big_endian = true
+	return self.read( stream )
 
 """
 	読み込み
+	@param	input
 	@return	smf
 """
-func read( ):
-	var header = self.read_chunk_data( self.input )
+func read( input ):
+	var header = self.read_chunk_data( input )
 	if header.id != "MThd" and header.size != 6:
 		print( "MThd header expected" )
 		breakpoint
@@ -80,7 +90,7 @@ func read( ):
 
 	var tracks = []
 	for i in range( 0, track_count ):
-		tracks.append( self.read_track( i ) )
+		tracks.append( self.read_track( input, i ) )
 
 	return {
 		"format_type": format_type,
@@ -91,11 +101,12 @@ func read( ):
 
 """
 	トラックの読み込み
+	@param	input
 	@param	track_number	トラックナンバー
 	@return	track data
 """
-func read_track( track_number ):
-	var track_chunk = self.read_chunk_data( self.input )
+func read_track( input, track_number ):
+	var track_chunk = self.read_chunk_data( input )
 	if track_chunk.id != "MTrk":
 		print( "Unknown chunk: " + track_chunk.id )
 		breakpoint
@@ -109,19 +120,19 @@ func read_track( track_number ):
 		time += delta_time
 		var event_type_byte = stream.get_u8( )
 
-		var type
+		var event
 		if self.is_system_event( event_type_byte ):
-			type = {
+			event = {
 				"type": MIDIEventType.system_event,
 				"args": self.read_system_event( stream, event_type_byte )
 			}
 		else:
-			type = self.read_event( stream, event_type_byte )
+			event = self.read_event( stream, event_type_byte )
 
 		events.append({
 			"time": time,
 			"channel_number": event_type_byte & 0x0f,
-			"type": type,
+			"event": event,
 		})
 
 	return {
@@ -173,10 +184,11 @@ func read_system_event( stream, event_type_byte ):
 			if size != 3:
 				print( "Tempo length is not 3" )
 				breakpoint
-			var mbp = stream.get_u8( ) << 16
-			mbp |= stream.get_u8( ) << 8
-			mbp |= stream.get_u8( )
-			return { "type": MIDISystemEventType.set_tempo, "tempo": mbp }
+			# beat per microseconds
+			var bpm = stream.get_u8( ) << 16
+			bpm |= stream.get_u8( ) << 8
+			bpm |= stream.get_u8( )
+			return { "type": MIDISystemEventType.set_tempo, "bpm": bpm }
 		elif meta_type == 0x54:
 			if size != 5:
 				print( "SMPTE length is not 5" )

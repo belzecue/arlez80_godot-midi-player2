@@ -1,23 +1,38 @@
-[gd_scene load_steps=3 format=2]
+[gd_scene load_steps=4 format=2]
 
-[ext_resource path="res://MidiPlayer.tscn" type="PackedScene" id=1]
+[ext_resource path="res://midi/MidiPlayer.tscn" type="PackedScene" id=1]
+[ext_resource path="res://piano.wav" type="AudioStream" id=2]
 
 [sub_resource type="GDScript" id=1]
 
 script/source = "extends Node
 
 func _ready( ):
-	var SMF = preload( \"SMF.gd\" )
-	var smf_loader = SMF.new( )
+	# SMF reader test
+	var SMF = preload( \"res://midi/SMF.gd\" )
+	var smf_reader = SMF.new( )
 
-	var data = smf_loader.read_file( \"cr_map.mid\" )
-	print( data )
+	var data = smf_reader.read_file( \"cr_map.mid\" )
 "
 
 [node name="TestScene" type="Node" index="0"]
 
 script = SubResource( 1 )
+_sections_unfolded = [ "Pause" ]
 
 [node name="MidiPlayer" parent="." index="0" instance=ExtResource( 1 )]
+
+file = "res://cr_katorea.mid"
+playing = true
+
+[node name="Instruments" type="Node" parent="MidiPlayer" index="0"]
+
+[node name="0" type="AudioStreamPlayer" parent="MidiPlayer/Instruments" index="0"]
+
+stream = ExtResource( 2 )
+volume_db = 0.0
+autoplay = false
+mix_target = 0
+bus = "Master"
 
 
