@@ -15,14 +15,14 @@ func _ready( ):
 	var data = smf_reader.read_file( \"cr_map.mid\" )
 "
 
-[node name="TestScene" type="Node" index="0"]
+[node name="TestScene" type="Node"]
 
 script = SubResource( 1 )
 _sections_unfolded = [ "Pause" ]
 
 [node name="MidiPlayer" parent="." index="0" instance=ExtResource( 1 )]
 
-file = "res://cr_katorea.mid"
+file = "res://cr_map.mid"
 playing = true
 
 [node name="Instruments" type="Node" parent="MidiPlayer" index="0"]
