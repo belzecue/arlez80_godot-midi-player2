@@ -12,14 +12,15 @@ export var file = ""
 export var playing = false
 export var channel_mute = [ false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false, ]
 export var play_speed = 1.0
+export var volume_db = -8
 var smf = null
 
 var seconds_to_timebase = 2.3
 var position = 0
+var last_position = 0
 var track_status = null
 var channel_status = []
 var instruments_status = {}
-var volume_db = -8
 var channel_volume_db = 20
 
 # 69 = A4
@@ -73,6 +74,8 @@ func _init_track( ):
 
 	# ソート
 	self.track_status.events.sort_custom( TrackSorter, "sort" )
+
+	self.last_position = self.track_status.events[len(self.track_status.events)-1].time
 
 """
 	チャンネル初期化

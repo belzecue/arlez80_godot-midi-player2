@@ -2,10 +2,19 @@
 
 MIDI player library for Godot Engine 3.
 
+* Can changes play speed.
+* Can control as AudioSamplePlayer.
+
 ## Try it
 
-+ Copy "piano.wav" to "res://"
-+ Copy *.mid to "res://"
++ Copy test.mid to "res://"
+
+### Add instruments
+
++ Add AudioStreamPlayer node renamed program number (0 based) to TestScene/MidiPlayer/Instruments of TestScene.tscn.
+
+### MIDI Changes
+
 + Set MIDI file name to "File" of MidiPlayer in TestScene.tscn
 
 ## How to use

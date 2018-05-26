@@ -10,5 +10,6 @@ file = ""
 playing = false
 channel_mute = [ false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false ]
 play_speed = 1.0
+volume_db = -8
 
 

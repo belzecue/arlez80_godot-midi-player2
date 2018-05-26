@@ -1,18 +1,53 @@
 [gd_scene load_steps=4 format=2]
 
 [ext_resource path="res://midi/MidiPlayer.tscn" type="PackedScene" id=1]
-[ext_resource path="res://piano.wav" type="AudioStream" id=2]
+[ext_resource path="res://instruments/piano.wav" type="AudioStream" id=2]
 
 [sub_resource type="GDScript" id=1]
 
 script/source = "extends Node
 
-func _ready( ):
-	# SMF reader test
-	var SMF = preload( \"res://midi/SMF.gd\" )
-	var smf_reader = SMF.new( )
+onready var midi_player = self.get_node( \"MidiPlayer\" )
+onready var ui_play_speed_bar = self.get_node( \"UI/PlaySpeedBar\" )
+onready var ui_volume_bar = self.get_node( \"UI/VolumeBar\" )
+onready var ui_seek_bar = self.get_node( \"UI/SeekBar\" )
+var ui_channel_mutes = []
 
-	var data = smf_reader.read_file( \"test.mid\" )
+func _ready( ):
+	# seek
+	self.ui_seek_bar.connect( \"scrolling\", self, \"_on_ui_seek_bar_scrolling\" )
+	# channel mute
+	var channel_text_label = self.get_node( \"UI/Label5\" )
+	for i in range( 0, len(self.midi_player.channel_status) ):
+		var checkbox = CheckBox.new( )
+		checkbox.text = \"\"
+		checkbox.margin_left = channel_text_label.margin_left + 20
+		checkbox.margin_top = channel_text_label.margin_top + i * 16 + 20
+		self.get_node( \"UI\" ).add_child( checkbox )
+		self.ui_channel_mutes.append( checkbox )
+
+func _process( delta ):
+	self.midi_player.play_speed = self.ui_play_speed_bar.value
+	self.midi_player.volume_db = self.ui_volume_bar.value
+
+	self.ui_seek_bar.min_value = 0
+	self.ui_seek_bar.max_value = self.midi_player.last_position
+	self.ui_seek_bar.value = self.midi_player.position
+
+	for i in range( 0, len(self.midi_player.channel_status) ):
+		var channel = self.midi_player.channel_status[i]
+		self.midi_player.channel_mute[i] = self.ui_channel_mutes[i].pressed
+		self.ui_channel_mutes[i].text = \"CH%2d program:#%3d notes:%2d volume:%8.5f expression:%8.5f pan:%8.5f\\n\" % [
+			i,
+			channel.program,
+			len( channel.note_on.keys( ) ),
+			channel.volume,
+			channel.expression,
+			channel.pan,
+		]
+
+func _on_ui_seek_bar_scrolling( ):
+	self.midi_player.seek( self.ui_seek_bar.value )
 "
 
 [node name="TestScene" type="Node" index="0"]
@@ -35,5 +70,189 @@ volume_db = 0.0
 autoplay = false
 mix_target = 0
 bus = "Master"
+
+[node name="UI" type="Node" parent="." index="1"]
+
+[node name="Label" type="Label" parent="UI" index="0"]
+
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 23.0
+margin_top = 18.0
+margin_right = 176.0
+margin_bottom = 32.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+mouse_filter = 2
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 4
+text = "Godot MIDI Player Library Test:"
+percent_visible = 1.0
+lines_skipped = 0
+max_lines_visible = -1
+
+[node name="Label2" type="Label" parent="UI" index="1"]
+
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 24.0
+margin_top = 76.0
+margin_right = 103.0
+margin_bottom = 90.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+mouse_filter = 2
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 4
+text = "PlaySpeed"
+percent_visible = 1.0
+lines_skipped = 0
+max_lines_visible = -1
+
+[node name="Label3" type="Label" parent="UI" index="2"]
+
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 24.0
+margin_top = 124.0
+margin_right = 103.0
+margin_bottom = 138.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+mouse_filter = 2
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 4
+text = "Volume"
+percent_visible = 1.0
+lines_skipped = 0
+max_lines_visible = -1
+
+[node name="Label4" type="Label" parent="UI" index="3"]
+
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 34.0
+margin_top = 178.0
+margin_right = 113.0
+margin_bottom = 192.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+mouse_filter = 2
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 4
+text = "Seek"
+percent_visible = 1.0
+lines_skipped = 0
+max_lines_visible = -1
+
+[node name="Label5" type="Label" parent="UI" index="4"]
+
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 34.0
+margin_top = 220.0
+margin_right = 113.0
+margin_bottom = 234.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+mouse_filter = 2
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 4
+text = "Channel / Mute"
+percent_visible = 1.0
+lines_skipped = 0
+max_lines_visible = -1
+
+[node name="PlaySpeedBar" type="HScrollBar" parent="UI" index="5"]
+
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 103.0
+margin_top = 70.0
+margin_right = 361.0
+margin_bottom = 96.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+mouse_filter = 0
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 0
+min_value = 0.0
+max_value = 2.0
+step = 0.0
+page = 0.0
+value = 1.0
+exp_edit = false
+rounded = false
+custom_step = -1.0
+_sections_unfolded = [ "Anchor", "Margin" ]
+
+[node name="VolumeBar" type="HScrollBar" parent="UI" index="6"]
+
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 103.0
+margin_top = 121.0
+margin_right = 361.0
+margin_bottom = 147.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+mouse_filter = 0
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 0
+min_value = -50.0
+max_value = 0.0
+step = 0.0
+page = 0.0
+value = -8.0
+exp_edit = false
+rounded = false
+custom_step = -1.0
+_sections_unfolded = [ "Anchor", "Margin" ]
+
+[node name="SeekBar" type="HScrollBar" parent="UI" index="7"]
+
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 105.0
+margin_top = 170.0
+margin_right = 994.0
+margin_bottom = 201.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+mouse_filter = 0
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 0
+min_value = 0.0
+max_value = 100.0
+step = 0.0
+page = 0.0
+value = 0.0
+exp_edit = false
+rounded = false
+custom_step = -1.0
 
 
