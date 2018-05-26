@@ -50,7 +50,7 @@ Software MIDI Player
 * Supports format 2
 * Implements some effects (Use godot's mixer!)
 
-## Known Probrem
+## Known Problem
 
 * Player's timebase is 1/60.
 ** It probably need 1/240 at least.
