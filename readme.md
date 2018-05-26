@@ -1,6 +1,12 @@
 # Godot MIDI Player
 
-Godot Engine 3用 MIDI Player / It is MIDI player for Godot Engine 3.
+MIDI player for Godot Engine 3.
+
+## Try it
+
++ Copy "piano.wav" to "res://"
++ Copy *.mid to "res://"
++ Set MIDI file name to "File" of MidiPlayer in TestScene.tscn
 
 ## How to use
 
@@ -14,13 +20,11 @@ print( smf )
 
 ### MidiPlayer.tscn
 
-TODO / かきかけ
+TODO
 
 ## TODO
 
-* soundfont
-* ADSR
-* Drums
+* See [issues]( https://bitbucket.org/arlez80/godot-midi-player/issues )
 
 ## License
 

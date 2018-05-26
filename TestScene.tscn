@@ -23,7 +23,7 @@ _sections_unfolded = [ "Pause" ]
 [node name="MidiPlayer" parent="." index="0" instance=ExtResource( 1 )]
 
 max_polyphony = 32
-file = "res://stur1-1.mid"
+file = "res://nugacel-12.mid"
 playing = true
 
 [node name="Instruments" type="Node" parent="MidiPlayer" index="0"]
