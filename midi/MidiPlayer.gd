@@ -10,7 +10,7 @@ onready var SMF = preload( "SMF.gd" )
 export var max_polyphony = 8
 export var file = ""
 export var playing = false
-export var channel_mute = [ false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false, ]
+export var channel_mute = [false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false]
 export var play_speed = 1.0
 export var volume_db = -8
 var smf = null
@@ -44,12 +44,13 @@ func _ready( ):
 		print( "Godot MIDI Player: MidiPlayer has not 'Instruments' node!" )
 		breakpoint
 
+	var ADSR = preload("ADSR.tscn")
 	for instrument in instruments.get_children( ):
 		var program_number = int( instrument.name )
 		self.instruments_status[program_number] = []
 
 		for i in range( self.max_polyphony ):
-			var audio_stream_player = AudioStreamPlayer.new( )
+			var audio_stream_player = ADSR.instance( )
 			audio_stream_player.stream = instrument.stream.duplicate( )
 			self.add_child( audio_stream_player )
 			self.instruments_status[program_number].append( audio_stream_player )
@@ -181,12 +182,12 @@ func _process_track( ):
 				if channel.note_on.has( event.note ):
 					var note = channel.note_on[event.note]
 					note.play( )
-					note.volume_db = volume_db
+					note.maximum_volume_db = volume_db
 				else:
 					var note = self._get_instruments( channel.program )
 					if note != null:
 						note.stream.mix_rate = play_rate_table[event.note]
-						note.volume_db = volume_db
+						note.maximum_volume_db = volume_db
 						note.play( )
 						channel.note_on[event.note] = note
 		elif event.type == SMF.MIDIEventType.program_change:

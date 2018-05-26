@@ -1,0 +1,91 @@
+[gd_scene load_steps=2 format=2]
+
+[sub_resource type="GDScript" id=1]
+
+script/source = "extends AudioStreamPlayer
+
+\"\"\"
+	AudioStreamPlayer with ADSR
+\"\"\"
+
+enum ADSRPlayingMode {
+	ads,
+	release,
+}
+
+var mode = ADSRPlayingMode.ads
+var timer = 0.0
+var current_volume = 0
+var maximum_volume_db = -8
+var minimum_volume_db = -60
+var pan = 0.5
+var ads_state = [
+	{ \"time\": 0, \"volume\": 1.0 },
+	{ \"time\": 0.2, \"volume\": 0.8 },
+	# { \"time\": 0.2, \"jump_to\": 0.0 },	# not implemented
+]
+var release_state = [
+	{ \"time\": 0, \"volume\": 0.8 },
+	{ \"time\": 0.1, \"volume\": 0.0 },
+	# { \"time\": 0.2, \"jump_to\": 0.0 },	# not implemented
+]
+
+func play( ):
+	self.mode = ADSRPlayingMode.ads
+	self.timer = 0.0
+	# self.stream.loop_mode = AudioStreamSample.LOOP_FORWARD
+	.play( 0.0 )
+
+func stop( ):
+	self.mode = ADSRPlayingMode.release
+	self.timer = 0.0
+
+func _process( delta ):
+	if not self.playing:
+		return
+
+	self.timer += delta
+	# self.transform.origin.x = self.pan * self.get_viewport( ).size.x
+
+	var use_state = null
+	if self.mode == ADSRPlayingMode.ads:
+		use_state = self.ads_state
+	elif self.mode == ADSRPlayingMode.release:
+		use_state = self.release_state
+
+	var last_time = 0
+	var all_states = len( use_state )
+	var last_state = all_states - 1
+	for state_number in range( all_states ):
+		var state = use_state[state_number]
+		if state.time <= self.timer:
+			if 0 < last_time:
+				var s = ( state.time - self.timer ) / last_time
+				var t = 1.0 - s
+				self.current_volume = self.current_volume * s + state.volume * t
+				if self.mode == ADSRPlayingMode.release:
+					if state_number == last_state:
+						self.stop( )
+			else:
+				self.current_volume = state.volume
+			break
+		else:
+			self.current_volume = state.volume
+			last_time = state.time
+
+	var s = self.current_volume
+	var t = 1.0 - s
+	self.volume_db = s * self.maximum_volume_db + t * self.minimum_volume_db
+"
+
+[node name="ADSR" type="AudioStreamPlayer"]
+
+stream = null
+volume_db = 0.0
+autoplay = false
+mix_target = 0
+bus = "Master"
+script = SubResource( 1 )
+_sections_unfolded = [ "Transform", "Z Index" ]
+
+
