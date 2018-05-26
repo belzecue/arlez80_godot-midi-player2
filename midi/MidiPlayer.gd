@@ -18,7 +18,7 @@ var position = 0
 var track_status = []
 var channel_status = []
 var instruments_status = {}
-var volume_db = -20
+var volume_db = -40
 var channel_volume_db = 20
 
 # 69 = A4
@@ -160,19 +160,20 @@ func _process_track( track ):
 					old_note.stop( )
 				var note = self._get_instruments( channel.program )
 				if note != null:
+					var vol = channel.volume * channel.expression * ( event.velocity / 127.0 )
 					note.stream.mix_rate = play_rate_table[event.note]
-					note.volume_db = ( ( channel.volume * channel.expression * ( event.velocity / 127 ) ) * self.channel_volume_db ) - self.channel_volume_db + self.volume_db
+					note.volume_db = vol * self.channel_volume_db - self.channel_volume_db + self.volume_db
 					note.play( )
 					channel.note_on[event.note] = note
 		elif event.type == SMF.MIDIEventType.program_change:
 			channel.program = event.number
 		elif event.type == SMF.MIDIEventType.control_change:
 			if event.number == SMF.control_number_volume:
-				channel.volume = event.value / 127
+				channel.volume = event.value / 127.0
 			elif event.number == SMF.control_number_expression:
-				channel.expression = event.value / 127
+				channel.expression = event.value / 127.0
 			elif event.number == SMF.control_number_pan:
-				channel.pan = event.value / 64 - 1.0
+				channel.pan = event.value / 64.0 - 1.0
 			else:
 				# 無視
 				pass
