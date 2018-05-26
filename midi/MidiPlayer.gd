@@ -11,6 +11,7 @@ export var max_polyphony = 8
 export var file = ""
 export var playing = false
 export var channel_mute = [ false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false, ]
+export var play_speed = 1.0
 var smf = null
 
 var seconds_to_timebase = 2.3
@@ -138,7 +139,7 @@ func _process( delta ):
 
 	self._process_track( )
 
-	self.position += self.smf.timebase * delta * self.seconds_to_timebase
+	self.position += self.smf.timebase * delta * self.seconds_to_timebase * self.play_speed
 
 """
 	トラック処理
