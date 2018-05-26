@@ -14,6 +14,7 @@ enum ADSRPlayingMode {
 }
 
 var mode = ADSRPlayingMode.ads
+var using_timer = 0.0
 var timer = 0.0
 var current_volume = 0
 var maximum_volume_db = -8
@@ -26,7 +27,7 @@ var ads_state = [
 ]
 var release_state = [
 	{ \"time\": 0, \"volume\": 0.8 },
-	{ \"time\": 0.1, \"volume\": 0.0 },
+	{ \"time\": 0.03, \"volume\": 0.0 },
 	# { \"time\": 0.2, \"jump_to\": 0.0 },	# not implemented
 ]
 
@@ -36,6 +37,7 @@ func _ready( ):
 func play( ):
 	self.mode = ADSRPlayingMode.ads
 	self.timer = 0.0
+	self.using_timer = 0.0
 	# self.stream.loop_mode = AudioStreamSample.LOOP_FORWARD
 	self.current_volume = self.ads_state[0].volume
 	.play( 0.0 )
@@ -52,6 +54,7 @@ func _process( delta ):
 		return
 
 	self.timer += delta
+	self.using_timer += delta
 	# self.transform.origin.x = self.pan * self.get_viewport( ).size.x
 
 	var use_state = null

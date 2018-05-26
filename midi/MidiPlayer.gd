@@ -246,8 +246,14 @@ func _process_track( ):
 			pass
 
 func _get_instruments( program ):
+	var old_instrument = null
+	var longest = 0.0
+
 	for instrument in self.instruments_status[program]:
 		if not instrument.playing:
 			return instrument
+		if longest < instrument.using_timer:
+			old_instrument = instrument
+			longest = instrument.using_timer
 
-	return null
+	return old_instrument
