@@ -366,4 +366,4 @@ func read_chunk_data( stream ):
 	文字列で返す
 """
 func read_string( stream, size ):
-	return stream.get_partial_data( size )[1].get_string_from_utf8( )
+	return stream.get_partial_data( size )[1].get_string_from_ascii( )
