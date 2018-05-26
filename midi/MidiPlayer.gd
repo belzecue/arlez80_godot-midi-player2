@@ -88,7 +88,7 @@ func _init_channel( ):
 			"program": 0,
 			"volume": 1.0,
 			"expression": 1.0,
-			"pan": 0,
+			"pan": 0.5,
 		})
 
 """
@@ -164,6 +164,11 @@ func _process_track( ):
 		var event_chunk = track.events[track.event_pointer]
 		if self.position < event_chunk.time:
 			break
+		track.event_pointer += 1
+
+		if event_chunk.channel_number == 9:
+			# ドラムトラックは"今"未対応なので無視する
+			continue
 
 		var channel = self.channel_status[event_chunk.channel_number]
 		var event = event_chunk.event
@@ -172,7 +177,7 @@ func _process_track( ):
 			if channel.note_on.has( event.note ):
 				var note = channel.note_on[event.note]
 				if note != null:
-					note.stop( )
+					note.start_release( )
 					channel.note_on.erase( event.note )
 		elif event.type == SMF.MIDIEventType.note_on:
 			if not self.channel_mute[event_chunk.channel_number]:
@@ -198,7 +203,7 @@ func _process_track( ):
 			elif event.number == SMF.control_number_expression:
 				channel.expression = event.value / 127.0
 			elif event.number == SMF.control_number_pan:
-				channel.pan = event.value / 64.0 - 1.0
+				channel.pan = event.value / 127.0
 			else:
 				# 無視
 				pass
@@ -212,8 +217,6 @@ func _process_track( ):
 		else:
 			# 無視
 			pass
-
-		track.event_pointer += 1
 
 func _get_instruments( program ):
 	if not self.instruments_status.has( program ):

@@ -30,15 +30,22 @@ var release_state = [
 	# { \"time\": 0.2, \"jump_to\": 0.0 },	# not implemented
 ]
 
+func _ready( ):
+	self.stop( )
+
 func play( ):
 	self.mode = ADSRPlayingMode.ads
 	self.timer = 0.0
 	# self.stream.loop_mode = AudioStreamSample.LOOP_FORWARD
+	self.current_volume = self.ads_state[0].volume
 	.play( 0.0 )
+	self._update_volume( )
 
-func stop( ):
+func start_release( ):
 	self.mode = ADSRPlayingMode.release
+	self.current_volume = self.release_state[0].volume
 	self.timer = 0.0
+	self._update_volume( )
 
 func _process( delta ):
 	if not self.playing:
@@ -73,12 +80,15 @@ func _process( delta ):
 			self.current_volume = state.volume
 			last_time = state.time
 
+	self._update_volume( )
+
+func _update_volume( ):
 	var s = self.current_volume
 	var t = 1.0 - s
 	self.volume_db = s * self.maximum_volume_db + t * self.minimum_volume_db
 "
 
-[node name="ADSR" type="AudioStreamPlayer" index="0"]
+[node name="ADSR" type="AudioStreamPlayer"]
 
 stream = null
 volume_db = 0.0
