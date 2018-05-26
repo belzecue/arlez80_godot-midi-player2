@@ -1,6 +1,6 @@
 # Godot MIDI Player
 
-MIDI player for Godot Engine 3.
+MIDI player library for Godot Engine 3.
 
 ## Try it
 
