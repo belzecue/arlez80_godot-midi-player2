@@ -57,6 +57,8 @@ func _ready( ):
 		for i in range( self.max_polyphony ):
 			var audio_stream_player = ADSR.instance( )
 			audio_stream_player.stream = instrument.stream.duplicate( )
+			audio_stream_player.mix_target = instrument.mix_target
+			audio_stream_player.bus = instrument.bus
 			self.add_child( audio_stream_player )
 			self.instruments_status[program_number].append( audio_stream_player )
 

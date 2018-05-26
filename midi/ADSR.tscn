@@ -102,7 +102,7 @@ func _update_volume( ):
 	self.volume_db = s * self.maximum_volume_db + t * self.minimum_volume_db
 "
 
-[node name="ADSR" type="AudioStreamPlayer" index="0"]
+[node name="ADSR" type="AudioStreamPlayer"]
 
 stream = null
 volume_db = 0.0

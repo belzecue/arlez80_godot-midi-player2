@@ -64,7 +64,7 @@ _sections_unfolded = [ "Pause" ]
 
 [node name="MidiPlayer" parent="." index="0" instance=ExtResource( 1 )]
 
-max_polyphony = 64
+max_polyphony = 16
 file = "res://test.mid"
 playing = true
 
@@ -76,7 +76,7 @@ stream = ExtResource( 2 )
 volume_db = 0.0
 autoplay = false
 mix_target = 0
-bus = "Master"
+bus = "Rev"
 
 [node name="4" type="AudioStreamPlayer" parent="MidiPlayer/Instruments" index="1"]
 
@@ -84,7 +84,7 @@ stream = ExtResource( 3 )
 volume_db = 0.0
 autoplay = false
 mix_target = 0
-bus = "Master"
+bus = "Rev"
 
 [node name="5" type="AudioStreamPlayer" parent="MidiPlayer/Instruments" index="2"]
 
@@ -92,7 +92,7 @@ stream = ExtResource( 4 )
 volume_db = 0.0
 autoplay = false
 mix_target = 0
-bus = "Master"
+bus = "Rev"
 
 [node name="12" type="AudioStreamPlayer" parent="MidiPlayer/Instruments" index="3"]
 
@@ -100,7 +100,7 @@ stream = ExtResource( 5 )
 volume_db = 0.0
 autoplay = false
 mix_target = 0
-bus = "Master"
+bus = "Rev"
 
 [node name="39" type="AudioStreamPlayer" parent="MidiPlayer/Instruments" index="4"]
 
@@ -108,7 +108,7 @@ stream = ExtResource( 6 )
 volume_db = 0.0
 autoplay = false
 mix_target = 0
-bus = "Master"
+bus = "Rev"
 
 [node name="UI" type="Node" parent="." index="1"]
 
