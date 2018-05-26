@@ -107,15 +107,14 @@ func play( from_position = 0 ):
 func seek( to_position ):
 	self._stop_all_notes( )
 	self.position = to_position
-	var pointer = 0
 
+	var pointer = 0
 	var length = len(self.track_status.events)
 	while pointer < length:
 		var event_chunk = self.track_status.events[pointer]
 		if self.position < event_chunk.time:
 			break
 		pointer += 1
-
 	self.track_status.event_pointer = pointer
 
 """
@@ -129,9 +128,12 @@ func stop( ):
 	全音を止める
 """
 func _stop_all_notes( ):
-	for instrument in self.instruments_status:
-		for asp in instrument:
-			asp.stop( )
+	for program in self.instruments_status.keys( ):
+		for instrument in self.instruments_status[program]:
+			instrument.stop( )
+
+	for channel in self.channel_status:
+		channel.note_on = {}
 
 """
 	毎フレーム処理
@@ -141,7 +143,6 @@ func _process( delta ):
 		return
 
 	self._process_track( )
-
 	self.position += self.smf.timebase * delta * self.seconds_to_timebase * self.play_speed
 
 """
@@ -153,6 +154,10 @@ func _process_track( ):
 		return
 
 	var length = len(track.events)
+
+	if length <= track.event_pointer:
+		self.playing = false
+		return
 
 	while track.event_pointer < length:
 		var event_chunk = track.events[track.event_pointer]
