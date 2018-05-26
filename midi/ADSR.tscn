@@ -43,7 +43,7 @@ func play( ):
 	self.using_timer = 0.0
 	# self.stream.loop_mode = AudioStreamSample.LOOP_FORWARD
 	self.current_volume = self.ads_state[0].volume
-	self.stream.mix_rate = round( self.mix_rate * ( 1 + self.pitch_bend ) )
+	self.stream.mix_rate = round( self.mix_rate * ( 1 + self.pitch_bend * 0.5 ) )
 	.play( 0.0 )
 	self._update_volume( )
 
@@ -56,7 +56,7 @@ func start_release( ):
 func set_pitch_bend( pb ):
 	self.pitch_bend = pb
 	var pos = self.get_playback_position( )
-	self.stream.mix_rate = round( self.mix_rate * ( 1 + self.pitch_bend ) )
+	self.stream.mix_rate = round( self.mix_rate * ( 1 + self.pitch_bend * 0.5 ) )
 	.play( pos )
 
 func _process( delta ):
@@ -102,7 +102,7 @@ func _update_volume( ):
 	self.volume_db = s * self.maximum_volume_db + t * self.minimum_volume_db
 "
 
-[node name="ADSR" type="AudioStreamPlayer"]
+[node name="ADSR" type="AudioStreamPlayer" index="0"]
 
 stream = null
 volume_db = 0.0
