@@ -61,7 +61,7 @@ _sections_unfolded = [ "Pause" ]
 
 [node name="MidiPlayer" parent="." index="0" instance=ExtResource( 1 )]
 
-max_polyphony = 32
+max_polyphony = 64
 file = "res://test.mid"
 playing = true
 
