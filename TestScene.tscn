@@ -54,7 +54,7 @@ func _on_ui_seek_bar_scrolling( ):
 	self.midi_player.seek( self.ui_seek_bar.value )
 "
 
-[node name="TestScene" type="Node"]
+[node name="TestScene" type="Node" index="0"]
 
 script = SubResource( 1 )
 _sections_unfolded = [ "Pause" ]

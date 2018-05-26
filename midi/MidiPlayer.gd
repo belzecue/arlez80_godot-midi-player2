@@ -4,6 +4,7 @@ const max_track = 16
 const max_channel = 16
 const max_note_number = 128
 const max_program_number = 128
+const drum_track_channel = 0x09
 
 onready var SMF = preload( "SMF.gd" )
 
@@ -166,7 +167,7 @@ func _process_track( ):
 			break
 		track.event_pointer += 1
 
-		if event_chunk.channel_number == 9:
+		if event_chunk.channel_number == drum_track_channel:
 			# ドラムトラックは"今"未対応なので無視する
 			continue
 
