@@ -26,6 +26,11 @@ TODO
 
 * See [issues]( https://bitbucket.org/arlez80/godot-midi-player/issues )
 
+## not TODO
+
+* Supports format 2
+* Implements some effects (Use godot's mixer!)
+
 ## License
 
 MIT License
