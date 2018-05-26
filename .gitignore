@@ -1,5 +1,4 @@
 .dropbox.attr
 Thumbs.db
-*.mid
 .import/*
 *.import
