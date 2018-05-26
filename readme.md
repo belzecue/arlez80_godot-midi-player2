@@ -45,7 +45,7 @@ Software MIDI Player
 
 * See [issues]( https://bitbucket.org/arlez80/godot-midi-player/issues )
 
-## not TODO
+## Not TODO
 
 * Supports format 2
 * Implements some effects (Use godot's mixer!)
@@ -53,7 +53,8 @@ Software MIDI Player
 ## Known Problem
 
 * Player's timebase is 1/60.
-** It probably need 1/240 at least.
+ * It probably need 1/240 at least.
+* Pitch bend is buggy...
 
 ## License
 

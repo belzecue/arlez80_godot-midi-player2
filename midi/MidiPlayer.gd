@@ -115,6 +115,7 @@ func _init_channel( ):
 			"program": 0,
 			"volume": 1.0,
 			"expression": 1.0,
+			"pitch_bend": 0.0,
 			"pan": 0.5,
 		})
 
@@ -213,15 +214,17 @@ func _process_track( ):
 
 				if channel.note_on.has( event.note ):
 					var note = channel.note_on[event.note]
-					note.play( )
 					note.velocity = event.velocity
 					note.maximum_volume_db = volume_db
+					note.pitch_bend = channel.pitch_bend
+					note.play( )
 				else:
 					var note = self._get_instruments( channel.program )
 					if note != null:
-						note.stream.mix_rate = play_rate_table[event.note]
+						note.mix_rate = play_rate_table[event.note]
 						note.maximum_volume_db = volume_db
 						note.velocity = event.velocity
+						note.pitch_bend = channel.pitch_bend
 						note.play( )
 						channel.note_on[event.note] = note
 		elif event.type == SMF.MIDIEventType.program_change:
@@ -238,6 +241,9 @@ func _process_track( ):
 			else:
 				# 無視
 				pass
+		elif event.type == SMF.MIDIEventType.pitch_bend:
+			channel.pitch_bend = event.value / 8192.0 - 1.0
+			self._update_pitch_bend_note( channel )
 		elif event.type == SMF.MIDIEventType.system_event:
 			if event.args.type == SMF.MIDISystemEventType.set_tempo:
 				var bpm = 60000000.0 / event.args.bpm
@@ -266,3 +272,7 @@ func _update_volume_note( channel ):
 	for note in channel.note_on.values( ):
 		var note_volume = channel.volume * channel.expression * ( note.velocity / 127.0 )
 		note.maximum_volume_db = volume_db
+
+func _update_pitch_bend_note( channel ):
+	for note in channel.note_on.values( ):
+		note.set_pitch_bend( channel.pitch_bend )
