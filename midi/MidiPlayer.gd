@@ -214,12 +214,14 @@ func _process_track( ):
 				if channel.note_on.has( event.note ):
 					var note = channel.note_on[event.note]
 					note.play( )
+					note.velocity = event.velocity
 					note.maximum_volume_db = volume_db
 				else:
 					var note = self._get_instruments( channel.program )
 					if note != null:
 						note.stream.mix_rate = play_rate_table[event.note]
 						note.maximum_volume_db = volume_db
+						note.velocity = event.velocity
 						note.play( )
 						channel.note_on[event.note] = note
 		elif event.type == SMF.MIDIEventType.program_change:
@@ -227,8 +229,10 @@ func _process_track( ):
 		elif event.type == SMF.MIDIEventType.control_change:
 			if event.number == SMF.control_number_volume:
 				channel.volume = event.value / 127.0
+				self._update_volume_note( channel )
 			elif event.number == SMF.control_number_expression:
 				channel.expression = event.value / 127.0
+				self._update_volume_note( channel )
 			elif event.number == SMF.control_number_pan:
 				channel.pan = event.value / 127.0
 			else:
@@ -257,3 +261,8 @@ func _get_instruments( program ):
 			longest = instrument.using_timer
 
 	return old_instrument
+
+func _update_volume_note( channel ):
+	for note in channel.note_on.values( ):
+		var note_volume = channel.volume * channel.expression * ( note.velocity / 127.0 )
+		note.maximum_volume_db = volume_db

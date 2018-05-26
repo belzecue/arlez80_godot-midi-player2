@@ -14,6 +14,7 @@ enum ADSRPlayingMode {
 }
 
 var mode = ADSRPlayingMode.ads
+var velocity = 0
 var using_timer = 0.0
 var timer = 0.0
 var current_volume = 0
