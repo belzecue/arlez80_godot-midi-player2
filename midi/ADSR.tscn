@@ -17,7 +17,7 @@ var mode = ADSRPlayingMode.ads
 var timer = 0.0
 var current_volume = 0
 var maximum_volume_db = -8
-var minimum_volume_db = -60
+var minimum_volume_db = -1000
 var pan = 0.5
 var ads_state = [
 	{ \"time\": 0, \"volume\": 1.0 },
@@ -78,7 +78,7 @@ func _process( delta ):
 	self.volume_db = s * self.maximum_volume_db + t * self.minimum_volume_db
 "
 
-[node name="ADSR" type="AudioStreamPlayer"]
+[node name="ADSR" type="AudioStreamPlayer" index="0"]
 
 stream = null
 volume_db = 0.0
