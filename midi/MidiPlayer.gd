@@ -158,7 +158,6 @@ func _process_track( track ):
 					var note = channel.note_on[event.note]
 					note.seek( 0.0 )
 					note.volume_db = volume_db
-					print( "recycle %02x %d" % [ event.note, event.velocity ] )
 				else:
 					var note = self._get_instruments( channel.program )
 					if note != null:

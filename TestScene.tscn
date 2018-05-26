@@ -15,7 +15,7 @@ func _ready( ):
 	var data = smf_reader.read_file( \"cr_map.mid\" )
 "
 
-[node name="TestScene" type="Node"]
+[node name="TestScene" type="Node" index="0"]
 
 script = SubResource( 1 )
 _sections_unfolded = [ "Pause" ]
@@ -23,7 +23,7 @@ _sections_unfolded = [ "Pause" ]
 [node name="MidiPlayer" parent="." index="0" instance=ExtResource( 1 )]
 
 max_polyphony = 32
-file = "res://cr_map.mid"
+file = "res://stur1-1.mid"
 playing = true
 
 [node name="Instruments" type="Node" parent="MidiPlayer" index="0"]
