@@ -18,7 +18,7 @@ var position = 0
 var track_status = []
 var channel_status = []
 var instruments_status = {}
-var volume_db = -40
+var volume_db = -8
 var channel_volume_db = 20
 
 # 69 = A4
@@ -70,13 +70,9 @@ func _init_track( ):
 	チャンネル初期化
 """
 func _init_channel( ):
-	var note_on = []
-	for i in range( max_note_number ):
-		note_on.append( null )
-
 	for i in range( max_channel ):
 		self.channel_status.append({
-			"note_on": note_on,
+			"note_on": {},
 			"program": 0,
 			"volume": 1.0,
 			"expression": 1.0,
@@ -148,23 +144,28 @@ func _process_track( track ):
 		var event = event_chunk.event
 
 		if event.type == SMF.MIDIEventType.note_off:
-			var note = channel.note_on[event.note]
-			if note != null:
-				channel.note_on[event.note] = null
-				note.stop( )
+			if channel.note_on.has( event.note ):
+				var note = channel.note_on[event.note]
+				if note != null:
+					note.stop( )
+					channel.note_on.erase( event.note )
 		elif event.type == SMF.MIDIEventType.note_on:
 			if not self.channel_mute[event_chunk.channel_number]:
-				var old_note = channel.note_on[event.note]
-				if old_note != null:
-					channel.note_on[event.note] = null
-					old_note.stop( )
-				var note = self._get_instruments( channel.program )
-				if note != null:
-					var vol = channel.volume * channel.expression * ( event.velocity / 127.0 )
-					note.stream.mix_rate = play_rate_table[event.note]
-					note.volume_db = vol * self.channel_volume_db - self.channel_volume_db + self.volume_db
-					note.play( )
-					channel.note_on[event.note] = note
+				var note_volume = channel.volume * channel.expression * ( event.velocity / 127.0 )
+				var volume_db = note_volume * self.channel_volume_db - self.channel_volume_db + self.volume_db
+
+				if channel.note_on.has( event.note ):
+					var note = channel.note_on[event.note]
+					note.seek( 0.0 )
+					note.volume_db = volume_db
+					print( "recycle %02x %d" % [ event.note, event.velocity ] )
+				else:
+					var note = self._get_instruments( channel.program )
+					if note != null:
+						note.stream.mix_rate = play_rate_table[event.note]
+						note.volume_db = volume_db
+						note.play( )
+						channel.note_on[event.note] = note
 		elif event.type == SMF.MIDIEventType.program_change:
 			channel.program = event.number
 		elif event.type == SMF.MIDIEventType.control_change:
