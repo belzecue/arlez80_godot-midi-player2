@@ -15,7 +15,7 @@ var smf = null
 
 var seconds_to_timebase = 2.3
 var position = 0
-var track_status = []
+var track_status = null
 var channel_status = []
 var instruments_status = {}
 var volume_db = -8
@@ -55,16 +55,23 @@ func _ready( ):
 """
 	トラック初期化
 """
+class TrackSorter:
+	static func sort(a, b):
+		if a.time < b.time:
+			return true
+
 func _init_track( ):
-	for i in range( max_track ):
-		self.track_status.append({
-			"events": null,
-			"event_pointer": 0,
-		})
+	self.track_status = {
+		"events": [],
+		"event_pointer": 0,
+	}
+
+	# 1トラックに集約
 	for track in self.smf.tracks:
-		if 16 <= track.track_number:
-			continue
-		self.track_status[track.track_number].events = track.events
+		self.track_status.events += track.events
+
+	# ソート
+	self.track_status.events.sort_custom( TrackSorter, "sort" )
 
 """
 	チャンネル初期化
@@ -121,15 +128,15 @@ func _process( delta ):
 	if not self.playing:
 		return
 
-	for track in self.track_status:
-		self._process_track( track )
+	self._process_track( )
 
 	self.position += self.smf.timebase * delta * self.seconds_to_timebase
 
 """
 	トラック処理
 """
-func _process_track( track ):
+func _process_track( ):
+	var track = self.track_status
 	if track.events == null:
 		return
 
@@ -156,7 +163,7 @@ func _process_track( track ):
 
 				if channel.note_on.has( event.note ):
 					var note = channel.note_on[event.note]
-					note.seek( 0.0 )
+					note.play( )
 					note.volume_db = volume_db
 				else:
 					var note = self._get_instruments( channel.program )

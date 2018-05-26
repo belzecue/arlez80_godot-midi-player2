@@ -280,11 +280,20 @@ func read_event( stream, event_type_byte ):
 			"velocity": stream.get_u8( ),
 		}
 	elif event_type == 0x90:
-		return {
-			"type": MIDIEventType.note_on,
-			"note": param,
-			"velocity": stream.get_u8( ),
-		}
+		var velocity = stream.get_u8( )
+		if velocity == 0:
+			# velocity0のnote_onはnote_off扱いにする
+			return {
+				"type": MIDIEventType.note_off,
+				"note": param,
+				"velocity": velocity,
+			}
+		else:
+			return {
+				"type": MIDIEventType.note_on,
+				"note": param,
+				"velocity": velocity,
+			}
 	elif event_type == 0xA0:
 		return {
 			"type": MIDIEventType.polyphonic_key_pressure,
