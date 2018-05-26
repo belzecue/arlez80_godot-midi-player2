@@ -129,6 +129,9 @@ func read_track( input, track_number ):
 		else:
 			event = self.read_event( stream, event_type_byte )
 
+			if ( event_type_byte & 0x80 ) == 0:
+				event_type_byte = self.last_event_type
+
 		events.append({
 			"time": time,
 			"channel_number": event_type_byte & 0x0f,

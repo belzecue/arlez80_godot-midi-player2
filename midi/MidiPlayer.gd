@@ -137,7 +137,9 @@ func _process_track( track ):
 	if track.events == null:
 		return
 
-	while track.event_pointer < len(track.events):
+	var length = len(track.events)
+
+	while track.event_pointer < length:
 		var event_chunk = track.events[track.event_pointer]
 		if self.position < event_chunk.time:
 			break
