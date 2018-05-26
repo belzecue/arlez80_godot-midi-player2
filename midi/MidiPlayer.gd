@@ -101,10 +101,18 @@ func play( from_position = 0 ):
 	シーク
 """
 func seek( to_position ):
-	print( "not implemented" )
-	breakpoint
-	# TODO: ノートの状態を変更するように
-	# self.position = to_position
+	self._stop_all_notes( )
+	self.position = to_position
+	var pointer = 0
+
+	var length = len(self.track_status.events)
+	while pointer < length:
+		var event_chunk = self.track_status.events[pointer]
+		if self.position < event_chunk.time:
+			break
+		pointer += 1
+
+	self.track_status.event_pointer = pointer
 
 """
 	停止
