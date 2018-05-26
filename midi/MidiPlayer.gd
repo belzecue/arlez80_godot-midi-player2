@@ -13,7 +13,7 @@ export var file = ""
 export var playing = false
 export var channel_mute = [false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false]
 export var play_speed = 1.0
-export var volume_db = -8
+export var volume_db = -30
 var smf = null
 
 var seconds_to_timebase = 2.3
@@ -271,6 +271,7 @@ func _get_instruments( program ):
 func _update_volume_note( channel ):
 	for note in channel.note_on.values( ):
 		var note_volume = channel.volume * channel.expression * ( note.velocity / 127.0 )
+		var volume_db = note_volume * self.channel_volume_db - self.channel_volume_db + self.volume_db
 		note.maximum_volume_db = volume_db
 
 func _update_pitch_bend_note( channel ):
