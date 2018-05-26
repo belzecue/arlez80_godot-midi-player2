@@ -41,20 +41,23 @@ func _process( delta ):
 	for i in range( 0, len(self.midi_player.channel_status) ):
 		var channel = self.midi_player.channel_status[i]
 		self.midi_player.channel_mute[i] = self.ui_channel_mutes[i].pressed
-		self.ui_channel_mutes[i].text = \"CH%2d program:#%3d notes:%2d volume:%8.5f expression:%8.5f pan:%8.5f\\n\" % [
+		self.ui_channel_mutes[i].text = \"CH%2d program:#%3d notes:%2d volume:%8.5f expression:%8.5f pan:%8.5f pitch:%8.5f\\n\" % [
 			i,
 			channel.program,
 			len( channel.note_on.keys( ) ),
 			channel.volume,
 			channel.expression,
 			channel.pan,
+			channel.pitch_bend,
 		]
 
 func _on_ui_seek_bar_scrolling( ):
+	if not self.midi_player.playing:
+		self.midi_player.play( )
 	self.midi_player.seek( self.ui_seek_bar.value )
 "
 
-[node name="TestScene" type="Node" index="0"]
+[node name="TestScene" type="Node"]
 
 script = SubResource( 1 )
 _sections_unfolded = [ "Pause" ]

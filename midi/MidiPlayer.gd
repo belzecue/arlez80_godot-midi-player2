@@ -50,9 +50,9 @@ func _ready( ):
 	var default_instrument = instruments.get_children( )[0]
 	for program_number in self.max_polyphony_of_instruments.keys( ):
 		self.instruments_status[program_number] = []
-		var instrument = instruments.get_node( "%d" % program_number )
-		if instrument == null:
-			instrument = default_instrument
+		var instrument = default_instrument
+		if instruments.has_node( "%d" % program_number ):
+			instrument = instruments.get_node( "%d" % program_number )
 		# var polyphony = min( self.max_polyphony_of_instruments[program_number],  )
 		for i in range( self.max_polyphony ):
 			var audio_stream_player = ADSR.instance( )
@@ -109,6 +109,7 @@ func _init_track( ):
 	チャンネル初期化
 """
 func _init_channel( ):
+	self.channel_status = []
 	for i in range( max_channel ):
 		self.channel_status.append({
 			"note_on": {},
@@ -124,11 +125,10 @@ func _init_channel( ):
 	@param	from_position
 """
 func play( from_position = 0 ):
-	self._stop_all_notes( )
 	self.playing = true
-	self.position = from_position
 	self._init_track( )
 	self._init_channel( )
+	self.seek( from_position )
 
 """
 	シーク
