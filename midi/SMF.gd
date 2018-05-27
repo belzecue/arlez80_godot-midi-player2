@@ -2,13 +2,61 @@
 	SMF reader by Yui Kinomoto @arlez80
 """
 
-var last_event_type
-
+# Control Numbers
+const control_number_bank_select_msb = 0x00
 const control_number_modulation = 0x01
+const control_number_breath_controller = 0x02
+const control_number_foot_controller = 0x04
+const control_number_portamento_time = 0x05
+const control_number_data_entry = 0x06
 const control_number_volume = 0x07
+const control_number_balance = 0x08
 const control_number_pan = 0x0A
 const control_number_expression = 0x0B
 
+const control_number_bank_select_lsb = 0x20
+const control_number_modulation_lsb = 0x21
+const control_number_breath_controller_lsb = 0x22
+const control_number_foot_controller_lsb = 0x24
+const control_number_portamento_time_lsb = 0x25
+const control_number_data_entry_lsb = 0x26
+const control_number_channel_volume_lsb = 0x27
+const control_number_calance_lsb = 0x28
+const control_number_pan_lsb = 0x2A
+const control_number_expression_lsb = 0x2B
+
+const control_number_hold = 0x40
+const control_number_portament = 0x41
+const control_number_sostenuto = 0x42
+const control_number_soft_pedal = 0x43
+const control_number_legato_foot_switch = 0x44
+const control_number_freeze = 0x45
+const control_number_sound_variation = 0x46
+const control_number_timbre = 0x47
+const control_number_release_time = 0x48
+const control_number_attack_time = 0x49
+const control_number_brightness = 0x4A
+const control_number_vibrato_rate = 0x4B
+const control_number_vibrato_depth = 0x4C
+const control_number_vibrato_delay = 0x4D
+
+const control_number_nrpn_lsb = 0x62
+const control_number_nrpn_msb = 0x63
+const control_number_rpn_lsb = 0x64
+const control_number_rpn_msb = 0x65
+
+# Manufacture ID
+const manufacture_id_universal_nopn_realtime_sys_ex = 0x7E
+const manufacture_id_universal_realtime_sys_ex = 0x7F
+const manufacture_id_kawai_musical_instruments_mfg_co_ltd = 0x40
+const manufacture_id_roland_corporation = 0x41
+const manufacture_id_korg_inc = 0x42
+const manufacture_id_yamaha_corporation = 0x43
+const manufacture_id_casio_computer_co_ltd = 0x44
+const manufacture_id_kamiya_studio_co_ltd = 0x46
+const manufacture_id_akai_electric_co_ltd = 0x47
+
+# Enums
 enum MIDIEventType {
 	note_off,					# 8*
 	note_on,					# 9*
@@ -42,6 +90,8 @@ enum MIDISystemEventType {
 	unknown,				
 }
 
+var last_event_type
+
 """
 	ファイルから読み込み
 	@param	path	File path
@@ -60,7 +110,7 @@ func read_file( path ):
 	stream.big_endian = true
 	f.close( )
 
-	return self.read( stream )
+	return self._read( stream )
 
 """
 	配列から読み込み
@@ -71,15 +121,15 @@ func read_data( data ):
 	var stream = StreamPeerBuffer.new( )
 	stream.set_data_array( data )
 	stream.big_endian = true
-	return self.read( stream )
+	return self._read( stream )
 
 """
 	読み込み
 	@param	input
 	@return	smf
 """
-func read( input ):
-	var header = self.read_chunk_data( input )
+func _read( input ):
+	var header = self._read_chunk_data( input )
 	if header.id != "MThd" and header.size != 6:
 		print( "MThd header expected" )
 		breakpoint
@@ -90,7 +140,7 @@ func read( input ):
 
 	var tracks = []
 	for i in range( 0, track_count ):
-		tracks.append( self.read_track( input, i ) )
+		tracks.append( self._read_track( input, i ) )
 
 	return {
 		"format_type": format_type,
@@ -105,8 +155,8 @@ func read( input ):
 	@param	track_number	トラックナンバー
 	@return	track data
 """
-func read_track( input, track_number ):
-	var track_chunk = self.read_chunk_data( input )
+func _read_track( input, track_number ):
+	var track_chunk = self._read_chunk_data( input )
 	if track_chunk.id != "MTrk":
 		print( "Unknown chunk: " + track_chunk.id )
 		breakpoint
@@ -116,18 +166,18 @@ func read_track( input, track_number ):
 	var events = []
 
 	while 0 < stream.get_available_bytes( ):
-		var delta_time = self.read_variable_int( stream )
+		var delta_time = self._read_variable_int( stream )
 		time += delta_time
 		var event_type_byte = stream.get_u8( )
 
 		var event
-		if self.is_system_event( event_type_byte ):
+		if self._is_system_event( event_type_byte ):
 			event = {
 				"type": MIDIEventType.system_event,
-				"args": self.read_system_event( stream, event_type_byte )
+				"args": self._read_system_event( stream, event_type_byte )
 			}
 		else:
-			event = self.read_event( stream, event_type_byte )
+			event = self._read_event( stream, event_type_byte )
 
 			if ( event_type_byte & 0x80 ) == 0:
 				event_type_byte = self.last_event_type
@@ -148,31 +198,31 @@ func read_track( input, track_number ):
 	@param	b	event type
 	@return	システムイベントならtrueを返す
 """
-func is_system_event( b ):
+func _is_system_event( b ):
 	return ( b & 0xf0 ) == 0xf0
 
 """
 	システムイベントの読み込み
 """
-func read_system_event( stream, event_type_byte ):
+func _read_system_event( stream, event_type_byte ):
 	if event_type_byte == 0xff:
 		var meta_type = stream.get_u8( )
-		var size = self.read_variable_int( stream )
+		var size = self._read_variable_int( stream )
 
 		if meta_type == 0x01:
-			return { "type": MIDISystemEventType.text_event, "text": self.read_string( stream, size ) }
+			return { "type": MIDISystemEventType.text_event, "text": self._read_string( stream, size ) }
 		elif meta_type == 0x02:
-			return { "type": MIDISystemEventType.copyright, "text": self.read_string( stream, size ) }
+			return { "type": MIDISystemEventType.copyright, "text": self._read_string( stream, size ) }
 		elif meta_type == 0x03:
-			return { "type": MIDISystemEventType.track_name, "text": self.read_string( stream, size ) }
+			return { "type": MIDISystemEventType.track_name, "text": self._read_string( stream, size ) }
 		elif meta_type == 0x04:
-			return { "type": MIDISystemEventType.instrument_name, "text": self.read_string( stream, size ) }
+			return { "type": MIDISystemEventType.instrument_name, "text": self._read_string( stream, size ) }
 		elif meta_type == 0x05:
-			return { "type": MIDISystemEventType.lyric, "text": self.read_string( stream, size ) }
+			return { "type": MIDISystemEventType.lyric, "text": self._read_string( stream, size ) }
 		elif meta_type == 0x06:
-			return { "type": MIDISystemEventType.marker, "text": self.read_string( stream, size ) }
+			return { "type": MIDISystemEventType.marker, "text": self._read_string( stream, size ) }
 		elif meta_type == 0x07:
-			return { "type": MIDISystemEventType.cue_point, "text": self.read_string( stream, size ) }
+			return { "type": MIDISystemEventType.cue_point, "text": self._read_string( stream, size ) }
 		elif meta_type == 0x20:
 			if size != 1:
 				print( "MIDI Channel Prefix length is not 1" )
@@ -242,13 +292,13 @@ func read_system_event( stream, event_type_byte ):
 				"data": stream.get_partial_data( size )[1],
 			}
 	elif event_type_byte == 0xf0:
-		var size = self.read_variable_int( stream )
+		var size = self._read_variable_int( stream )
 		return {
 			"type": MIDISystemEventType.sys_ex,
 			"data": stream.get_partial_data( size )[1],
 		}
 	elif event_type_byte == 0xf7:
-		var size = self.read_variable_int( stream )
+		var size = self._read_variable_int( stream )
 		return {
 			"type": MIDISystemEventType.divided_sys_ex,
 			"data": stream.get_partial_data( size )[1],
@@ -260,7 +310,7 @@ func read_system_event( stream, event_type_byte ):
 """
 	通常のイベント読み込み
 """
-func read_event( stream, event_type_byte ):
+func _read_event( stream, event_type_byte ):
 	var param = 0
 
 	if ( event_type_byte & 0x80 ) == 0:
@@ -330,7 +380,7 @@ func read_event( stream, event_type_byte ):
 	@param	stream
 	@return	数値
 """
-func read_variable_int( stream ):
+func _read_variable_int( stream ):
 	var result = 0
 
 	while true:
@@ -349,8 +399,8 @@ func read_variable_int( stream ):
 	@param	stream	Stream
 	@return	chunk data
 """
-func read_chunk_data( stream ):
-	var id = self.read_string( stream, 4 )
+func _read_chunk_data( stream ):
+	var id = self._read_string( stream, 4 )
 	var size = stream.get_32( )
 	var new_stream = StreamPeerBuffer.new( )
 	new_stream.set_data_array( stream.get_partial_data( size )[1] )
@@ -364,6 +414,9 @@ func read_chunk_data( stream ):
 
 """
 	文字列の読み込み
+	@param	stream	Stream
+	@param	size	string size
+	@return string
 """
-func read_string( stream, size ):
+func _read_string( stream, size ):
 	return stream.get_partial_data( size )[1].get_string_from_ascii( )
