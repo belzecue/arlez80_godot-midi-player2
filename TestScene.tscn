@@ -15,11 +15,19 @@ onready var midi_player = self.get_node( \"MidiPlayer\" )
 onready var ui_play_speed_bar = self.get_node( \"UI/PlaySpeedBar\" )
 onready var ui_volume_bar = self.get_node( \"UI/VolumeBar\" )
 onready var ui_seek_bar = self.get_node( \"UI/SeekBar\" )
+onready var ui_tempo = self.get_node( \"UI/Tempo\" )
+
+var tempo_changing = false
+
 var ui_channel_mutes = []
 
 func _ready( ):
 	# seek
 	self.ui_seek_bar.connect( \"scrolling\", self, \"_on_ui_seek_bar_scrolling\" )
+	# tempo
+	self.ui_tempo.connect( \"text_entered\", self, \"_on_ui_tempo_entered\" )
+	self.ui_tempo.connect( \"focus_entered\", self, \"_on_ui_tempo_focus_entered\" )
+	self.ui_tempo.connect( \"focus_exited\", self, \"_on_ui_tempo_focus_exited\" )
 	# channel mute
 	var channel_text_label = self.get_node( \"UI/Label5\" )
 	for i in range( 0, len(self.midi_player.channel_status) ):
@@ -38,6 +46,9 @@ func _process( delta ):
 	self.ui_seek_bar.max_value = self.midi_player.last_position
 	self.ui_seek_bar.value = self.midi_player.position
 
+	if not self.tempo_changing:
+		self.ui_tempo.text = str( self.midi_player.tempo )
+
 	for i in range( 0, len(self.midi_player.channel_status) ):
 		var channel = self.midi_player.channel_status[i]
 		self.midi_player.channel_mute[i] = self.ui_channel_mutes[i].pressed
@@ -55,6 +66,17 @@ func _on_ui_seek_bar_scrolling( ):
 	if not self.midi_player.playing:
 		self.midi_player.play( )
 	self.midi_player.seek( self.ui_seek_bar.value )
+
+func _on_ui_tempo_focus_entered( ):
+	self.tempo_changing = true
+
+func _on_ui_tempo_focus_exited( ):
+	self.tempo_changing = false
+
+func _on_ui_tempo_entered( o ):
+	var bpm = int( self.ui_tempo.text )
+	if 0 <= bpm:
+		self.midi_player.tempo = bpm
 "
 
 [node name="TestScene" type="Node" index="0"]
@@ -64,11 +86,14 @@ _sections_unfolded = [ "Pause" ]
 
 [node name="MidiPlayer" parent="." index="0" instance=ExtResource( 1 )]
 
+editor/display_folded = true
 max_polyphony = 16
 file = "res://test.mid"
 playing = true
 
 [node name="Instruments" type="Node" parent="MidiPlayer" index="0"]
+
+editor/display_folded = true
 
 [node name="0" type="AudioStreamPlayer" parent="MidiPlayer/Instruments" index="0"]
 
@@ -217,7 +242,28 @@ percent_visible = 1.0
 lines_skipped = 0
 max_lines_visible = -1
 
-[node name="PlaySpeedBar" type="HScrollBar" parent="UI" index="5"]
+[node name="Label6" type="Label" parent="UI" index="5"]
+
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 420.0
+margin_top = 74.0
+margin_right = 517.0
+margin_bottom = 88.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+mouse_filter = 2
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 4
+text = "Tempo"
+percent_visible = 1.0
+lines_skipped = 0
+max_lines_visible = -1
+
+[node name="PlaySpeedBar" type="HScrollBar" parent="UI" index="6"]
 
 anchor_left = 0.0
 anchor_top = 0.0
@@ -243,7 +289,7 @@ rounded = false
 custom_step = -1.0
 _sections_unfolded = [ "Anchor", "Margin" ]
 
-[node name="VolumeBar" type="HScrollBar" parent="UI" index="6"]
+[node name="VolumeBar" type="HScrollBar" parent="UI" index="7"]
 
 anchor_left = 0.0
 anchor_top = 0.0
@@ -269,7 +315,7 @@ rounded = false
 custom_step = -1.0
 _sections_unfolded = [ "Anchor", "Margin" ]
 
-[node name="SeekBar" type="HScrollBar" parent="UI" index="7"]
+[node name="SeekBar" type="HScrollBar" parent="UI" index="8"]
 
 anchor_left = 0.0
 anchor_top = 0.0
@@ -293,5 +339,30 @@ value = 0.0
 exp_edit = false
 rounded = false
 custom_step = -1.0
+
+[node name="Tempo" type="LineEdit" parent="UI" index="9"]
+
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 487.0
+margin_top = 66.0
+margin_right = 619.0
+margin_bottom = 90.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+focus_mode = 2
+mouse_filter = 0
+mouse_default_cursor_shape = 1
+size_flags_horizontal = 1
+size_flags_vertical = 1
+focus_mode = 2
+context_menu_enabled = true
+placeholder_alpha = 0.6
+caret_blink = false
+caret_blink_speed = 0.65
+caret_position = 0
+_sections_unfolded = [ "Caret", "Placeholder" ]
 
 

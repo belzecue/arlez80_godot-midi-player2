@@ -16,6 +16,7 @@ export var play_speed = 1.0
 export var volume_db = -30
 var smf = null
 
+var tempo = 120 setget set_tempo
 var seconds_to_timebase = 2.3
 var position = 0
 var last_position = 0
@@ -156,6 +157,13 @@ func stop( ):
 	self.playing = false
 
 """
+	テンポ設定
+"""
+func set_tempo( bpm ):
+	tempo = bpm
+	self.seconds_to_timebase = tempo / 60.0
+
+"""
 	全音を止める
 """
 func _stop_all_notes( ):
@@ -248,8 +256,7 @@ func _process_track( ):
 			self._update_pitch_bend_note( channel )
 		elif event.type == SMF.MIDIEventType.system_event:
 			if event.args.type == SMF.MIDISystemEventType.set_tempo:
-				var bpm = 60000000.0 / event.args.bpm
-				self.seconds_to_timebase = bpm / 60.0
+				self.tempo = 60000000.0 / event.args.bpm
 			else:
 				# 無視
 				pass
