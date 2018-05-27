@@ -16,6 +16,7 @@ export var play_speed = 1.0
 export var volume_db = -30
 var smf = null
 
+var key_shift = 0
 var tempo = 120 setget set_tempo
 var seconds_to_timebase = 2.3
 var position = 0
