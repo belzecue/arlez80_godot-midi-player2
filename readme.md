@@ -3,7 +3,7 @@
 Software MIDI player library for Godot Engine 3.
 
 * Can changes play speed.
-* Can control as AudioSamplePlayer.
+* Can control as AudioStreamPlayer.
 
 I develop it for use embedding in game.
 
@@ -15,7 +15,7 @@ I develop it for use embedding in game.
 
 + Add AudioStreamPlayer node renamed program number (0 based) to TestScene/MidiPlayer/Instruments of TestScene.tscn.
 
-(It will be change this method.)
+(It will be change this method. Use soundfont or defination using JSON)
 
 ### Demo / Screenshot
 
@@ -27,7 +27,7 @@ I develop it for use embedding in game.
 
 ### SMF.gd
 
-Standard MIDI File reader
+Standard MIDI File reader. It can read format 0 and format 1.
 
 ```
 var smf_reader = preload( "path/to/SMF.gd" ).new( )
@@ -35,11 +35,39 @@ var smf = smf_reader.read_file( "path/to/smf.mid" )
 print( smf )
 ```
 
+#### read_file( path )
+
+read from file.
+
+#### read_data( data )
+
+read from data (PoolByteArray).
+
 ### MidiPlayer.tscn
 
-Software MIDI Player
+Software MIDI Player. Add MidiPlayer node to scene to use.
 
-* TODO / かきかけとちゅう
+Some method/member is the same as AudioStreamPlayer.
+
+#### file
+
+Play file path.
+
+#### tempo
+
+Set/Get currently tempo.
+
+#### play_speed
+
+Change play speed. It is not change tempo value. When tempo is 120 and this value is 0.5, play tempo is as 60.
+
+#### channel_mute
+
+Set true to mute channel.
+
+#### smf_data
+
+SMF data.
 
 ## TODO
 
