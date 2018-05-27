@@ -14,9 +14,9 @@ export var playing = false
 export var channel_mute = [false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false]
 export var play_speed = 1.0
 export var volume_db = -30
-var smf = null
+export var key_shift = 0
 
-var key_shift = 0
+var smf_data = null
 var tempo = 120 setget set_tempo
 var seconds_to_timebase = 2.3
 var position = 0
@@ -35,9 +35,9 @@ var play_rate_table = [819,868,920,974,1032,1094,1159,1228,1301,1378,1460,1547,1
 """
 func _ready( ):
 	# ファイル読み込み
-	if self.smf == null:
+	if self.smf_data == null:
 		var smf_reader = SMF.new( )
-		self.smf = smf_reader.read_file( self.file )
+		self.smf_data = smf_reader.read_file( self.file )
 
 	self._init_track( )
 	self._init_channel( )
@@ -78,7 +78,7 @@ func _init_track( ):
 		"event_pointer": 0,
 	}
 
-	for track in self.smf.tracks:
+	for track in self.smf_data.tracks:
 		self.track_status.events += track.events
 	self.track_status.events.sort_custom( TrackSorter, "sort" )
 	self.last_position = self.track_status.events[len(self.track_status.events)-1].time
@@ -183,7 +183,7 @@ func _process( delta ):
 		return
 
 	self._process_track( )
-	self.position += self.smf.timebase * delta * self.seconds_to_timebase * self.play_speed
+	self.position += self.smf_data.timebase * delta * self.seconds_to_timebase * self.play_speed
 
 """
 	トラック処理
@@ -213,31 +213,33 @@ func _process_track( ):
 		var event = event_chunk.event
 
 		if event.type == SMF.MIDIEventType.note_off:
-			if channel.note_on.has( event.note ):
-				var note = channel.note_on[event.note]
-				if note != null:
-					note.start_release( )
-					channel.note_on.erase( event.note )
+			var note_number = event.note + self.key_shift
+			if channel.note_on.has( note_number ):
+				var note_player = channel.note_on[note_number]
+				if note_player != null:
+					note_player.start_release( )
+					channel.note_on.erase( note_number )
 		elif event.type == SMF.MIDIEventType.note_on:
 			if not self.channel_mute[event_chunk.channel_number]:
+				var note_number = event.note + self.key_shift
 				var note_volume = channel.volume * channel.expression * ( event.velocity / 127.0 )
 				var volume_db = note_volume * self.channel_volume_db - self.channel_volume_db + self.volume_db
 
-				if channel.note_on.has( event.note ):
-					var note = channel.note_on[event.note]
-					note.velocity = event.velocity
-					note.maximum_volume_db = volume_db
-					note.pitch_bend = channel.pitch_bend
-					note.play( )
+				if channel.note_on.has( note_number ):
+					var note_player = channel.note_on[note_number]
+					note_player.velocity = event.velocity
+					note_player.maximum_volume_db = volume_db
+					note_player.pitch_bend = channel.pitch_bend
+					note_player.play( )
 				else:
-					var note = self._get_instruments( channel.program )
-					if note != null:
-						note.mix_rate = play_rate_table[event.note]
-						note.maximum_volume_db = volume_db
-						note.velocity = event.velocity
-						note.pitch_bend = channel.pitch_bend
-						note.play( )
-						channel.note_on[event.note] = note
+					var note_player = self._get_instruments( channel.program )
+					if note_player != null:
+						note_player.mix_rate = play_rate_table[note_number]
+						note_player.maximum_volume_db = volume_db
+						note_player.velocity = event.velocity
+						note_player.pitch_bend = channel.pitch_bend
+						note_player.play( )
+						channel.note_on[note_number] = note_player
 		elif event.type == SMF.MIDIEventType.program_change:
 			channel.program = event.number
 		elif event.type == SMF.MIDIEventType.control_change:
