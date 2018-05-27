@@ -116,6 +116,7 @@ func _init_channel( ):
 	self.channel_status = []
 	for i in range( max_channel ):
 		self.channel_status.append({
+			"number": i,
 			"note_on": {},
 			"program": 0,
 			"volume": 1.0,
@@ -213,59 +214,71 @@ func _process_track( ):
 		var event = event_chunk.event
 
 		if event.type == SMF.MIDIEventType.note_off:
-			var note_number = event.note + self.key_shift
-			if channel.note_on.has( note_number ):
-				var note_player = channel.note_on[note_number]
-				if note_player != null:
-					note_player.start_release( )
-					channel.note_on.erase( note_number )
+			self._process_track_event_note_off( channel, event )
 		elif event.type == SMF.MIDIEventType.note_on:
-			if not self.channel_mute[event_chunk.channel_number]:
-				var note_number = event.note + self.key_shift
-				var note_volume = channel.volume * channel.expression * ( event.velocity / 127.0 )
-				var volume_db = note_volume * self.channel_volume_db - self.channel_volume_db + self.volume_db
-
-				if channel.note_on.has( note_number ):
-					var note_player = channel.note_on[note_number]
-					note_player.velocity = event.velocity
-					note_player.maximum_volume_db = volume_db
-					note_player.pitch_bend = channel.pitch_bend
-					note_player.play( )
-				else:
-					var note_player = self._get_instruments( channel.program )
-					if note_player != null:
-						note_player.mix_rate = play_rate_table[note_number]
-						note_player.maximum_volume_db = volume_db
-						note_player.velocity = event.velocity
-						note_player.pitch_bend = channel.pitch_bend
-						note_player.play( )
-						channel.note_on[note_number] = note_player
+			self._process_track_event_note_on( channel, event )
 		elif event.type == SMF.MIDIEventType.program_change:
 			channel.program = event.number
 		elif event.type == SMF.MIDIEventType.control_change:
-			if event.number == SMF.control_number_volume:
-				channel.volume = event.value / 127.0
-				self._update_volume_note( channel )
-			elif event.number == SMF.control_number_expression:
-				channel.expression = event.value / 127.0
-				self._update_volume_note( channel )
-			elif event.number == SMF.control_number_pan:
-				channel.pan = event.value / 127.0
-			else:
-				# 無視
-				pass
+			self._process_track_event_control_change( channel, event )
 		elif event.type == SMF.MIDIEventType.pitch_bend:
 			channel.pitch_bend = event.value / 8192.0 - 1.0
 			self._update_pitch_bend_note( channel )
 		elif event.type == SMF.MIDIEventType.system_event:
-			if event.args.type == SMF.MIDISystemEventType.set_tempo:
-				self.tempo = 60000000.0 / event.args.bpm
-			else:
-				# 無視
-				pass
+			self._process_track_system_event( channel, event )
 		else:
 			# 無視
 			pass
+
+func _process_track_event_note_off( channel, event ):
+	var note_number = event.note + self.key_shift
+	if channel.note_on.has( note_number ):
+		var note_player = channel.note_on[note_number]
+		if note_player != null:
+			note_player.start_release( )
+			channel.note_on.erase( note_number )
+
+func _process_track_event_note_on( channel, event ):
+	if not self.channel_mute[channel.number]:
+		var note_number = event.note + self.key_shift
+		var note_volume = channel.volume * channel.expression * ( event.velocity / 127.0 )
+		var volume_db = note_volume * self.channel_volume_db - self.channel_volume_db + self.volume_db
+
+		if channel.note_on.has( note_number ):
+			var note_player = channel.note_on[note_number]
+			note_player.velocity = event.velocity
+			note_player.maximum_volume_db = volume_db
+			note_player.pitch_bend = channel.pitch_bend
+			note_player.play( )
+		else:
+			var note_player = self._get_instruments( channel.program )
+			if note_player != null:
+				note_player.mix_rate = play_rate_table[note_number]
+				note_player.maximum_volume_db = volume_db
+				note_player.velocity = event.velocity
+				note_player.pitch_bend = channel.pitch_bend
+				note_player.play( )
+				channel.note_on[note_number] = note_player
+
+func _process_track_event_control_change( channel, event ):
+	if event.number == SMF.control_number_volume:
+		channel.volume = event.value / 127.0
+		self._update_volume_note( channel )
+	elif event.number == SMF.control_number_expression:
+		channel.expression = event.value / 127.0
+		self._update_volume_note( channel )
+	elif event.number == SMF.control_number_pan:
+		channel.pan = event.value / 127.0
+	else:
+		# 無視
+		pass
+
+func _process_track_system_event( channel, event ):
+	if event.args.type == SMF.MIDISystemEventType.set_tempo:
+		self.tempo = 60000000.0 / event.args.bpm
+	else:
+		# 無視
+		pass
 
 func _get_instruments( program ):
 	var old_instrument = null
