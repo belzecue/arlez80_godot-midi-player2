@@ -29,6 +29,12 @@ var instruments_status = {}
 var channel_volume_db = 20
 var max_polyphony_of_instruments = {}
 
+signal changed_tempo( tempo )
+signal appeared_lyric( lyric )
+signal appeared_marker( marker )
+signal appeared_cue_point( cue_point )
+signal looped
+
 # 69 = A4
 var play_rate_table = [819,868,920,974,1032,1094,1159,1228,1301,1378,1460,1547,1639,1736,1840,1949,2065,2188,2318,2456,2602,2756,2920,3094,3278,3473,3679,3898,4130,4375,4635,4911,5203,5513,5840,6188,6556,6945,7358,7796,8259,8751,9271,9822,10406,11025,11681,12375,13111,13891,14717,15592,16519,17501,18542,19644,20812,22050,23361,24750,26222,27781,29433,31183,33038,35002,37084,39289,41625,44100,46722,49501,52444,55563,58866,62367,66075,70004,74167,78577,83250,88200,93445,99001,104888,111125,117733,124734,132151,140009,148334,157155,166499,176400,186889,198002,209776,222250,235466,249467,264301,280018,296668,314309,332999,352800,373779,396005,419552,444500,470932,498935,528603,560035,593337,628618,665998,705600,747557,792009,839105,889000,941863,997869,1057205,1120070,1186673,1257236]
 
@@ -171,6 +177,7 @@ func stop( ):
 func set_tempo( bpm ):
 	tempo = bpm
 	self.seconds_to_timebase = tempo / 60.0
+	self.emit_signal( "changed_tempo", bpm )
 
 """
 	全音を止める
@@ -206,6 +213,7 @@ func _process_track( ):
 	if length <= track.event_pointer:
 		if self.loop:
 			self.seek( self.loop_start )
+			self.emit_signal( "looped" )
 		else:
 			self.playing = false
 		return
@@ -286,6 +294,12 @@ func _process_track_event_control_change( channel, event ):
 func _process_track_system_event( channel, event ):
 	if event.args.type == SMF.MIDISystemEventType.set_tempo:
 		self.tempo = 60000000.0 / event.args.bpm
+	elif event.args.type == SMF.MIDISystemEventType.lyric:
+		self.emit_signal( "appeared_lyric", event.args.text )
+	elif event.args.type == SMF.MIDISystemEventType.marker:
+		self.emit_signal( "appeared_marker", event.args.text )
+	elif event.args.type == SMF.MIDISystemEventType.cue_point:
+		self.emit_signal( "appeared_cue_point", event.args.text )
 	else:
 		# 無視
 		pass
