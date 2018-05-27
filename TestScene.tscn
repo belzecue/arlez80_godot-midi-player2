@@ -16,6 +16,7 @@ onready var ui_play_speed_bar = self.get_node( \"UI/PlaySpeedBar\" )
 onready var ui_volume_bar = self.get_node( \"UI/VolumeBar\" )
 onready var ui_seek_bar = self.get_node( \"UI/SeekBar\" )
 onready var ui_tempo = self.get_node( \"UI/Tempo\" )
+onready var ui_loop = self.get_node( \"UI/Loop\" )
 
 var tempo_changing = false
 
@@ -41,6 +42,7 @@ func _ready( ):
 func _process( delta ):
 	self.midi_player.play_speed = self.ui_play_speed_bar.value
 	self.midi_player.volume_db = self.ui_volume_bar.value
+	self.midi_player.loop = self.ui_loop.pressed
 
 	self.ui_seek_bar.min_value = 0
 	self.ui_seek_bar.max_value = self.midi_player.last_position
@@ -364,5 +366,30 @@ caret_blink = false
 caret_blink_speed = 0.65
 caret_position = 0
 _sections_unfolded = [ "Caret", "Placeholder" ]
+
+[node name="Loop" type="CheckBox" parent="UI" index="10"]
+
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 417.0
+margin_top = 119.0
+margin_right = 476.0
+margin_bottom = 143.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+focus_mode = 2
+mouse_filter = 0
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 1
+toggle_mode = true
+enabled_focus_mode = 2
+shortcut = null
+group = null
+text = "Loop"
+flat = false
+align = 0
 
 

@@ -44,6 +44,7 @@ const control_number_nrpn_lsb = 0x62
 const control_number_nrpn_msb = 0x63
 const control_number_rpn_lsb = 0x64
 const control_number_rpn_msb = 0x65
+const control_number_tkool_loop_point = 0x6F	# CC111
 
 # Manufacture ID
 const manufacture_id_universal_nopn_realtime_sys_ex = 0x7E

@@ -15,6 +15,8 @@ export var channel_mute = [false,false,false,false,false,false,false,false,false
 export var play_speed = 1.0
 export var volume_db = -30
 export var key_shift = 0
+export var loop = false
+export var loop_start = 0
 
 var smf_data = null
 var tempo = 120 setget set_tempo
@@ -40,6 +42,7 @@ func _ready( ):
 		self.smf_data = smf_reader.read_file( self.file )
 
 	self._init_track( )
+	self._analyse_smf( )
 	self._init_channel( )
 
 	# 楽器
@@ -63,7 +66,6 @@ func _ready( ):
 			audio_stream_player.bus = instrument.bus
 			self.add_child( audio_stream_player )
 			self.instruments_status[program_number].append( audio_stream_player )
-
 """
 	トラック初期化
 """
@@ -83,7 +85,10 @@ func _init_track( ):
 	self.track_status.events.sort_custom( TrackSorter, "sort" )
 	self.last_position = self.track_status.events[len(self.track_status.events)-1].time
 
-	# 最大同時発音数を出す
+"""
+	SMF解析
+"""
+func _analyse_smf( ):
 	var channels = []
 	for i in range( max_channel ):
 		channels.append({
@@ -108,6 +113,9 @@ func _init_track( ):
 					self.max_polyphony_of_instruments[channel.instruments] = current
 		elif event.type == SMF.MIDIEventType.program_change:
 			channel.instruments = event.number
+		elif event.type == SMF.MIDIEventType.control_change:
+			if event.number == SMF.control_number_tkool_loop_point:
+				self.loop_start = event_chunk.time
 
 """
 	チャンネル初期化
@@ -197,7 +205,10 @@ func _process_track( ):
 	var length = len(track.events)
 
 	if length <= track.event_pointer:
-		self.playing = false
+		if self.loop:
+			self.seek( self.loop_start )
+		else:
+			self.playing = false
 		return
 
 	while track.event_pointer < length:
