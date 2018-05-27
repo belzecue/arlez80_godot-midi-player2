@@ -35,7 +35,7 @@ var play_rate_table = [819,868,920,974,1032,1094,1159,1228,1301,1378,1460,1547,1
 """
 	初期化
 """
-func _ready( ):
+func _prepare_to_play( ):
 	# ファイル読み込み
 	if self.smf_data == null:
 		var smf_reader = SMF.new( )
@@ -138,9 +138,8 @@ func _init_channel( ):
 	@param	from_position
 """
 func play( from_position = 0 ):
+	self._prepare_to_play( )
 	self.playing = true
-	self._init_track( )
-	self._init_channel( )
 	self.seek( from_position )
 
 """

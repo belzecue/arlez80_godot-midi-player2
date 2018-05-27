@@ -88,7 +88,7 @@ enum MIDISystemEventType {
 	beat,					# 58
 	key,					# 59
 
-	unknown,				
+	unknown,
 }
 
 var last_event_type
