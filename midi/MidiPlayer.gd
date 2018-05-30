@@ -111,21 +111,22 @@ func _analyse_smf( ):
 		var channel = channels[channel_number]
 		var event = event_chunk.event
 
-		if event.type == SMF.MIDIEventType.note_off:
-			channel.note_on.erase( event.note )
-		elif event.type == SMF.MIDIEventType.note_on:
-			channel.note_on[event.note] = true
-			var current = len( channel.note_on.keys( ) )
-			if not self.max_polyphony_of_instruments.has( channel.instruments ):
-				self.max_polyphony_of_instruments[channel.instruments] = current
-			else:
-				if self.max_polyphony_of_instruments[channel.instruments] < current:
+		match event.type:
+			SMF.MIDIEventType.note_off:
+				channel.note_on.erase( event.note )
+			SMF.MIDIEventType.note_on:
+				channel.note_on[event.note] = true
+				var current = len( channel.note_on.keys( ) )
+				if not self.max_polyphony_of_instruments.has( channel.instruments ):
 					self.max_polyphony_of_instruments[channel.instruments] = current
-		elif event.type == SMF.MIDIEventType.program_change:
-			channel.instruments = event.number
-		elif event.type == SMF.MIDIEventType.control_change:
-			if event.number == SMF.control_number_tkool_loop_point:
-				self.loop_start = event_chunk.time
+				else:
+					if self.max_polyphony_of_instruments[channel.instruments] < current:
+						self.max_polyphony_of_instruments[channel.instruments] = current
+			SMF.MIDIEventType.program_change:
+				channel.instruments = event.number
+			SMF.MIDIEventType.control_change:
+				if event.number == SMF.control_number_tkool_loop_point:
+					self.loop_start = event_chunk.time
 
 """
 	チャンネル初期化
@@ -237,22 +238,23 @@ func _process_track( ):
 		var channel = self.channel_status[event_chunk.channel_number]
 		var event = event_chunk.event
 
-		if event.type == SMF.MIDIEventType.note_off:
-			self._process_track_event_note_off( channel, event )
-		elif event.type == SMF.MIDIEventType.note_on:
-			self._process_track_event_note_on( channel, event )
-		elif event.type == SMF.MIDIEventType.program_change:
-			channel.program = event.number
-		elif event.type == SMF.MIDIEventType.control_change:
-			self._process_track_event_control_change( channel, event )
-		elif event.type == SMF.MIDIEventType.pitch_bend:
-			channel.pitch_bend = event.value / 8192.0 - 1.0
-			self._update_pitch_bend_note( channel )
-		elif event.type == SMF.MIDIEventType.system_event:
-			self._process_track_system_event( channel, event )
-		else:
-			# 無視
-			pass
+		match event.type:
+			SMF.MIDIEventType.note_off:
+				self._process_track_event_note_off( channel, event )
+			SMF.MIDIEventType.note_on:
+				self._process_track_event_note_on( channel, event )
+			SMF.MIDIEventType.program_change:
+				channel.program = event.number
+			SMF.MIDIEventType.control_change:
+				self._process_track_event_control_change( channel, event )
+			SMF.MIDIEventType.pitch_bend:
+				channel.pitch_bend = event.value / 8192.0 - 1.0
+				self._update_pitch_bend_note( channel )
+			SMF.MIDIEventType.system_event:
+				self._process_track_system_event( channel, event )
+			_:
+				# 無視
+				pass
 
 func _process_track_event_note_off( channel, event ):
 	var note_number = event.note + self.key_shift
@@ -298,17 +300,18 @@ func _process_track_event_control_change( channel, event ):
 		pass
 
 func _process_track_system_event( channel, event ):
-	if event.args.type == SMF.MIDISystemEventType.set_tempo:
-		self.tempo = 60000000.0 / event.args.bpm
-	elif event.args.type == SMF.MIDISystemEventType.lyric:
-		self.emit_signal( "appeared_lyric", event.args.text )
-	elif event.args.type == SMF.MIDISystemEventType.marker:
-		self.emit_signal( "appeared_marker", event.args.text )
-	elif event.args.type == SMF.MIDISystemEventType.cue_point:
-		self.emit_signal( "appeared_cue_point", event.args.text )
-	else:
-		# 無視
-		pass
+	match event.args.type:
+		SMF.MIDISystemEventType.set_tempo:
+			self.tempo = 60000000.0 / event.args.bpm
+		SMF.MIDISystemEventType.lyric:
+			self.emit_signal( "appeared_lyric", event.args.text )
+		SMF.MIDISystemEventType.marker:
+			self.emit_signal( "appeared_marker", event.args.text )
+		SMF.MIDISystemEventType.cue_point:
+			self.emit_signal( "appeared_cue_point", event.args.text )
+		_:
+			# 無視
+			pass
 
 func _get_instruments( program ):
 	var old_instrument = null
