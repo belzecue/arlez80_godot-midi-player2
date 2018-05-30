@@ -287,17 +287,18 @@ func _process_track_event_note_on( channel, event ):
 				channel.note_on[note_number] = note_player
 
 func _process_track_event_control_change( channel, event ):
-	if event.number == SMF.control_number_volume:
-		channel.volume = event.value / 127.0
-		self._update_volume_note( channel )
-	elif event.number == SMF.control_number_expression:
-		channel.expression = event.value / 127.0
-		self._update_volume_note( channel )
-	elif event.number == SMF.control_number_pan:
-		channel.pan = event.value / 127.0
-	else:
-		# 無視
-		pass
+	match event.number:
+		SMF.control_number_volume:
+			channel.volume = event.value / 127.0
+			self._update_volume_note( channel )
+		SMF.control_number_expression:
+			channel.expression = event.value / 127.0
+			self._update_volume_note( channel )
+		SMF.control_number_pan:
+			channel.pan = event.value / 127.0
+		_:
+			# 無視
+			pass
 
 func _process_track_system_event( channel, event ):
 	match event.args.type:
