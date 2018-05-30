@@ -210,88 +210,89 @@ func _read_system_event( stream, event_type_byte ):
 		var meta_type = stream.get_u8( )
 		var size = self._read_variable_int( stream )
 
-		if meta_type == 0x01:
-			return { "type": MIDISystemEventType.text_event, "text": self._read_string( stream, size ) }
-		elif meta_type == 0x02:
-			return { "type": MIDISystemEventType.copyright, "text": self._read_string( stream, size ) }
-		elif meta_type == 0x03:
-			return { "type": MIDISystemEventType.track_name, "text": self._read_string( stream, size ) }
-		elif meta_type == 0x04:
-			return { "type": MIDISystemEventType.instrument_name, "text": self._read_string( stream, size ) }
-		elif meta_type == 0x05:
-			return { "type": MIDISystemEventType.lyric, "text": self._read_string( stream, size ) }
-		elif meta_type == 0x06:
-			return { "type": MIDISystemEventType.marker, "text": self._read_string( stream, size ) }
-		elif meta_type == 0x07:
-			return { "type": MIDISystemEventType.cue_point, "text": self._read_string( stream, size ) }
-		elif meta_type == 0x20:
-			if size != 1:
-				print( "MIDI Channel Prefix length is not 1" )
-				breakpoint
-			return { "type": MIDISystemEventType.midi_channel_prefix, "prefix": stream.get_u8( ) }
-		elif meta_type == 0x2F:
-			if size != 0:
-				print( "End of track with unknown data" )
-				breakpoint
-			return { "type": MIDISystemEventType.end_of_track }
-		elif meta_type == 0x51:
-			if size != 3:
-				print( "Tempo length is not 3" )
-				breakpoint
-			# beat per microseconds
-			var bpm = stream.get_u8( ) << 16
-			bpm |= stream.get_u8( ) << 8
-			bpm |= stream.get_u8( )
-			return { "type": MIDISystemEventType.set_tempo, "bpm": bpm }
-		elif meta_type == 0x54:
-			if size != 5:
-				print( "SMPTE length is not 5" )
-				breakpoint
-			var hr = stream.get_u8( )
-			var mm = stream.get_u8( )
-			var se = stream.get_u8( )
-			var fr = stream.get_u8( )
-			var ff = stream.get_u8( )
-			return {
-				"type": MIDISystemEventType.smpte_offset,
-				"hr": hr,
-				"mm": mm,
-				"se": se,
-				"fr": fr,
-				"ff": ff,
-			}
-		elif meta_type == 0x58:
-			if size != 4:
-				print( "Beat length is not 4" )
-				breakpoint
-			var numerator = stream.get_u8( )
-			var denominator = stream.get_u8( )
-			var clock = stream.get_u8( )
-			var beat32 = stream.get_u8( )
-			return {
-				"type": MIDISystemEventType.beat,
-				"numerator": numerator,
-				"denominator": denominator,
-				"clock": clock,
-				"beat32": beat32,
-			}
-		elif meta_type == 0x59:
-			if size != 2:
-				print( "Key length is not 2" )
-				breakpoint
-			var sf = stream.get_u8( )
-			var minor = stream.get_u8( ) == 1
-			return {
-				"type": MIDISystemEventType.key,
-				"sf": sf,
-				"minor": minor,
-			}
-		else:
-			return {
-				"type": MIDISystemEventType.unknown,
-				"meta_type": meta_type,
-				"data": stream.get_partial_data( size )[1],
-			}
+		match meta_type:
+			0x01:
+				return { "type": MIDISystemEventType.text_event, "text": self._read_string( stream, size ) }
+			0x02:
+				return { "type": MIDISystemEventType.copyright, "text": self._read_string( stream, size ) }
+			0x03:
+				return { "type": MIDISystemEventType.track_name, "text": self._read_string( stream, size ) }
+			0x04:
+				return { "type": MIDISystemEventType.instrument_name, "text": self._read_string( stream, size ) }
+			0x05:
+				return { "type": MIDISystemEventType.lyric, "text": self._read_string( stream, size ) }
+			0x06:
+				return { "type": MIDISystemEventType.marker, "text": self._read_string( stream, size ) }
+			0x07:
+				return { "type": MIDISystemEventType.cue_point, "text": self._read_string( stream, size ) }
+			0x20:
+				if size != 1:
+					print( "MIDI Channel Prefix length is not 1" )
+					breakpoint
+				return { "type": MIDISystemEventType.midi_channel_prefix, "prefix": stream.get_u8( ) }
+			0x2F:
+				if size != 0:
+					print( "End of track with unknown data" )
+					breakpoint
+				return { "type": MIDISystemEventType.end_of_track }
+			0x51:
+				if size != 3:
+					print( "Tempo length is not 3" )
+					breakpoint
+				# beat per microseconds
+				var bpm = stream.get_u8( ) << 16
+				bpm |= stream.get_u8( ) << 8
+				bpm |= stream.get_u8( )
+				return { "type": MIDISystemEventType.set_tempo, "bpm": bpm }
+			0x54:
+				if size != 5:
+					print( "SMPTE length is not 5" )
+					breakpoint
+				var hr = stream.get_u8( )
+				var mm = stream.get_u8( )
+				var se = stream.get_u8( )
+				var fr = stream.get_u8( )
+				var ff = stream.get_u8( )
+				return {
+					"type": MIDISystemEventType.smpte_offset,
+					"hr": hr,
+					"mm": mm,
+					"se": se,
+					"fr": fr,
+					"ff": ff,
+				}
+			0x58:
+				if size != 4:
+					print( "Beat length is not 4" )
+					breakpoint
+				var numerator = stream.get_u8( )
+				var denominator = stream.get_u8( )
+				var clock = stream.get_u8( )
+				var beat32 = stream.get_u8( )
+				return {
+					"type": MIDISystemEventType.beat,
+					"numerator": numerator,
+					"denominator": denominator,
+					"clock": clock,
+					"beat32": beat32,
+				}
+			0x59:
+				if size != 2:
+					print( "Key length is not 2" )
+					breakpoint
+				var sf = stream.get_u8( )
+				var minor = stream.get_u8( ) == 1
+				return {
+					"type": MIDISystemEventType.key,
+					"sf": sf,
+					"minor": minor,
+				}
+			_:
+				return {
+					"type": MIDISystemEventType.unknown,
+					"meta_type": meta_type,
+					"data": stream.get_partial_data( size )[1],
+				}
 	elif event_type_byte == 0xf0:
 		var size = self._read_variable_int( stream )
 		return {
@@ -324,54 +325,55 @@ func _read_event( stream, event_type_byte ):
 
 	var event_type = event_type_byte & 0xf0
 
-	if event_type == 0x80:
-		return {
-			"type": MIDIEventType.note_off,
-			"note": param,
-			"velocity": stream.get_u8( ),
-		}
-	elif event_type == 0x90:
-		var velocity = stream.get_u8( )
-		if velocity == 0:
-			# velocity0のnote_onはnote_off扱いにする
+	match event_type:
+		0x80:
 			return {
 				"type": MIDIEventType.note_off,
 				"note": param,
-				"velocity": velocity,
+				"velocity": stream.get_u8( ),
 			}
-		else:
+		0x90:
+			var velocity = stream.get_u8( )
+			if velocity == 0:
+				# velocity0のnote_onはnote_off扱いにする
+				return {
+					"type": MIDIEventType.note_off,
+					"note": param,
+					"velocity": velocity,
+				}
+			else:
+				return {
+					"type": MIDIEventType.note_on,
+					"note": param,
+					"velocity": velocity,
+				}
+		0xA0:
 			return {
-				"type": MIDIEventType.note_on,
+				"type": MIDIEventType.polyphonic_key_pressure,
 				"note": param,
-				"velocity": velocity,
+				"value": stream.get_u8( ),
 			}
-	elif event_type == 0xA0:
-		return {
-			"type": MIDIEventType.polyphonic_key_pressure,
-			"note": param,
-			"value": stream.get_u8( ),
-		}
-	elif event_type == 0xB0:
-		return {
-			"type": MIDIEventType.control_change,
-			"number": param,
-			"value": stream.get_u8( ),
-		}
-	elif event_type == 0xC0:
-		return {
-			"type": MIDIEventType.program_change,
-			"number": param,
-		}
-	elif event_type == 0xD0:
-		return {
-			"type": MIDIEventType.channel_pressure,
-			"value": param,
-		}
-	elif event_type == 0xE0:
-		return {
-			"type": MIDIEventType.pitch_bend,
-			"value": param | ( stream.get_u8( ) << 7 ),
-		}
+		0xB0:
+			return {
+				"type": MIDIEventType.control_change,
+				"number": param,
+				"value": stream.get_u8( ),
+			}
+		0xC0:
+			return {
+				"type": MIDIEventType.program_change,
+				"number": param,
+			}
+		0xD0:
+			return {
+				"type": MIDIEventType.channel_pressure,
+				"value": param,
+			}
+		0xE0:
+			return {
+				"type": MIDIEventType.pitch_bend,
+				"value": param | ( stream.get_u8( ) << 7 ),
+			}
 
 	print( "unknown event type: %d" % event_type_byte )
 	breakpoint
