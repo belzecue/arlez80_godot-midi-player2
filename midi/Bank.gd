@@ -36,24 +36,7 @@ func create_instrument( ):
 	計算
 """
 func calc_mix_rate( rate, center_key, target_key ):
-	var key = center_key
-	var half = pow( 2.0, 1.0 / 12.0 )
-	var rev_half = 1 / half
-
-	while key + 12 < target_key:
-		rate *= 2
-		key += 12
-	while key < target_key:
-		rate *= half
-		key += 1
-	while target_key < key - 12:
-		rate *= 0.5
-		key -= 12
-	while target_key < key:
-		rate *= rev_half
-		key -= 1
-
-	return round( rate )
+	return round( rate * pow( 2.0, ( target_key - center_key ) / 12.0 ) )
 
 """
 	追加
@@ -122,6 +105,11 @@ func read_soundfont( sf ):
 
 		self.set_preset( program_number, preset )
 
+	print( self.presets[72].instruments[81] )
+	print( self.presets[72].instruments[82] )
+	print( self.presets[72].instruments[85] )
+	print( self.presets[72].instruments[86] )
+
 func _read_soundfont_inst_to_preset( sf, instruments, sf_inst ):
 	for bag in sf_inst.bags:
 		var mix_rate = bag.sample.sample_rate * pow( 2.0, bag.coarse_tune / 12 ) * pow( 2.0, ( bag.sample.pitch_correction + bag.fine_tune ) / 1200 )
@@ -157,8 +145,9 @@ func _read_soundfont_pdta_inst( sf ):
 
 		var bag_next = sf.pdta.inst[inst_index+1].inst_bag_ndx
 		var bag_count = bag_index
+		var global_bag = {}
 		while bag_count < bag_next:
-			var bag_data = {
+			var bag = {
 				"sample": null,
 				"sample_id": -1,
 				"sample_start": 0,
@@ -178,48 +167,50 @@ func _read_soundfont_pdta_inst( sf ):
 				var gen = sf.pdta.igen[gen_count]
 				match gen.gen_oper:
 					SoundFont.key_range:
-						bag_data.key_range.high = gen.uamount >> 8
-						bag_data.key_range.low = gen.uamount & 0xFF
+						bag.key_range.high = gen.uamount >> 8
+						bag.key_range.low = gen.uamount & 0xFF
 					SoundFont.vel_range:
-						bag_data.vel_range.high = gen.uamount >> 8
-						bag_data.vel_range.low = gen.uamount & 0xFF
+						bag.vel_range.high = gen.uamount >> 8
+						bag.vel_range.low = gen.uamount & 0xFF
 					SoundFont.overriding_root_key:
-						bag_data.original_key = gen.amount
+						bag.original_key = gen.amount
 					SoundFont.start_addrs_offset:
-						bag_data.sample_start += gen.amount
+						bag.sample_start += gen.amount
 					SoundFont.end_addrs_offset:
-						bag_data.sample_end += gen.amount
+						bag.sample_end += gen.amount
 					SoundFont.start_addrs_coarse_offset:
-						bag_data.sample_start += gen.amount * 32768
+						bag.sample_start += gen.amount * 32768
 					SoundFont.end_addrs_coarse_offset:
-						bag_data.sample_end += gen.amount * 32768
+						bag.sample_end += gen.amount * 32768
 					SoundFont.startloop_addrs_offset:
-						bag_data.sample_start_loop = gen.amount
+						bag.sample_start_loop = gen.amount
 					SoundFont.endloop_addrs_offset:
-						bag_data.sample_end_loop = gen.amount
+						bag.sample_end_loop = gen.amount
 					SoundFont.startloop_addrs_coarse_offset:
-						bag_data.sample_start_loop += gen.amount * 32768
+						bag.sample_start_loop += gen.amount * 32768
 					SoundFont.endloop_addrs_coarse_offset:
-						bag_data.sample_end_loop += gen.amount * 32768
+						bag.sample_end_loop += gen.amount * 32768
 					SoundFont.coarse_tune:
-						bag_data.coarse_tune = gen.amount
+						bag.coarse_tune = gen.amount
 					SoundFont.fine_tune:
-						bag_data.fine_tune = gen.amount
+						bag.fine_tune = gen.amount
 					SoundFont.keynum:
-						bag_data.keynum = gen.amount
+						bag.keynum = gen.amount
 					SoundFont.sample_id:
-						bag_data.sample_id = gen.uamount
-						bag_data.sample = sf.pdta.shdr[gen.amount]
-						bag_data.sample_start += bag_data.sample.start
-						bag_data.sample_end += bag_data.sample.end
-						bag_data.sample_start_loop += bag_data.sample.start_loop
-						bag_data.sample_end_loop += bag_data.sample.end_loop
-						if bag_data.original_key == 255:
-							bag_data.original_key = bag_data.sample.original_key
+						bag.sample_id = gen.uamount
+						bag.sample = sf.pdta.shdr[gen.amount]
+						bag.sample_start += bag.sample.start
+						bag.sample_end += bag.sample.end
+						bag.sample_start_loop += bag.sample.start_loop
+						bag.sample_end_loop += bag.sample.end_loop
+						if bag.original_key == 255:
+							bag.original_key = bag.sample.original_key
 				gen_count += 1
 			# global zoneでない場合
-			if bag_data.sample != null:
-				sf_inst.bags.append( bag_data )
+			if bag.sample != null:
+				sf_inst.bags.append( bag )
+			else:
+				global_bag = bag
 			gen_index = gen_next
 			bag_count += 1
 		sf_insts.append( sf_inst )
