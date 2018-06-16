@@ -11,6 +11,7 @@
 
 script/source = "extends Node
 
+onready var SoundFont = preload( \"res://midi/SoundFont.gd\" )
 onready var midi_player = self.get_node( \"MidiPlayer\" )
 onready var ui_play_speed_bar = self.get_node( \"UI/PlaySpeedBar\" )
 onready var ui_volume_bar = self.get_node( \"UI/VolumeBar\" )
@@ -23,6 +24,10 @@ var tempo_changing = false
 var ui_channel_mutes = []
 
 func _ready( ):
+	# test
+	#var sf = SoundFont.new( )
+	#sf.read_file( \"Aspirin-Stereo.sf2\" )
+
 	# seek
 	self.ui_seek_bar.connect( \"scrolling\", self, \"_on_ui_seek_bar_scrolling\" )
 	# tempo
@@ -88,14 +93,12 @@ _sections_unfolded = [ "Pause" ]
 
 [node name="MidiPlayer" parent="." index="0" instance=ExtResource( 1 )]
 
-editor/display_folded = true
 max_polyphony = 16
 file = "res://test.mid"
 playing = true
+soundfont = "res://Aspirin-Stereo.sf2"
 
 [node name="Instruments" type="Node" parent="MidiPlayer" index="0"]
-
-editor/display_folded = true
 
 [node name="0" type="AudioStreamPlayer" parent="MidiPlayer/Instruments" index="0"]
 

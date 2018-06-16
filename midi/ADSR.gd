@@ -37,7 +37,6 @@ func play( ):
 	self.mode = ADSRPlayingMode.ads
 	self.timer = 0.0
 	self.using_timer = 0.0
-	# self.stream.loop_mode = AudioStreamSample.LOOP_FORWARD
 	self.current_volume = self.ads_state[0].volume
 	self.stream.mix_rate = round( self.mix_rate * ( 1 + self.pitch_bend * 0.5 ) )
 	.play( 0.0 )

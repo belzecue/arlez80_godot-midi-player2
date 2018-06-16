@@ -2,6 +2,70 @@
 	SoundFont Reader by Yui Kinomoto @arlez80
 """
 
+"""
+	GenerateOperator
+"""
+const start_addrs_offset = 0
+const end_addrs_offset = 1
+const startloop_addrs_offset = 2
+const endloop_addrs_offset = 3
+const start_addrs_coarse_offset = 4
+const mod_lfo_to_pitch = 5
+const vib_lfo_to_pitch = 6
+const mod_env_to_pitch = 7
+const initial_filter_fc = 8
+const initial_filter_q = 9
+const mod_lfo_to_filter_fc = 10
+const mod_env_to_filter_fc = 11
+const end_addrs_coarse_offset = 12
+const mod_lfo_to_volume = 13
+const unused1 = 14
+const chorus_effects_send = 15
+const reverb_effects_send = 16
+const pan = 17
+const unused2 = 18
+const unused3 = 19
+const unused4 = 20
+const delay_mod_lfo = 21
+const freq_mod_lfo = 22
+const delay_vib_lfo = 23
+const freq_vib_lfo = 24
+const delay_mod_env = 25
+const attack_mod_env = 26
+const hold_mod_env = 27
+const decay_mod_env = 28
+const sustain_mod_env = 29
+const release_mod_env = 30
+const keynum_to_mod_env_hold = 31
+const keynum_to_mod_env_decay = 32
+const delay_vol_env = 33
+const attack_vol_env = 34
+const hold_vol_env = 35
+const decay_vol_env = 36
+const sustain_vol_env = 37
+const release_vol_env = 38
+const keynum_to_vol_env_hold = 39
+const keynum_to_vol_env_decay = 40
+const instrument = 41
+const reserved1 = 42
+const key_range = 43
+const vel_range = 44
+const startloop_addrs_coarse_offset = 45
+const keynum = 46
+const velocity = 47
+const initial_attenuation = 48
+const reserved2 = 49
+const endloop_addrs_coarse_offset = 50
+const coarse_tune = 51
+const fine_tune = 52
+const sample_id = 53
+const sample_modes = 54
+const reserved3 = 55
+const scale_tuning = 56
+const exclusive_class = 57
+const overriding_root_key = 58
+const unused5 = 59
+const end_oper = 60
 
 """
 	ファイルから読み込み
@@ -339,8 +403,8 @@ func _read_pdta_gen( stream ):
 			"amount": 0,
 		}
 	
-		gen.src_oper = chunk.stream.get_u16( )
-		gen.dest_oper = chunk.stream.get_u16( )
+		gen.gen_oper = chunk.stream.get_u16( )
+		gen.amount = chunk.stream.get_u16( )
 		gens.append( gen )
 
 	return gens

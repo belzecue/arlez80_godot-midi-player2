@@ -7,8 +7,10 @@ const max_program_number = 128
 const drum_track_channel = 0x09
 
 onready var SMF = preload( "SMF.gd" )
+onready var SoundFont = preload( "SoundFont.gd" )
+onready var Bank = preload( "Bank.gd" )
 
-export var max_polyphony = 8
+export var max_polyphony = 64
 export var file = ""
 export var playing = false
 export var channel_mute = [false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false]
@@ -17,6 +19,7 @@ export var volume_db = -30
 export var key_shift = 0
 export var loop = false
 export var loop_start = 0
+export var soundfont = ""
 
 var smf_data = null
 var tempo = 120 setget set_tempo
@@ -25,18 +28,16 @@ var position = 0
 var last_position = 0
 var track_status = null
 var channel_status = []
-var instruments_status = {}
 var channel_volume_db = 20
-var max_polyphony_of_instruments = {}
+
+var bank = null
+var audio_stream_players = []
 
 signal changed_tempo( tempo )
 signal appeared_lyric( lyric )
 signal appeared_marker( marker )
 signal appeared_cue_point( cue_point )
 signal looped
-
-# 69 = A4
-var play_rate_table = [819,868,920,974,1032,1094,1159,1228,1301,1378,1460,1547,1639,1736,1840,1949,2065,2188,2318,2456,2602,2756,2920,3094,3278,3473,3679,3898,4130,4375,4635,4911,5203,5513,5840,6188,6556,6945,7358,7796,8259,8751,9271,9822,10406,11025,11681,12375,13111,13891,14717,15592,16519,17501,18542,19644,20812,22050,23361,24750,26222,27781,29433,31183,33038,35002,37084,39289,41625,44100,46722,49501,52444,55563,58866,62367,66075,70004,74167,78577,83250,88200,93445,99001,104888,111125,117733,124734,132151,140009,148334,157155,166499,176400,186889,198002,209776,222250,235466,249467,264301,280018,296668,314309,332999,352800,373779,396005,419552,444500,470932,498935,528603,560035,593337,628618,665998,705600,747557,792009,839105,889000,941863,997869,1057205,1120070,1186673,1257236]
 
 func _ready( ):
 	if self.playing:
@@ -56,26 +57,32 @@ func _prepare_to_play( ):
 	self._init_channel( )
 
 	# 楽器
+	self.bank = Bank.new( )
+	if self.soundfont != "":
+		var sf_reader = SoundFont.new( )
+		var sf2 = sf_reader.read_file( self.soundfont )
+		self.bank.read_soundfont( sf2 )
+
+	"""
 	var instruments = self.get_node( "Instruments" )
 	if instruments == null:
-		print( "Godot MIDI Player: MidiPlayer has not 'Instruments' node!" )
+		print( "Godot MIDI Player: MidiPlayer has not instruments. You must add 'Instruments' node or add soundfont path" )
 		breakpoint
-
+	for instrument_node in instruments.get_children( ):
+		var program_number = int( instrument_node.get_name( ) )
+		self.bank.set_preset_sample( program_number, instrument_node.stream, 44100 )
+	"""
+	# 発音機
 	var ADSR = preload("ADSR.tscn")
-	var default_instrument = instruments.get_children( )[0]
-	for program_number in self.max_polyphony_of_instruments.keys( ):
-		self.instruments_status[program_number] = []
-		var instrument = default_instrument
-		if instruments.has_node( "%d" % program_number ):
-			instrument = instruments.get_node( "%d" % program_number )
-		# var polyphony = min( self.max_polyphony_of_instruments[program_number],  )
-		for i in range( self.max_polyphony ):
-			var audio_stream_player = ADSR.instance( )
-			audio_stream_player.stream = instrument.stream.duplicate( )
-			audio_stream_player.mix_target = instrument.mix_target
-			audio_stream_player.bus = instrument.bus
-			self.add_child( audio_stream_player )
-			self.instruments_status[program_number].append( audio_stream_player )
+	for i in range( self.max_polyphony ):
+		var audio_stream_player = ADSR.instance( )
+		#audio_stream_player.mix_target = instrument.mix_target
+		#audio_stream_player.bus = instrument.bus
+		self.add_child( audio_stream_player )
+		self.audio_stream_players.append( audio_stream_player )
+
+
+
 """
 	トラック初期化
 """
@@ -102,7 +109,7 @@ func _analyse_smf( ):
 	var channels = []
 	for i in range( max_channel ):
 		channels.append({
-			"instruments": 0,
+			"program_number": 0,
 			"note_on": {}
 		})
 
@@ -116,14 +123,8 @@ func _analyse_smf( ):
 				channel.note_on.erase( event.note )
 			SMF.MIDIEventType.note_on:
 				channel.note_on[event.note] = true
-				var current = len( channel.note_on.keys( ) )
-				if not self.max_polyphony_of_instruments.has( channel.instruments ):
-					self.max_polyphony_of_instruments[channel.instruments] = current
-				else:
-					if self.max_polyphony_of_instruments[channel.instruments] < current:
-						self.max_polyphony_of_instruments[channel.instruments] = current
 			SMF.MIDIEventType.program_change:
-				channel.instruments = event.number
+				channel.program_number = event.number
 			SMF.MIDIEventType.control_change:
 				if event.number == SMF.control_number_tkool_loop_point:
 					self.loop_start = event_chunk.time
@@ -188,9 +189,8 @@ func set_tempo( bpm ):
 	全音を止める
 """
 func _stop_all_notes( ):
-	for program in self.instruments_status.keys( ):
-		for instrument in self.instruments_status[program]:
-			instrument.stop( )
+	for audio_stream_player in self.audio_stream_players:
+		audio_stream_player.stop( )
 
 	for channel in self.channel_status:
 		channel.note_on = {}
@@ -231,10 +231,6 @@ func _process_track( ):
 			break
 		track.event_pointer += 1
 
-		if event_chunk.channel_number == drum_track_channel:
-			# ドラムトラックは"今"未対応なので無視する
-			continue
-
 		var channel = self.channel_status[event_chunk.channel_number]
 		var event = event_chunk.event
 
@@ -257,34 +253,44 @@ func _process_track( ):
 				pass
 
 func _process_track_event_note_off( channel, event ):
-	var note_number = event.note + self.key_shift
-	if channel.note_on.has( note_number ):
-		var note_player = channel.note_on[note_number]
+	var key_number = event.note + self.key_shift
+	if channel.note_on.has( key_number ):
+		var note_player = channel.note_on[key_number]
 		if note_player != null:
 			note_player.start_release( )
-			channel.note_on.erase( note_number )
+			channel.note_on.erase( key_number )
 
 func _process_track_event_note_on( channel, event ):
 	if not self.channel_mute[channel.number]:
-		var note_number = event.note + self.key_shift
+		var program_number = channel.program
+		if channel.number == drum_track_channel:
+			program_number |= 128 << 7
+
+		var key_number = event.note + self.key_shift
 		var note_volume = channel.volume * channel.expression * ( event.velocity / 127.0 )
 		var volume_db = note_volume * self.channel_volume_db - self.channel_volume_db + self.volume_db
+		var preset = self.bank.get_preset( program_number )
+		var instrument = preset.instruments[key_number]
 
-		if channel.note_on.has( note_number ):
-			var note_player = channel.note_on[note_number]
-			note_player.velocity = event.velocity
-			note_player.maximum_volume_db = volume_db
-			note_player.pitch_bend = channel.pitch_bend
-			note_player.play( )
-		else:
-			var note_player = self._get_instruments( channel.program )
-			if note_player != null:
-				note_player.mix_rate = play_rate_table[note_number]
-				note_player.maximum_volume_db = volume_db
+		if instrument != null:
+			if channel.note_on.has( key_number ):
+				var note_player = channel.note_on[key_number]
 				note_player.velocity = event.velocity
+				note_player.maximum_volume_db = volume_db
 				note_player.pitch_bend = channel.pitch_bend
+				note_player.mix_rate = instrument.mix_rate
+				note_player.stream = instrument.stream.duplicate( )
 				note_player.play( )
-				channel.note_on[note_number] = note_player
+			else:
+				var note_player = self._get_idle_player( channel.program )
+				if note_player != null:
+					note_player.maximum_volume_db = volume_db
+					note_player.velocity = event.velocity
+					note_player.pitch_bend = channel.pitch_bend
+					note_player.mix_rate = instrument.mix_rate
+					note_player.stream = instrument.stream.duplicate( )
+					note_player.play( )
+					channel.note_on[key_number] = note_player
 
 func _process_track_event_control_change( channel, event ):
 	match event.number:
@@ -314,18 +320,18 @@ func _process_track_system_event( channel, event ):
 			# 無視
 			pass
 
-func _get_instruments( program ):
-	var old_instrument = null
+func _get_idle_player( program ):
+	var oldest_audio_stream_player = null
 	var longest = 0.0
 
-	for instrument in self.instruments_status[program]:
-		if not instrument.playing:
-			return instrument
-		if longest < instrument.using_timer:
-			old_instrument = instrument
-			longest = instrument.using_timer
+	for audio_stream_player in self.audio_stream_players:
+		if not audio_stream_player.playing:
+			return audio_stream_player
+		if longest < audio_stream_player.using_timer:
+			oldest_audio_stream_player = audio_stream_player
+			longest = audio_stream_player.using_timer
 
-	return old_instrument
+	return oldest_audio_stream_player
 
 func _update_volume_note( channel ):
 	for note in channel.note_on.values( ):
