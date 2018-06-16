@@ -93,26 +93,44 @@ func read_soundfont( sf ):
 		while bag_count < bag_next:
 			var gen_next = sf.pdta.pbag[bag_count+1].gen_ndx
 			var gen_count = gen_index
+			var bag = {
+				"program_number": program_number,
+				"preset": preset,
+				"coarse_tune": 0,
+				"fine_tune": 0,
+				"key_range": null,
+				"instrument": null,
+			}
 			while gen_count < gen_next:
 				var gen = sf.pdta.pgen[gen_count]
 				match gen.gen_oper:
+					SoundFont.coarse_tune:
+						bag.coarse_tune = gen.amount
+					SoundFont.fine_tune:
+						bag.fine_tune = gen.amount
+					SoundFont.key_range:
+						bag.key_range = {
+							"high": gen.uamount >> 8,
+							"low": gen.uamount & 0xFF,
+						}
 					SoundFont.instrument:
-						self._read_soundfont_inst_to_preset( sf, preset.instruments, sf_insts[gen.amount] )
+						bag.instrument = sf_insts[gen.uamount]
+					_:
+						# print( gen.gen_oper )
+						pass
 				gen_count += 1
+			if bag.instrument != null:
+				self._read_soundfont_inst_to_preset( sf, preset.instruments, bag )
 			gen_index = gen_next
 			bag_count += 1
 		bag_index = bag_next
 
 		self.set_preset( program_number, preset )
 
-	print( self.presets[72].instruments[81] )
-	print( self.presets[72].instruments[82] )
-	print( self.presets[72].instruments[85] )
-	print( self.presets[72].instruments[86] )
-
-func _read_soundfont_inst_to_preset( sf, instruments, sf_inst ):
+func _read_soundfont_inst_to_preset( sf, instruments, preset_bag ):
+	var sf_inst = preset_bag.instrument
 	for bag in sf_inst.bags:
-		var mix_rate = bag.sample.sample_rate * pow( 2.0, bag.coarse_tune / 12 ) * pow( 2.0, ( bag.sample.pitch_correction + bag.fine_tune ) / 1200 )
+		var mix_rate = bag.sample.sample_rate * pow( 2.0, ( preset_bag.coarse_tune + bag.coarse_tune ) / 12.0 ) * pow( 2.0, ( bag.sample.pitch_correction + preset_bag.fine_tune + bag.fine_tune ) / 1200.0 )
 
 		var ass = AudioStreamSample.new( )
 		ass.data = sf.sdta.smpl.subarray( bag.sample_start * 2, bag.sample_end * 2 )
@@ -125,7 +143,12 @@ func _read_soundfont_inst_to_preset( sf, instruments, sf_inst ):
 		#if ass.stereo:
 		#	ass.loop_begin /= 2
 		#	ass.loop_end /= 2
-		for key_number in range( bag.key_range.low, bag.key_range.high + 1 ):
+		if ass.loop_end - ass.loop_begin < 8:
+			ass.loop_mode = AudioStreamSample.LOOP_DISABLED
+		var key_range = bag.key_range
+		if preset_bag.key_range != null:
+			key_range = preset_bag.key_range
+		for key_number in range( key_range.low, key_range.high + 1 ):
 			var instrument = self.create_instrument( )
 			if bag.original_key == 255:
 				instrument.mix_rate = bag.sample.sample_rate
