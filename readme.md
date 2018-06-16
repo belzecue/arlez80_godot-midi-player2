@@ -10,12 +10,8 @@ I develop it for use embedding in game.
 ## Try it
 
 + Copy test.mid to "res://"
-
-### Add instruments
-
-+ Add AudioStreamPlayer node renamed program number (0 based) to TestScene/MidiPlayer/Instruments of TestScene.tscn.
-
-(It will be change this method. Use soundfont or defination using JSON)
++ Copy *.sf2 to "res://"
+* set SoundFont to MidiPlayer path "soundfont" parameter.
 
 ### Demo / Screenshot
 
@@ -83,6 +79,7 @@ SMF data.
 * Player's timebase is 1/60.
  * It probably need 1/240 at least.
 * Pitch bend is buggy...
+* Sometimes appear petit noises.
 
 ## License
 
