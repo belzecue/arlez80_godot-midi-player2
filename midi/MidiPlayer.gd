@@ -5,10 +5,10 @@ const max_channel = 16
 const max_note_number = 128
 const max_program_number = 128
 const drum_track_channel = 0x09
-
-onready var SMF = preload( "SMF.gd" )
-onready var SoundFont = preload( "SoundFont.gd" )
-onready var Bank = preload( "Bank.gd" )
+const ADSR = preload("ADSR.tscn")
+const SMF = preload( "SMF.gd" )
+const SoundFont = preload( "SoundFont.gd" )
+const Bank = preload( "Bank.gd" )
 
 export var max_polyphony = 64
 export var file = ""
@@ -63,25 +63,15 @@ func _prepare_to_play( ):
 		var sf2 = sf_reader.read_file( self.soundfont )
 		self.bank.read_soundfont( sf2 )
 
-	"""
-	var instruments = self.get_node( "Instruments" )
-	if instruments == null:
-		print( "Godot MIDI Player: MidiPlayer has not instruments. You must add 'Instruments' node or add soundfont path" )
-		breakpoint
-	for instrument_node in instruments.get_children( ):
-		var program_number = int( instrument_node.get_name( ) )
-		self.bank.set_preset_sample( program_number, instrument_node.stream, 44100 )
-	"""
 	# 発音機
-	var ADSR = preload("ADSR.tscn")
+	var default_audio_stream_player = self.get_node( "Default" )
 	for i in range( self.max_polyphony ):
 		var audio_stream_player = ADSR.instance( )
-		#audio_stream_player.mix_target = instrument.mix_target
-		#audio_stream_player.bus = instrument.bus
+		if default_audio_stream_player != null:
+			audio_stream_player.mix_target = default_audio_stream_player.mix_target
+			audio_stream_player.bus = default_audio_stream_player.bus
 		self.add_child( audio_stream_player )
 		self.audio_stream_players.append( audio_stream_player )
-
-
 
 """
 	トラック初期化
@@ -321,15 +311,21 @@ func _process_track_system_event( channel, event ):
 			pass
 
 func _get_idle_player( program ):
+	var stopped_audio_stream_player = null
 	var oldest_audio_stream_player = null
-	var longest = 0.0
+	var oldest = 0.0
 
 	for audio_stream_player in self.audio_stream_players:
 		if not audio_stream_player.playing:
 			return audio_stream_player
-		if longest < audio_stream_player.using_timer:
+		if audio_stream_player.mode == 1:
+			stopped_audio_stream_player = audio_stream_player
+		if oldest < audio_stream_player.using_timer:
 			oldest_audio_stream_player = audio_stream_player
-			longest = audio_stream_player.using_timer
+			oldest = audio_stream_player.using_timer
+
+	if stopped_audio_stream_player != null:
+		return stopped_audio_stream_player
 
 	return oldest_audio_stream_player
 

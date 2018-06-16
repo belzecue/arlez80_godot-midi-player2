@@ -122,24 +122,27 @@ func read_soundfont( sf ):
 
 		self.set_preset( program_number, preset )
 
-	print( self.presets[72].instruments[84] )
-
 func _read_soundfont_inst_to_preset( sf, instruments, sf_inst ):
 	for bag in sf_inst.bags:
+		var mix_rate = bag.sample.sample_rate * pow( 2.0, bag.coarse_tune / 12 ) * pow( 2.0, ( bag.sample.pitch_correction + bag.fine_tune ) / 1200 )
+
 		var ass = AudioStreamSample.new( )
-		ass.data = sf.sdta.smpl.subarray( bag.sample.start * 2, bag.sample.end * 2 )
+		ass.data = sf.sdta.smpl.subarray( bag.sample_start * 2, bag.sample_end * 2 )
 		ass.format = AudioStreamSample.FORMAT_16_BITS
+		ass.mix_rate = mix_rate
+		ass.stereo = false #bag.sample.sample_type != SoundFont.mono_sample
+		ass.loop_begin = bag.sample_start_loop - bag.sample_start
+		ass.loop_end = bag.sample_end_loop - bag.sample_start
 		ass.loop_mode = AudioStreamSample.LOOP_FORWARD
-		ass.mix_rate = bag.sample.sample_rate
-		ass.stereo = false
-		ass.loop_begin = bag.sample.start_loop - bag.sample.start
-		ass.loop_end = bag.sample.end_loop - bag.sample.start
+		#if ass.stereo:
+		#	ass.loop_begin /= 2
+		#	ass.loop_end /= 2
 		for key_number in range( bag.key_range.low, bag.key_range.high + 1 ):
 			var instrument = self.create_instrument( )
 			if bag.original_key == 255:
 				instrument.mix_rate = bag.sample.sample_rate
 			else:
-				instrument.mix_rate = self.calc_mix_rate( bag.sample.sample_rate, bag.original_key, key_number )
+				instrument.mix_rate = self.calc_mix_rate( mix_rate, bag.original_key, key_number )
 			instrument.stream = ass
 			instruments[key_number] = instrument
 
@@ -155,26 +158,66 @@ func _read_soundfont_pdta_inst( sf ):
 		var bag_next = sf.pdta.inst[inst_index+1].inst_bag_ndx
 		var bag_count = bag_index
 		while bag_count < bag_next:
-			var bag_data = { "sample": null, "original_key":255, "key_range": { "high": 127, "low": 0 }, "vel_range": { "high": 127, "low": 0 } }
+			var bag_data = {
+				"sample": null,
+				"sample_id": -1,
+				"sample_start": 0,
+				"sample_end": 0,
+				"sample_start_loop": 0,
+				"sample_end_loop": 0,
+				"coarse_tune": 0,
+				"fine_tune": 0,
+				"original_key": 255,
+				"keynum": 0,
+				"key_range": { "high": 127, "low": 0 },
+				"vel_range": { "high": 127, "low": 0 },
+			}
 			var gen_next = sf.pdta.ibag[bag_count+1].gen_ndx
 			var gen_count = gen_index
 			while gen_count < gen_next:
 				var gen = sf.pdta.igen[gen_count]
 				match gen.gen_oper:
 					SoundFont.key_range:
-						bag_data.key_range.high = gen.amount >> 8
-						bag_data.key_range.low = gen.amount & 0xFF
+						bag_data.key_range.high = gen.uamount >> 8
+						bag_data.key_range.low = gen.uamount & 0xFF
 					SoundFont.vel_range:
-						bag_data.vel_range.high = gen.amount >> 8
-						bag_data.vel_range.low = gen.amount & 0xFF
+						bag_data.vel_range.high = gen.uamount >> 8
+						bag_data.vel_range.low = gen.uamount & 0xFF
 					SoundFont.overriding_root_key:
 						bag_data.original_key = gen.amount
+					SoundFont.start_addrs_offset:
+						bag_data.sample_start += gen.amount
+					SoundFont.end_addrs_offset:
+						bag_data.sample_end += gen.amount
+					SoundFont.start_addrs_coarse_offset:
+						bag_data.sample_start += gen.amount * 32768
+					SoundFont.end_addrs_coarse_offset:
+						bag_data.sample_end += gen.amount * 32768
+					SoundFont.startloop_addrs_offset:
+						bag_data.sample_start_loop = gen.amount
+					SoundFont.endloop_addrs_offset:
+						bag_data.sample_end_loop = gen.amount
+					SoundFont.startloop_addrs_coarse_offset:
+						bag_data.sample_start_loop += gen.amount * 32768
+					SoundFont.endloop_addrs_coarse_offset:
+						bag_data.sample_end_loop += gen.amount * 32768
+					SoundFont.coarse_tune:
+						bag_data.coarse_tune = gen.amount
+					SoundFont.fine_tune:
+						bag_data.fine_tune = gen.amount
+					SoundFont.keynum:
+						bag_data.keynum = gen.amount
 					SoundFont.sample_id:
+						bag_data.sample_id = gen.uamount
 						bag_data.sample = sf.pdta.shdr[gen.amount]
+						bag_data.sample_start += bag_data.sample.start
+						bag_data.sample_end += bag_data.sample.end
+						bag_data.sample_start_loop += bag_data.sample.start_loop
+						bag_data.sample_end_loop += bag_data.sample.end_loop
 						if bag_data.original_key == 255:
 							bag_data.original_key = bag_data.sample.original_key
 				gen_count += 1
-			# global zone無視
+			# global zoneでない場合
 			if bag_data.sample != null:
 				sf_inst.bags.append( bag_data )
 			gen_index = gen_next
@@ -183,3 +226,37 @@ func _read_soundfont_pdta_inst( sf ):
 		bag_index = bag_next
 
 	return sf_insts
+
+func _read_soundfont_shdr( sf ):
+	var samples = {}
+	var zero_4bytes = PoolByteArray( [ 0, 0, 0, 0 ] )
+
+	for sample_id in range( 0, len(sf.pdta.shdr) ):
+		var shdr = sf.pdta.shdr[sample_id]
+		var sample = null
+		var base_sample = sf.sdta.smpl.subarray( shdr.start * 2, shdr.end * 2 )
+
+		if samples.has( shdr.sample_link ):
+			sample = samples[shdr.sample_link]
+		else:
+			sample = PoolByteArray( )
+
+		match shdr.sample_type:
+			SoundFont.left_sample:
+				for i in range( 0, base_sample.size( ) - 2, 2 ):
+					if sample.size( ) < i*2 + 3:
+						sample.append_array( zero_4bytes )
+					sample[i*2  ] = base_sample[i]
+					sample[i*2+1] = base_sample[i+1]
+			SoundFont.right_sample:
+				for i in range( 0, base_sample.size( ) - 2, 2 ):
+					if sample.size( ) < i*2 + 3:
+						sample.append_array( zero_4bytes )
+					sample[i*2+2] = base_sample[i]
+					sample[i*2+3] = base_sample[i+1]
+			_:
+				sample = base_sample
+
+		samples[sample_id] = sample
+
+	return samples

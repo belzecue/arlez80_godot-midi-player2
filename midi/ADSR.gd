@@ -26,7 +26,7 @@ var ads_state = [
 ]
 var release_state = [
 	{ "time": 0, "volume": 0.8 },
-	{ "time": 0.03, "volume": 0.0 },
+	{ "time": 0.01, "volume": 0.0 },
 	# { "time": 0.2, "jump_to": 0.0 },	# not implemented
 ]
 

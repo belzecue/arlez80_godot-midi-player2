@@ -3,6 +3,18 @@
 """
 
 """
+	SoundFontSampleLink
+"""
+const mono_sample = 1
+const right_sample = 2
+const left_sample = 4
+const linked_sample = 8
+const rom_mono_sample = 0x8001
+const rom_right_sample = 0x8002
+const rom_left_sample = 0x8004
+const rom_linked_sample = 0x8008
+
+"""
 	GenerateOperator
 """
 const start_addrs_offset = 0
@@ -401,10 +413,15 @@ func _read_pdta_gen( stream ):
 		var gen = {
 			"gen_oper": 0,
 			"amount": 0,
+			"uamount": 0,
 		}
 	
 		gen.gen_oper = chunk.stream.get_u16( )
-		gen.amount = chunk.stream.get_u16( )
+		var u = chunk.stream.get_u16( )
+		gen.uamount = u
+		gen.amount = u
+		if 32767 < u:
+			gen.amount = - ( 65536 - u )
 		gens.append( gen )
 
 	return gens
