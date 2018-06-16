@@ -33,7 +33,7 @@ func create_instrument( ):
 	}
 
 """
-	計算
+	再生周波数計算
 """
 func calc_mix_rate( rate, center_key, target_key ):
 	return round( rate * pow( 2.0, ( target_key - center_key ) / 12.0 ) )
