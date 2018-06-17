@@ -15,7 +15,6 @@ var default_release_state = [
 	{ "time": 0.01, "volume": 0.0 },
 ]
 
-
 # 音色テーブル
 var presets = {}
 

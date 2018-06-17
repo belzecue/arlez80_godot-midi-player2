@@ -86,7 +86,7 @@ func _on_ui_tempo_entered( o ):
 		self.midi_player.tempo = bpm
 "
 
-[node name="TestScene" type="Node"]
+[node name="TestScene" type="Node" index="0"]
 
 script = SubResource( 1 )
 _sections_unfolded = [ "Pause" ]
@@ -96,13 +96,6 @@ _sections_unfolded = [ "Pause" ]
 file = "res://test.mid"
 playing = true
 soundfont = "res://Aspirin-Stereo.sf2"
-
-[node name="Default" type="AudioStreamPlayer" parent="MidiPlayer" index="0"]
-
-stream = null
-volume_db = 0.0
-autoplay = false
-mix_target = 0
 bus = "Rev"
 
 [node name="UI" type="Node" parent="." index="1"]

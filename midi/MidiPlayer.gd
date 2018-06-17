@@ -20,6 +20,8 @@ export var key_shift = 0
 export var loop = false
 export var loop_start = 0
 export var soundfont = ""
+export var mix_target = AudioStreamPlayer.MIX_TARGET_STEREO
+export var bus = "Master"
 
 var smf_data = null
 var tempo = 120 setget set_tempo
@@ -66,14 +68,16 @@ func _prepare_to_play( ):
 
 	# 発音機
 	if self.audio_stream_players.size( ) == 0:
-		var default_audio_stream_player = self.get_node( "Default" )
 		for i in range( self.max_polyphony ):
 			var audio_stream_player = ADSR.instance( )
-			if default_audio_stream_player != null:
-				audio_stream_player.mix_target = default_audio_stream_player.mix_target
-				audio_stream_player.bus = default_audio_stream_player.bus
+			audio_stream_player.mix_target = self.mix_target
+			audio_stream_player.bus = self.bus
 			self.add_child( audio_stream_player )
 			self.audio_stream_players.append( audio_stream_player )
+	else:
+		for audio_stream_player in self.audio_stream_players:
+			audio_stream_player.mix_target = self.mix_target
+			audio_stream_player.bus = self.bus
 
 """
 	トラック初期化
