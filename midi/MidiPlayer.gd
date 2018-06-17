@@ -230,6 +230,12 @@ func _process_track( ):
 			self.playing = false
 		return
 
+	for channel in self.channel_status:
+		for key_number in channel.note_on.keys( ):
+			var note_on = channel.note_on[key_number]
+			if not note_on.playing:
+				channel.note_on.erase( key_number )
+
 	while track.event_pointer < length:
 		var event_chunk = track.events[track.event_pointer]
 		if self.position < event_chunk.time:
