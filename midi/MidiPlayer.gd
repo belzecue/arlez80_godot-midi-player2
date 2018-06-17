@@ -271,7 +271,6 @@ func _process_track_event_note_on( channel, event ):
 				note_player.mix_rate = instrument.mix_rate
 				note_player.stream = instrument.stream.duplicate( )
 				note_player.play( )
-				print( "replay" )
 			else:
 				var note_player = self._get_idle_player( channel.program )
 				if note_player != null:
