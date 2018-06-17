@@ -282,8 +282,7 @@ func _process_track_event_note_on( channel, event ):
 				note_player.velocity = event.velocity
 				note_player.maximum_volume_db = volume_db
 				note_player.pitch_bend = channel.pitch_bend
-				note_player.mix_rate = instrument.mix_rate
-				note_player.stream = instrument.stream.duplicate( )
+				note_player.set_instrument( instrument )
 				note_player.play( )
 				channel.note_on[key_number] = note_player
 

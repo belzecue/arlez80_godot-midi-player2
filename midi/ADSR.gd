@@ -28,6 +28,12 @@ var release_state = [
 func _ready( ):
 	self.stop( )
 
+func set_instrument( instrument ):
+	self.mix_rate = instrument.mix_rate
+	self.stream = instrument.stream.duplicate( )
+	self.ads_state = instrument.ads_state
+	self.release_state = instrument.release_state
+
 func play( ):
 	self.releasing = false
 	self.timer = 0.0
