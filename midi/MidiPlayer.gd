@@ -57,21 +57,23 @@ func _prepare_to_play( ):
 	self._init_channel( )
 
 	# 楽器
-	self.bank = Bank.new( )
-	if self.soundfont != "":
-		var sf_reader = SoundFont.new( )
-		var sf2 = sf_reader.read_file( self.soundfont )
-		self.bank.read_soundfont( sf2 )
+	if self.bank == null:
+		self.bank = Bank.new( )
+		if self.soundfont != "":
+			var sf_reader = SoundFont.new( )
+			var sf2 = sf_reader.read_file( self.soundfont )
+			self.bank.read_soundfont( sf2 )
 
 	# 発音機
-	var default_audio_stream_player = self.get_node( "Default" )
-	for i in range( self.max_polyphony ):
-		var audio_stream_player = ADSR.instance( )
-		if default_audio_stream_player != null:
-			audio_stream_player.mix_target = default_audio_stream_player.mix_target
-			audio_stream_player.bus = default_audio_stream_player.bus
-		self.add_child( audio_stream_player )
-		self.audio_stream_players.append( audio_stream_player )
+	if self.audio_stream_players.size( ) == 0:
+		var default_audio_stream_player = self.get_node( "Default" )
+		for i in range( self.max_polyphony ):
+			var audio_stream_player = ADSR.instance( )
+			if default_audio_stream_player != null:
+				audio_stream_player.mix_target = default_audio_stream_player.mix_target
+				audio_stream_player.bus = default_audio_stream_player.bus
+			self.add_child( audio_stream_player )
+			self.audio_stream_players.append( audio_stream_player )
 
 """
 	トラック初期化
