@@ -27,6 +27,7 @@ func create_preset( ):
 		instruments.append( null )
 	return {
 		"name": "",
+		"number": 0,
 		"instruments": instruments,
 		"bags": [],
 	}
@@ -40,6 +41,7 @@ func create_instrument( ):
 		"stream": null,
 		"ads_state": default_ads_state,
 		"release_state": default_release_state,
+		"preset": null,
 		# "assine_group": 0,	# reserved
 	}
 
@@ -61,10 +63,12 @@ func set_preset_sample( program_number, base_sample, base_mix_rate ):
 
 	var preset = self.create_preset( )
 	preset.name = "#%03d" % program_number
+	preset.number = program_number
 	for i in range(0,128):
 		var inst = self.create_instrument( )
 		inst.mix_rate = mix_rate_table[i]
 		inst.stream = base_sample
+		inst.preset = preset
 		preset.instruments[i] = inst
 
 	self.set_preset( program_number, preset )
@@ -98,6 +102,7 @@ func read_soundfont( sf ):
 		var preset = self.create_preset( )
 		var program_number = phdr.preset | ( phdr.bank << 7 )
 		preset.name = phdr.name
+		preset.number = program_number
 
 		var bag_next = sf.pdta.phdr[phdr_index+1].preset_bag_index
 		var bag_count = bag_index
@@ -175,6 +180,7 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 				if preset.instruments[key_number] != null:
 					continue
 				var instrument = self.create_instrument( )
+				instrument.preset = preset
 				if ibag.original_key == 255:
 					instrument.mix_rate = ibag.sample.sample_rate
 				else:
@@ -195,6 +201,8 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 					{ "time": r, "volume": 0.0 },
 				]
 				preset.instruments[key_number] = instrument
+			#if preset.number == 72:
+			#	print( ibag.adsr )
 		break
 
 func _read_soundfont_pdta_inst( sf ):

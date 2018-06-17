@@ -5,6 +5,7 @@ extends AudioStreamPlayer
 """
 
 var releasing = false
+var instrument = null
 var velocity = 0
 var pitch_bend = 0
 var mix_rate = 0
@@ -29,14 +30,11 @@ func _ready( ):
 	self.stop( )
 
 func set_instrument( instrument ):
+	self.instrument = instrument
 	self.mix_rate = instrument.mix_rate
 	self.stream = instrument.stream.duplicate( )
 	self.ads_state = instrument.ads_state
 	self.release_state = instrument.release_state
-	#print( "---" )
-	#print( self.ads_state[0].time )
-	#print( self.ads_state[1].time )
-	#print( self.ads_state[2].time )
 
 func play( ):
 	self.releasing = false
@@ -87,7 +85,7 @@ func _process( delta ):
 				var pre_state = use_state[state_number-1]
 				var s = ( state.time - self.timer ) / ( state.time - pre_state.time )
 				var t = 1.0 - s
-				self.current_volume = self.current_volume * s + state.volume * t
+				self.current_volume = pre_state.volume * s + state.volume * t
 				break
 
 	self._update_volume( )
