@@ -146,6 +146,7 @@ func _init_channel( ):
 			"volume": 1.0,
 			"expression": 1.0,
 			"pitch_bend": 0.0,
+			"drum_track": ( i == drum_track_channel ),
 			"pan": 0.5,
 		})
 
@@ -267,7 +268,7 @@ func _process_track_event_note_off( channel, event ):
 func _process_track_event_note_on( channel, event ):
 	if not self.channel_mute[channel.number]:
 		var program_number = channel.program
-		if channel.number == drum_track_channel:
+		if channel.drum_track:
 			program_number |= 128 << 7
 
 		var key_number = event.note + self.key_shift
@@ -279,7 +280,6 @@ func _process_track_event_note_on( channel, event ):
 		if instrument != null:
 			if channel.note_on.has( key_number ):
 				channel.note_on[key_number].start_release( )
-				print( "play on release" )
 
 			var note_player = self._get_idle_player( channel.program )
 			if note_player != null:

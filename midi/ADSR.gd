@@ -12,11 +12,11 @@ var using_timer = 0.0
 var timer = 0.0
 var current_volume = 0
 var maximum_volume_db = -8.0
-var minimum_volume_db = -30.0
+var minimum_volume_db = -108.0
 var pan = 0.5
 var ads_state = [
 	{ "time": 0, "volume": 1.0 },
-	{ "time": 0.2, "volume": 0.8 },
+	{ "time": 0.2, "volume": 0.95 },
 	# { "time": 0.2, "jump_to": 0.0 },	# not implemented
 ]
 var release_state = [
@@ -33,6 +33,10 @@ func set_instrument( instrument ):
 	self.stream = instrument.stream.duplicate( )
 	self.ads_state = instrument.ads_state
 	self.release_state = instrument.release_state
+	#print( "---" )
+	#print( self.ads_state[0].time )
+	#print( self.ads_state[1].time )
+	#print( self.ads_state[2].time )
 
 func play( ):
 	self.releasing = false
