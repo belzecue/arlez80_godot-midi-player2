@@ -80,6 +80,13 @@ class TrackSorter:
 	static func sort(a, b):
 		if a.time < b.time:
 			return true
+		elif b.time < a.time:
+			return false
+		else:
+			if a.event.type == SMF.MIDIEventType.note_off:
+				return true
+			elif b.event.type == SMF.MIDIEventType.note_off:
+				return false
 
 func _init_track( ):
 	self.track_status = {
@@ -89,7 +96,8 @@ func _init_track( ):
 
 	for track in self.smf_data.tracks:
 		self.track_status.events += track.events
-	self.track_status.events.sort_custom( TrackSorter, "sort" )
+	if 1 < self.smf_data.tracks.size( ):
+		self.track_status.events.sort_custom( TrackSorter, "sort" )
 	self.last_position = self.track_status.events[len(self.track_status.events)-1].time
 
 """
@@ -264,23 +272,18 @@ func _process_track_event_note_on( channel, event ):
 
 		if instrument != null:
 			if channel.note_on.has( key_number ):
-				var note_player = channel.note_on[key_number]
+				channel.note_on[key_number].start_release( )
+				print( "play on release" )
+
+			var note_player = self._get_idle_player( channel.program )
+			if note_player != null:
 				note_player.velocity = event.velocity
 				note_player.maximum_volume_db = volume_db
 				note_player.pitch_bend = channel.pitch_bend
 				note_player.mix_rate = instrument.mix_rate
 				note_player.stream = instrument.stream.duplicate( )
 				note_player.play( )
-			else:
-				var note_player = self._get_idle_player( channel.program )
-				if note_player != null:
-					note_player.velocity = event.velocity
-					note_player.maximum_volume_db = volume_db
-					note_player.pitch_bend = channel.pitch_bend
-					note_player.mix_rate = instrument.mix_rate
-					note_player.stream = instrument.stream.duplicate( )
-					note_player.play( )
-					channel.note_on[key_number] = note_player
+				channel.note_on[key_number] = note_player
 
 func _process_track_event_control_change( channel, event ):
 	match event.number:
