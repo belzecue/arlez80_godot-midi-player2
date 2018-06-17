@@ -80,6 +80,14 @@ const unused5 = 59
 const end_oper = 60
 
 """
+	SampleMode
+"""
+const no_loop = 0
+const loop_continuously = 1
+const unused_no_loop = 2
+const loop_ends_by_key_depression = 3
+
+"""
 	ファイルから読み込み
 	@param	path	File path
 	@return	smf

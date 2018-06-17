@@ -172,7 +172,10 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 			ass.stereo = false #bag.sample.sample_type != SoundFont.mono_sample
 			ass.loop_begin = start_loop - start
 			ass.loop_end = end_loop - start
-			ass.loop_mode = AudioStreamSample.LOOP_FORWARD
+			if ibag.sample_modes == SoundFont.no_loop or ibag.sample_modes == SoundFont.unused_no_loop:
+				ass.loop_mode = AudioStreamSample.LOOP_DISABLED
+			else:
+				ass.loop_mode = AudioStreamSample.LOOP_FORWARD
 			var key_range = ibag.key_range
 			if pbag.key_range != null:
 				key_range = pbag.key_range
@@ -229,6 +232,7 @@ func _read_soundfont_pdta_inst( sf ):
 				"fine_tune": 0,
 				"original_key": 255,
 				"keynum": 0,
+				"sample_modes": 0,
 				"key_range": { "high": 127, "low": 0 },
 				"vel_range": { "high": 127, "low": 0 },
 				"adsr": {
@@ -282,6 +286,8 @@ func _read_soundfont_pdta_inst( sf ):
 					SoundFont.sustain_vol_env:
 						var s = min( max( 0, gen.amount ), 1440 )
 						bag.adsr.sustain_vol_env_level = ( 1440.0 - s ) / 1440.0
+					SoundFont.sample_modes:
+						bag.sample_modes = gen.uamount
 					SoundFont.sample_id:
 						bag.sample_id = gen.uamount
 						bag.sample = sf.pdta.shdr[gen.amount]
