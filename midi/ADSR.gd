@@ -4,20 +4,15 @@ extends AudioStreamPlayer
 	AudioStreamPlayer with ADSR
 """
 
-enum ADSRPlayingMode {
-	ads,
-	release,
-}
-
-var mode = ADSRPlayingMode.ads
+var releasing = false
 var velocity = 0
 var pitch_bend = 0
 var mix_rate = 0
 var using_timer = 0.0
 var timer = 0.0
 var current_volume = 0
-var maximum_volume_db = -8
-var minimum_volume_db = -1000
+var maximum_volume_db = -8.0
+var minimum_volume_db = -30.0
 var pan = 0.5
 var ads_state = [
 	{ "time": 0, "volume": 1.0 },
@@ -26,7 +21,7 @@ var ads_state = [
 ]
 var release_state = [
 	{ "time": 0, "volume": 0.8 },
-	{ "time": 0.03, "volume": 0.0 },
+	{ "time": 0.01, "volume": 0.0 },
 	# { "time": 0.2, "jump_to": 0.0 },	# not implemented
 ]
 
@@ -34,16 +29,16 @@ func _ready( ):
 	self.stop( )
 
 func play( ):
-	self.mode = ADSRPlayingMode.ads
+	self.releasing = false
 	self.timer = 0.0
 	self.using_timer = 0.0
 	self.current_volume = self.ads_state[0].volume
-	self.stream.mix_rate = round( self.mix_rate * ( 1 + self.pitch_bend * 0.5 ) )
+	self.stream.mix_rate = round( self.mix_rate * ( 1.0 + self.pitch_bend * 0.5 ) )
 	.play( 0.0 )
 	self._update_volume( )
 
 func start_release( ):
-	self.mode = ADSRPlayingMode.release
+	self.releasing = true
 	self.current_volume = self.release_state[0].volume
 	self.timer = 0.0
 	self._update_volume( )
@@ -51,7 +46,7 @@ func start_release( ):
 func set_pitch_bend( pb ):
 	self.pitch_bend = pb
 	var pos = self.get_playback_position( )
-	self.stream.mix_rate = round( self.mix_rate * ( 1 + self.pitch_bend * 0.5 ) )
+	self.stream.mix_rate = round( self.mix_rate * ( 1.0 + self.pitch_bend * 0.5 ) )
 	.play( pos )
 
 func _process( delta ):
@@ -64,30 +59,26 @@ func _process( delta ):
 
 	# ADSR
 	var use_state = null
-	if self.mode == ADSRPlayingMode.ads:
-		use_state = self.ads_state
-	elif self.mode == ADSRPlayingMode.release:
+	if self.releasing:
 		use_state = self.release_state
+	else:
+		use_state = self.ads_state
 
-	var last_time = 0
-	var all_states = len( use_state )
+	var all_states = use_state.size( )
 	var last_state = all_states - 1
-	for state_number in range( all_states ):
-		var state = use_state[state_number]
-		if state.time <= self.timer:
-			if 0 < last_time:
-				var s = ( state.time - self.timer ) / last_time
+	if use_state[last_state].time <= self.timer:
+		self.current_volume = use_state[last_state].volume
+		if self.releasing:
+			self.stop( )
+	else:
+		for state_number in range( 1, all_states ):
+			var state = use_state[state_number]
+			if self.timer < state.time:
+				var pre_state = use_state[state_number-1]
+				var s = ( state.time - self.timer ) / ( state.time - pre_state.time )
 				var t = 1.0 - s
 				self.current_volume = self.current_volume * s + state.volume * t
-				if self.mode == ADSRPlayingMode.release:
-					if state_number == last_state:
-						self.stop( )
-			else:
-				self.current_volume = state.volume
-			break
-		else:
-			self.current_volume = state.volume
-			last_time = state.time
+				break
 
 	self._update_volume( )
 

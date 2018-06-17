@@ -271,11 +271,12 @@ func _process_track_event_note_on( channel, event ):
 				note_player.mix_rate = instrument.mix_rate
 				note_player.stream = instrument.stream.duplicate( )
 				note_player.play( )
+				print( "replay" )
 			else:
 				var note_player = self._get_idle_player( channel.program )
 				if note_player != null:
-					note_player.maximum_volume_db = volume_db
 					note_player.velocity = event.velocity
+					note_player.maximum_volume_db = volume_db
 					note_player.pitch_bend = channel.pitch_bend
 					note_player.mix_rate = instrument.mix_rate
 					note_player.stream = instrument.stream.duplicate( )
@@ -312,14 +313,16 @@ func _process_track_system_event( channel, event ):
 
 func _get_idle_player( program ):
 	var stopped_audio_stream_player = null
+	var minimum_volume = 100.0
 	var oldest_audio_stream_player = null
 	var oldest = 0.0
 
 	for audio_stream_player in self.audio_stream_players:
 		if not audio_stream_player.playing:
 			return audio_stream_player
-		if audio_stream_player.mode == 1:
+		if audio_stream_player.releasing and audio_stream_player.current_volume < minimum_volume:
 			stopped_audio_stream_player = audio_stream_player
+			minimum_volume = audio_stream_player.current_volume
 		if oldest < audio_stream_player.using_timer:
 			oldest_audio_stream_player = audio_stream_player
 			oldest = audio_stream_player.using_timer
@@ -338,3 +341,13 @@ func _update_volume_note( channel ):
 func _update_pitch_bend_note( channel ):
 	for note in channel.note_on.values( ):
 		note.set_pitch_bend( channel.pitch_bend )
+
+"""
+	現在発音中の音色数を返す
+"""
+func get_now_playing_polyphony( ):
+	var polyphony = 0
+	for audio_stream_player in self.audio_stream_players:
+		if audio_stream_player.playing:
+			polyphony += 1
+	return polyphony

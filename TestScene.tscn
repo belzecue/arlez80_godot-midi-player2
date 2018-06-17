@@ -13,6 +13,7 @@ onready var ui_volume_bar = self.get_node( \"UI/VolumeBar\" )
 onready var ui_seek_bar = self.get_node( \"UI/SeekBar\" )
 onready var ui_tempo = self.get_node( \"UI/Tempo\" )
 onready var ui_loop = self.get_node( \"UI/Loop\" )
+onready var ui_polyphony = self.get_node( \"UI/PolyphonyStatus\" )
 
 var tempo_changing = false
 
@@ -64,6 +65,10 @@ func _process( delta ):
 			channel.pitch_bend,
 		]
 
+	ui_polyphony.text = (
+		( \"polyphony %d / %d\" % [ self.midi_player.get_now_playing_polyphony( ), self.midi_player.max_polyphony ] )
+	)
+
 func _on_ui_seek_bar_scrolling( ):
 	if not self.midi_player.playing:
 		self.midi_player.play( )
@@ -88,7 +93,6 @@ _sections_unfolded = [ "Pause" ]
 
 [node name="MidiPlayer" parent="." index="0" instance=ExtResource( 1 )]
 
-max_polyphony = 16
 file = "res://test.mid"
 playing = true
 soundfont = "res://Aspirin-Stereo.sf2"
@@ -195,7 +199,7 @@ anchor_right = 0.0
 anchor_bottom = 0.0
 margin_left = 34.0
 margin_top = 220.0
-margin_right = 113.0
+margin_right = 131.0
 margin_bottom = 234.0
 rect_pivot_offset = Vector2( 0, 0 )
 rect_clip_content = false
@@ -229,7 +233,28 @@ percent_visible = 1.0
 lines_skipped = 0
 max_lines_visible = -1
 
-[node name="PlaySpeedBar" type="HScrollBar" parent="UI" index="6"]
+[node name="PolyphonyStatus" type="Label" parent="UI" index="6"]
+
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 36.0
+margin_top = 540.0
+margin_right = 997.0
+margin_bottom = 588.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+mouse_filter = 2
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 4
+text = "Polyphony Status"
+percent_visible = 1.0
+lines_skipped = 0
+max_lines_visible = -1
+
+[node name="PlaySpeedBar" type="HScrollBar" parent="UI" index="7"]
 
 anchor_left = 0.0
 anchor_top = 0.0
@@ -255,7 +280,7 @@ rounded = false
 custom_step = -1.0
 _sections_unfolded = [ "Anchor", "Margin" ]
 
-[node name="VolumeBar" type="HScrollBar" parent="UI" index="7"]
+[node name="VolumeBar" type="HScrollBar" parent="UI" index="8"]
 
 anchor_left = 0.0
 anchor_top = 0.0
@@ -281,7 +306,7 @@ rounded = false
 custom_step = -1.0
 _sections_unfolded = [ "Anchor", "Margin" ]
 
-[node name="SeekBar" type="HScrollBar" parent="UI" index="8"]
+[node name="SeekBar" type="HScrollBar" parent="UI" index="9"]
 
 anchor_left = 0.0
 anchor_top = 0.0
@@ -306,7 +331,7 @@ exp_edit = false
 rounded = false
 custom_step = -1.0
 
-[node name="Tempo" type="LineEdit" parent="UI" index="9"]
+[node name="Tempo" type="LineEdit" parent="UI" index="10"]
 
 anchor_left = 0.0
 anchor_top = 0.0
@@ -331,7 +356,7 @@ caret_blink_speed = 0.65
 caret_position = 0
 _sections_unfolded = [ "Caret", "Placeholder" ]
 
-[node name="Loop" type="CheckBox" parent="UI" index="10"]
+[node name="Loop" type="CheckBox" parent="UI" index="11"]
 
 anchor_left = 0.0
 anchor_top = 0.0
