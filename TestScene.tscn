@@ -21,8 +21,7 @@ var ui_channel_mutes = []
 
 func _ready( ):
 	# test
-	#var sf = SoundFont.new( )
-	#sf.read_file( \"Aspirin-Stereo.sf2\" )
+	# var mod = preload( \"res://midi/MOD.gd\" ).new( ).read_file( \"res://data/sample.mod\" )
 
 	# seek
 	self.ui_seek_bar.connect( \"scrolling\", self, \"_on_ui_seek_bar_scrolling\" )
@@ -86,16 +85,16 @@ func _on_ui_tempo_entered( o ):
 		self.midi_player.tempo = bpm
 "
 
-[node name="TestScene" type="Node"]
+[node name="TestScene" type="Node" index="0"]
 
 script = SubResource( 1 )
 _sections_unfolded = [ "Pause" ]
 
 [node name="MidiPlayer" parent="." index="0" instance=ExtResource( 1 )]
 
-file = "res://test.mid"
+file = "res://data/test.mid"
 playing = true
-soundfont = "res://TimGM6mb.sf2"
+soundfont = "res://data/Aspirin-Stereo.sf2"
 bus = "Rev"
 
 [node name="UI" type="Node" parent="." index="1"]

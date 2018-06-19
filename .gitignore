@@ -1,6 +1,5 @@
 .dropbox.attr
 Thumbs.db
 .import/*
+data/*
 *.import
-*.mid
-*.sf2
