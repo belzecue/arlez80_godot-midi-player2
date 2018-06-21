@@ -3,89 +3,89 @@
 """
 
 """
-	SoundFontSampleLink
+	SampleLink
 """
-const mono_sample = 1
-const right_sample = 2
-const left_sample = 4
-const linked_sample = 8
-const rom_mono_sample = 0x8001
-const rom_right_sample = 0x8002
-const rom_left_sample = 0x8004
-const rom_linked_sample = 0x8008
+const sample_link_mono_sample = 1
+const sample_link_right_sample = 2
+const sample_link_left_sample = 4
+const sample_link_linked_sample = 8
+const sample_link_rom_mono_sample = 0x8001
+const sample_link_rom_right_sample = 0x8002
+const sample_link_rom_left_sample = 0x8004
+const sample_link_rom_linked_sample = 0x8008
 
 """
 	GenerateOperator
 """
-const start_addrs_offset = 0
-const end_addrs_offset = 1
-const startloop_addrs_offset = 2
-const endloop_addrs_offset = 3
-const start_addrs_coarse_offset = 4
-const mod_lfo_to_pitch = 5
-const vib_lfo_to_pitch = 6
-const mod_env_to_pitch = 7
-const initial_filter_fc = 8
-const initial_filter_q = 9
-const mod_lfo_to_filter_fc = 10
-const mod_env_to_filter_fc = 11
-const end_addrs_coarse_offset = 12
-const mod_lfo_to_volume = 13
-const unused1 = 14
-const chorus_effects_send = 15
-const reverb_effects_send = 16
-const pan = 17
-const unused2 = 18
-const unused3 = 19
-const unused4 = 20
-const delay_mod_lfo = 21
-const freq_mod_lfo = 22
-const delay_vib_lfo = 23
-const freq_vib_lfo = 24
-const delay_mod_env = 25
-const attack_mod_env = 26
-const hold_mod_env = 27
-const decay_mod_env = 28
-const sustain_mod_env = 29
-const release_mod_env = 30
-const keynum_to_mod_env_hold = 31
-const keynum_to_mod_env_decay = 32
-const delay_vol_env = 33
-const attack_vol_env = 34
-const hold_vol_env = 35
-const decay_vol_env = 36
-const sustain_vol_env = 37
-const release_vol_env = 38
-const keynum_to_vol_env_hold = 39
-const keynum_to_vol_env_decay = 40
-const instrument = 41
-const reserved1 = 42
-const key_range = 43
-const vel_range = 44
-const startloop_addrs_coarse_offset = 45
-const keynum = 46
-const velocity = 47
-const initial_attenuation = 48
-const reserved2 = 49
-const endloop_addrs_coarse_offset = 50
-const coarse_tune = 51
-const fine_tune = 52
-const sample_id = 53
-const sample_modes = 54
-const reserved3 = 55
-const scale_tuning = 56
-const exclusive_class = 57
-const overriding_root_key = 58
-const unused5 = 59
-const end_oper = 60
+const gen_oper_start_addrs_offset = 0
+const gen_oper_end_addrs_offset = 1
+const gen_oper_startloop_addrs_offset = 2
+const gen_oper_endloop_addrs_offset = 3
+const gen_oper_start_addrs_coarse_offset = 4
+const gen_oper_mod_lfo_to_pitch = 5
+const gen_oper_vib_lfo_to_pitch = 6
+const gen_oper_mod_env_to_pitch = 7
+const gen_oper_initial_filter_fc = 8
+const gen_oper_initial_filter_q = 9
+const gen_oper_mod_lfo_to_filter_fc = 10
+const gen_oper_mod_env_to_filter_fc = 11
+const gen_oper_end_addrs_coarse_offset = 12
+const gen_oper_mod_lfo_to_volume = 13
+const gen_oper_unused1 = 14
+const gen_oper_chorus_effects_send = 15
+const gen_oper_reverb_effects_send = 16
+const gen_oper_pan = 17
+const gen_oper_unused2 = 18
+const gen_oper_unused3 = 19
+const gen_oper_unused4 = 20
+const gen_oper_delay_mod_lfo = 21
+const gen_oper_freq_mod_lfo = 22
+const gen_oper_delay_vib_lfo = 23
+const gen_oper_freq_vib_lfo = 24
+const gen_oper_delay_mod_env = 25
+const gen_oper_attack_mod_env = 26
+const gen_oper_hold_mod_env = 27
+const gen_oper_decay_mod_env = 28
+const gen_oper_sustain_mod_env = 29
+const gen_oper_release_mod_env = 30
+const gen_oper_keynum_to_mod_env_hold = 31
+const gen_oper_keynum_to_mod_env_decay = 32
+const gen_oper_delay_vol_env = 33
+const gen_oper_attack_vol_env = 34
+const gen_oper_hold_vol_env = 35
+const gen_oper_decay_vol_env = 36
+const gen_oper_sustain_vol_env = 37
+const gen_oper_release_vol_env = 38
+const gen_oper_keynum_to_vol_env_hold = 39
+const gen_oper_keynum_to_vol_env_decay = 40
+const gen_oper_instrument = 41
+const gen_oper_reserved1 = 42
+const gen_oper_key_range = 43
+const gen_oper_vel_range = 44
+const gen_oper_startloop_addrs_coarse_offset = 45
+const gen_oper_keynum = 46
+const gen_oper_velocity = 47
+const gen_oper_initial_attenuation = 48
+const gen_oper_reserved2 = 49
+const gen_oper_endloop_addrs_coarse_offset = 50
+const gen_oper_coarse_tune = 51
+const gen_oper_fine_tune = 52
+const gen_oper_sample_id = 53
+const gen_oper_sample_modes = 54
+const gen_oper_reserved3 = 55
+const gen_oper_scale_tuning = 56
+const gen_oper_exclusive_class = 57
+const gen_oper_overriding_root_key = 58
+const gen_oper_unused5 = 59
+const gen_oper_end_oper = 60
 
 """
 	SampleMode
 """
-const no_loop = 0
-const loop_continuously = 1
-const unused_no_loop = 2
-const loop_ends_by_key_depression = 3
+const sample_mode_no_loop = 0
+const sample_mode_loop_continuously = 1
+const sample_mode_unused_no_loop = 2
+const sample_mode_loop_ends_by_key_depression = 3
 
 """
 	ファイルから読み込み

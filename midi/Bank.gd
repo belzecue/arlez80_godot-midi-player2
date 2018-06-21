@@ -123,18 +123,18 @@ func read_soundfont( sf ):
 			while gen_count < gen_next:
 				var gen = sf.pdta.pgen[gen_count]
 				match gen.gen_oper:
-					SoundFont.coarse_tune:
+					SoundFont.gen_oper_coarse_tune:
 						bag.coarse_tune = gen.amount
-					SoundFont.fine_tune:
+					SoundFont.gen_oper_fine_tune:
 						bag.fine_tune = gen.amount
-					SoundFont.key_range:
+					SoundFont.gen_oper_key_range:
 						bag.key_range = {
 							"high": gen.uamount >> 8,
 							"low": gen.uamount & 0xFF,
 						}
-					SoundFont.pan:
+					SoundFont.gen_oper_pan:
 						bag.pan = ( gen.amount + 500 ) / 1000.0
-					SoundFont.instrument:
+					SoundFont.gen_oper_instrument:
 						bag.instrument = sf_insts[gen.uamount]
 				gen_count += 1
 			if bag.instrument != null:
@@ -172,10 +172,10 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 			ass.data = sf.sdta.smpl.subarray( start * 2, end * 2 )
 			ass.format = AudioStreamSample.FORMAT_16_BITS
 			ass.mix_rate = mix_rate
-			ass.stereo = false #bag.sample.sample_type != SoundFont.mono_sample
+			ass.stereo = false #bag.sample.sample_type != SoundFont.sample_link_mono_sample
 			ass.loop_begin = start_loop - start
 			ass.loop_end = end_loop - start
-			if ibag.sample_modes == SoundFont.no_loop or ibag.sample_modes == SoundFont.unused_no_loop:
+			if ibag.sample_modes == SoundFont.sample_mode_no_loop or ibag.sample_modes == SoundFont.sample_mode_unused_no_loop:
 				ass.loop_mode = AudioStreamSample.LOOP_DISABLED
 			else:
 				ass.loop_mode = AudioStreamSample.LOOP_FORWARD
@@ -250,48 +250,48 @@ func _read_soundfont_pdta_inst( sf ):
 			while gen_count < gen_next:
 				var gen = sf.pdta.igen[gen_count]
 				match gen.gen_oper:
-					SoundFont.key_range:
+					SoundFont.gen_oper_key_range:
 						bag.key_range.high = gen.uamount >> 8
 						bag.key_range.low = gen.uamount & 0xFF
-					SoundFont.vel_range:
+					SoundFont.gen_oper_vel_range:
 						bag.vel_range.high = gen.uamount >> 8
 						bag.vel_range.low = gen.uamount & 0xFF
-					SoundFont.overriding_root_key:
+					SoundFont.gen_oper_overriding_root_key:
 						bag.original_key = gen.amount
-					SoundFont.start_addrs_offset:
+					SoundFont.gen_oper_start_addrs_offset:
 						bag.sample_start_offset += gen.amount
-					SoundFont.end_addrs_offset:
+					SoundFont.gen_oper_end_addrs_offset:
 						bag.sample_end_offset += gen.amount
-					SoundFont.start_addrs_coarse_offset:
+					SoundFont.gen_oper_start_addrs_coarse_offset:
 						bag.sample_start_offset += gen.amount * 32768
-					SoundFont.end_addrs_coarse_offset:
+					SoundFont.gen_oper_end_addrs_coarse_offset:
 						bag.sample_end_offset += gen.amount * 32768
-					SoundFont.startloop_addrs_offset:
+					SoundFont.gen_oper_startloop_addrs_offset:
 						bag.sample_start_loop_offset += gen.amount
-					SoundFont.endloop_addrs_offset:
+					SoundFont.gen_oper_endloop_addrs_offset:
 						bag.sample_end_loop_offset += gen.amount
-					SoundFont.startloop_addrs_coarse_offset:
+					SoundFont.gen_oper_startloop_addrs_coarse_offset:
 						bag.sample_start_loop_offset += gen.amount * 32768
-					SoundFont.endloop_addrs_coarse_offset:
+					SoundFont.gen_oper_endloop_addrs_coarse_offset:
 						bag.sample_end_loop_offset += gen.amount * 32768
-					SoundFont.coarse_tune:
+					SoundFont.gen_oper_coarse_tune:
 						bag.coarse_tune = gen.amount
-					SoundFont.fine_tune:
+					SoundFont.gen_oper_fine_tune:
 						bag.fine_tune = gen.amount
-					SoundFont.keynum:
+					SoundFont.gen_oper_keynum:
 						bag.keynum = gen.amount
-					SoundFont.attack_vol_env:
+					SoundFont.gen_oper_attack_vol_env:
 						bag.adsr.attack_vol_env_time = pow( 2.0, gen.amount / 1200.0 )
-					SoundFont.decay_vol_env:
+					SoundFont.gen_oper_decay_vol_env:
 						bag.adsr.decay_vol_env_time = pow( 2.0, gen.amount / 1200.0 )
-					SoundFont.release_vol_env:
+					SoundFont.gen_oper_release_vol_env:
 						bag.adsr.release_vol_env_time = pow( 2.0, gen.amount / 1200.0 )
-					SoundFont.sustain_vol_env:
+					SoundFont.gen_oper_sustain_vol_env:
 						var s = min( max( 0, gen.amount ), 1440 )
 						bag.adsr.sustain_vol_env_level = ( 1440.0 - s ) / 1440.0
-					SoundFont.sample_modes:
+					SoundFont.gen_oper_sample_modes:
 						bag.sample_modes = gen.uamount
-					SoundFont.sample_id:
+					SoundFont.gen_oper_sample_id:
 						bag.sample_id = gen.uamount
 						bag.sample = sf.pdta.shdr[gen.amount]
 						if bag.original_key == 255:
