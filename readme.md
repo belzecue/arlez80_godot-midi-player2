@@ -2,16 +2,24 @@
 
 Software MIDI player library for Godot Engine 3.
 
-* Can changes play speed.
+* Changes play speed.
+* Set tempo.
+* Emit on some events (tempo change, appears lyric ...)
 * Can control as AudioStreamPlayer.
 
 I develop it for use embedding in game.
 
 ## Try it
 
-+ Copy test.mid to "res://"
-+ Copy *.sf2 to "res://"
-* set SoundFont to MidiPlayer path "soundfont" parameter.
+1. Copy *.mid to "res://"
+2. Copy *.sf2 to "res://"
+3. Set MIDI path to MidiPlayer "file" parameter.
+4. Set SoundFont path to MidiPlayer "soundfont" parameter.
+5. Play
+
+## How to use
+
+* See [wiki](https://bitbucket.org/arlez80/godot-midi-player/wiki/)
 
 ### Demo / Screenshot
 
@@ -19,65 +27,18 @@ I develop it for use embedding in game.
 
 * [download](https://bitbucket.org/arlez80/godot-midi-player/downloads/demo.zip)
 
-## How to use
-
-### SMF.gd
-
-Standard MIDI File reader. It can read format 0 and format 1.
-
-```
-var smf_reader = preload( "path/to/SMF.gd" ).new( )
-var smf = smf_reader.read_file( "path/to/smf.mid" )
-print( smf )
-```
-
-#### read_file( path )
-
-read from file.
-
-#### read_data( data )
-
-read from data (PoolByteArray).
-
-### MidiPlayer.tscn
-
-Software MIDI Player. Add MidiPlayer node to scene to use.
-
-Some method/member is the same as AudioStreamPlayer.
-
-#### file
-
-Play file path.
-
-#### tempo
-
-Set/Get currently tempo.
-
-#### play_speed
-
-Change play speed. It is not change tempo value. When tempo is 120 and this value is 0.5, play tempo is as 60.
-
-#### channel_mute
-
-Set true to mute channel.
-
-#### smf_data
-
-SMF data.
-
 ## TODO
 
 * See [issues]( https://bitbucket.org/arlez80/godot-midi-player/issues )
 
 ## Not TODO
 
-* Supports format 2
+* Supports play format 2
 * Implements some effects (Use godot's mixer!)
 
 ## Known Problem
 
-* Player's timebase is 1/60.
- * It probably need 1/240 at least.
+* Player's timebase is 1/60. - It probably need 1/240 at least.
 * Pitch bend is buggy...
 * Sometimes appear petit noises.
 
