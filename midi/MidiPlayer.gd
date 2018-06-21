@@ -142,6 +142,7 @@ func _init_channel( ):
 		self.channel_status.append({
 			"number": i,
 			"note_on": {},
+			"bank": 0,
 			"program": 0,
 			"volume": 1.0,
 			"expression": 1.0,
@@ -276,6 +277,8 @@ func _process_track_event_note_on( channel, event ):
 		var program_number = channel.program
 		if channel.drum_track:
 			program_number |= 128 << 7
+		else:
+			program_number |= channel.bank << 7
 
 		var key_number = event.note + self.key_shift
 		var note_volume = channel.volume * channel.expression * ( event.velocity / 127.0 )
@@ -307,6 +310,10 @@ func _process_track_event_control_change( channel, event ):
 			self._update_volume_note( channel )
 		SMF.control_number_pan:
 			channel.pan = event.value / 127.0
+		SMF.control_number_bank_select_msb:
+			channel.bank = ( channel.bank & 0x7F ) | ( event.value << 7 )
+		SMF.control_number_bank_select_lsb:
+			channel.bank = ( channel.bank & 0x3F80 ) | ( event.value )
 		_:
 			# 無視
 			pass
