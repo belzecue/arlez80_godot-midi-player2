@@ -82,11 +82,14 @@ func set_preset( program_number, preset ):
 """
 	指定した楽器を取得
 """
-func get_preset( program_number ):
-	if not self.presets.has( program_number ):
-		program_number = 0
+func get_preset( program_number, bank = 0 ):
+	var pc = program_number | ( bank << 7 )
+	if not self.presets.has( pc ):
+		pc = program_number
+		if not self.presets.has( pc ):
+			pc = self.presets.keys( )[0]
 
-	return self.presets[program_number]
+	return self.presets[pc]
 
 """
 	サウンドフォント読み込み

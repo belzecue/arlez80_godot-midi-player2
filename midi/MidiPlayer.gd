@@ -5,6 +5,7 @@ const max_channel = 16
 const max_note_number = 128
 const max_program_number = 128
 const drum_track_channel = 0x09
+const drum_track_bank = 128
 const ADSR = preload("ADSR.tscn")
 const SMF = preload( "SMF.gd" )
 const SoundFont = preload( "SoundFont.gd" )
@@ -139,15 +140,19 @@ func _analyse_smf( ):
 func _init_channel( ):
 	self.channel_status = []
 	for i in range( max_channel ):
+		var drum_track = ( i == drum_track_channel )
+		var bank = 0
+		if drum_track:
+			bank = self.drum_track_bank
 		self.channel_status.append({
 			"number": i,
 			"note_on": {},
-			"bank": 0,
+			"bank": bank,
 			"program": 0,
 			"volume": 1.0,
 			"expression": 1.0,
 			"pitch_bend": 0.0,
-			"drum_track": ( i == drum_track_channel ),
+			"drum_track": drum_track,
 			"pan": 0.5,
 		})
 
@@ -274,16 +279,10 @@ func _process_track_event_note_off( channel, event ):
 
 func _process_track_event_note_on( channel, event ):
 	if not self.channel_mute[channel.number]:
-		var program_number = channel.program
-		if channel.drum_track:
-			program_number |= 128 << 7
-		else:
-			program_number |= channel.bank << 7
-
 		var key_number = event.note + self.key_shift
 		var note_volume = channel.volume * channel.expression * ( event.velocity / 127.0 )
 		var volume_db = note_volume * self.channel_volume_db - self.channel_volume_db + self.volume_db
-		var preset = self.bank.get_preset( program_number )
+		var preset = self.bank.get_preset( channel.program, channel.bank )
 		var instrument = preset.instruments[key_number]
 
 		if instrument != null:
@@ -311,9 +310,15 @@ func _process_track_event_control_change( channel, event ):
 		SMF.control_number_pan:
 			channel.pan = event.value / 127.0
 		SMF.control_number_bank_select_msb:
-			channel.bank = ( channel.bank & 0x7F ) | ( event.value << 7 )
+			if channel.drum_track:
+				channel.bank = self.drum_track_bank
+			else:
+				channel.bank = ( channel.bank & 0x7F ) | ( event.value << 7 )
 		SMF.control_number_bank_select_lsb:
-			channel.bank = ( channel.bank & 0x3F80 ) | ( event.value )
+			if channel.drum_track:
+				channel.bank = self.drum_track_bank
+			else:
+				channel.bank = ( channel.bank & 0x3F80 ) | ( event.value & 0x7F )
 		_:
 			# 無視
 			pass
