@@ -1,3 +1,4 @@
+tool
 extends Node
 
 const max_track = 16
@@ -6,7 +7,7 @@ const max_note_number = 128
 const max_program_number = 128
 const drum_track_channel = 0x09
 const drum_track_bank = 128
-const ADSR = preload("ADSR.tscn")
+const ADSR = preload( "ADSR.tscn" )
 const SMF = preload( "SMF.gd" )
 const SoundFont = preload( "SoundFont.gd" )
 const Bank = preload( "Bank.gd" )

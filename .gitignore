@@ -3,3 +3,7 @@ Thumbs.db
 .import/*
 data/*
 *.import
+*.tres
+*.cfg
+project.godot
+TestScene.tscn
