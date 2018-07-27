@@ -7,3 +7,4 @@ data/*
 *.cfg
 project.godot
 TestScene.tscn
+*.png
