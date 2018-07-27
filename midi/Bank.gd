@@ -89,13 +89,17 @@ func get_preset( program_number, bank = 0 ):
 		if not self.presets.has( pc ):
 			pc = self.presets.keys( )[0]
 
-	return self.presets[pc]
+	var preset = self.presets[pc]
+
+	return preset
 
 """
 	サウンドフォント読み込み
 """
-func read_soundfont( sf ):
+func read_soundfont( sf, need_program_numbers = null ):
 	var sf_insts = self._read_soundfont_pdta_inst( sf )
+
+	print( need_program_numbers )
 
 	var bag_index = 0
 	var gen_index = 0
@@ -104,6 +108,7 @@ func read_soundfont( sf ):
 
 		var preset = self.create_preset( )
 		var program_number = phdr.preset | ( phdr.bank << 7 )
+
 		preset.name = phdr.name
 		preset.number = program_number
 
@@ -141,9 +146,15 @@ func read_soundfont( sf ):
 				preset.bags.append( bag )
 			gen_index = gen_next
 			bag_count += 1
+		bag_index = bag_next
+
+		# 追加するか？
+		if need_program_numbers != null:
+			if not( program_number in need_program_numbers ) and not( phdr.preset in need_program_numbers ):
+				continue
+		# 追加
 		self._read_soundfont_preset_compose_sample( sf, preset )
 		self.set_preset( program_number, preset )
-		bag_index = bag_next
 
 func _read_soundfont_preset_compose_sample( sf, preset ):
 	"""

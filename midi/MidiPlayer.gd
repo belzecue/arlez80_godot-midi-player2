@@ -37,6 +37,8 @@ var channel_volume_db = 20
 var bank = null
 var audio_stream_players = []
 
+var _used_program_numbers = []
+
 signal changed_tempo( tempo )
 signal appeared_lyric( lyric )
 signal appeared_marker( marker )
@@ -66,7 +68,7 @@ func _prepare_to_play( ):
 		if self.soundfont != "":
 			var sf_reader = SoundFont.new( )
 			var sf2 = sf_reader.read_file( self.soundfont )
-			self.bank.read_soundfont( sf2 )
+			self.bank.read_soundfont( sf2, self._used_program_numbers )
 
 	# 発音機
 	if self.audio_stream_players.size( ) == 0:
@@ -115,9 +117,11 @@ func _analyse_smf( ):
 	var channels = []
 	for i in range( max_channel ):
 		channels.append({
-			"program_number": 0,
-			"note_on": {}
+			#"note_on": {},
+			#"program_number": 0,
+			"bank": 0,
 		})
+	self._used_program_numbers = []
 
 	for event_chunk in self.track_status.events:
 		var channel_number = event_chunk.channel_number
@@ -125,15 +129,25 @@ func _analyse_smf( ):
 		var event = event_chunk.event
 
 		match event.type:
-			SMF.MIDIEventType.note_off:
-				channel.note_on.erase( event.note )
-			SMF.MIDIEventType.note_on:
-				channel.note_on[event.note] = true
+			#SMF.MIDIEventType.note_off:
+			#	channel.note_on.erase( event.note )
+			#SMF.MIDIEventType.note_on:
+			#	channel.note_on[event.note] = true
 			SMF.MIDIEventType.program_change:
-				channel.program_number = event.number
+				var program_number = event.number | ( channel.bank << 7 )
+				# channel.program_number = program_number
+				if not( event.number in self._used_program_numbers ):
+					self._used_program_numbers.append( event.number )
+				if not( program_number in self._used_program_numbers ):
+					self._used_program_numbers.append( program_number )
 			SMF.MIDIEventType.control_change:
-				if event.number == SMF.control_number_tkool_loop_point:
-					self.loop_start = event_chunk.time
+				match event.number:
+					SMF.control_number_bank_select_msb:
+						channel.bank = ( channel.bank & 0x7F ) | ( event.value << 7 )
+					SMF.control_number_bank_select_lsb:
+						channel.bank = ( channel.bank & 0x3F80 ) | ( event.value & 0x7F )
+					SMF.control_number_tkool_loop_point:
+						self.loop_start = event_chunk.time
 
 """
 	チャンネル初期化
