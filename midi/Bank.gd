@@ -2,6 +2,7 @@
 	Sound Bank by Yui Kinomoto @arlez80
 """
 
+const drum_track_bank = 128
 const SoundFont = preload( "SoundFont.gd" )
 
 # デフォルト
@@ -85,12 +86,14 @@ func set_preset( program_number, preset ):
 func get_preset( program_number, bank = 0 ):
 	var pc = program_number | ( bank << 7 )
 	if not self.presets.has( pc ):
-		pc = program_number
+		if drum_track_bank == bank:
+			pc = drum_track_bank
+		else:
+			pc = program_number
 		if not self.presets.has( pc ):
 			pc = self.presets.keys( )[0]
 
 	var preset = self.presets[pc]
-
 	return preset
 
 """
