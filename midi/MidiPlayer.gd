@@ -1,4 +1,3 @@
-tool
 extends Node
 
 const max_track = 16

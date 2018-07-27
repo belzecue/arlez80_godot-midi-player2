@@ -85,6 +85,7 @@ func set_preset( program_number, preset ):
 """
 func get_preset( program_number, bank = 0 ):
 	var pc = program_number | ( bank << 7 )
+
 	if not self.presets.has( pc ):
 		if drum_track_bank == bank:
 			pc = drum_track_bank
@@ -101,8 +102,6 @@ func get_preset( program_number, bank = 0 ):
 """
 func read_soundfont( sf, need_program_numbers = null ):
 	var sf_insts = self._read_soundfont_pdta_inst( sf )
-
-	print( need_program_numbers )
 
 	var bag_index = 0
 	var gen_index = 0
