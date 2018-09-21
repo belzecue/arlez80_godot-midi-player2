@@ -196,6 +196,9 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 			if pbag.key_range != null:
 				key_range = pbag.key_range
 			for key_number in range( key_range.low, key_range.high + 1 ):
+				#if preset.number == drum_track_bank << 7:
+				#	if 36 <= key_number and key_number <= 40:
+				#		print( key_number, " # ", ibag.sample.name );
 				if preset.instruments[key_number] != null:
 					continue
 				var instrument = self.create_instrument( )
@@ -220,9 +223,6 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 					{ "time": r, "volume": 0.0 },
 				]
 				preset.instruments[key_number] = instrument
-			#if preset.number == 72:
-			#	print( ibag.adsr )
-		break
 
 func _read_soundfont_pdta_inst( sf ):
 	var sf_insts = []

@@ -118,6 +118,7 @@ func _analyse_smf( ):
 		channels.append({
 			#"note_on": {},
 			#"program_number": 0,
+			"number": i,
 			"bank": 0,
 		})
 	self._used_program_numbers = []
@@ -142,9 +143,15 @@ func _analyse_smf( ):
 			SMF.MIDIEventType.control_change:
 				match event.number:
 					SMF.control_number_bank_select_msb:
-						channel.bank = ( channel.bank & 0x7F ) | ( event.value << 7 )
+						if channel.number == drum_track_channel:
+							channel.bank = drum_track_bank
+						else:
+							channel.bank = ( channel.bank & 0x7F ) | ( event.value << 7 )
 					SMF.control_number_bank_select_lsb:
-						channel.bank = ( channel.bank & 0x3F80 ) | ( event.value & 0x7F )
+						if channel.number == drum_track_channel:
+							channel.bank = drum_track_bank
+						else:
+							channel.bank = ( channel.bank & 0x3F80 ) | ( event.value & 0x7F )
 					SMF.control_number_tkool_loop_point:
 						self.loop_start = event_chunk.time
 
