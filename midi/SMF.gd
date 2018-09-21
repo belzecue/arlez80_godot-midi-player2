@@ -323,6 +323,9 @@ func _read_system_event( stream, event_type_byte ):
 
 """
 	通常のイベント読み込み
+	@param	stream
+	@param	event_type_byte
+	@return	MIDIEvent
 """
 func _read_event( stream, event_type_byte ):
 	var param = 0
@@ -456,6 +459,8 @@ func write( smf ):
 
 	for t in smf.tracks:
 		self._write_track( stream, t )
+
+	return stream.get_partial_data( stream.get_available_bytes( ) )[1]
 
 """
 	トラックデータソート用
