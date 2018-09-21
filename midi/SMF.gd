@@ -1,6 +1,9 @@
 """
-	SMF reader by Yui Kinomoto @arlez80
+	SMF reader/writer by Yui Kinomoto @arlez80
 """
+
+# -----------------------------------------------------------------------------
+# 定数
 
 # Control Numbers
 const control_number_bank_select_msb = 0x00
@@ -91,12 +94,15 @@ enum MIDISystemEventType {
 	unknown,
 }
 
+# -----------------------------------------------------------------------------
+# 読み込み : Reader
+
 var last_event_type
 
 """
 	ファイルから読み込み
 	@param	path	File path
-	@return	smf
+	@return	smf or null(read error)
 """
 func read_file( path ):
 	var f = File.new( )
@@ -116,7 +122,7 @@ func read_file( path ):
 """
 	配列から読み込み
 	@param	data	PoolByteArray
-	@return	smf
+	@return	smf or null(read error)
 """
 func read_data( data ):
 	var stream = StreamPeerBuffer.new( )
@@ -132,8 +138,8 @@ func read_data( data ):
 func _read( input ):
 	var header = self._read_chunk_data( input )
 	if header.id != "MThd" and header.size != 6:
-		print( "MThd header expected" )
-		breakpoint
+		print( "expected MThd header" )
+		return null
 
 	var format_type = header.stream.get_u16( )
 	var track_count = header.stream.get_u16( )
@@ -141,7 +147,10 @@ func _read( input ):
 
 	var tracks = []
 	for i in range( 0, track_count ):
-		tracks.append( self._read_track( input, i ) )
+		var track = self._read_track( input, i )
+		if track == null:
+			return null
+		tracks.append( track )
 
 	return {
 		"format_type": format_type,
@@ -154,13 +163,13 @@ func _read( input ):
 	トラックの読み込み
 	@param	input
 	@param	track_number	トラックナンバー
-	@return	track data
+	@return	track data or null(read error)
 """
 func _read_track( input, track_number ):
 	var track_chunk = self._read_chunk_data( input )
 	if track_chunk.id != "MTrk":
 		print( "Unknown chunk: " + track_chunk.id )
-		breakpoint
+		return null
 
 	var stream = track_chunk.stream
 	var time = 0
@@ -173,12 +182,15 @@ func _read_track( input, track_number ):
 
 		var event
 		if self._is_system_event( event_type_byte ):
+			var args = self._read_system_event( stream, event_type_byte )
+			if args == null: return null
 			event = {
 				"type": MIDIEventType.system_event,
-				"args": self._read_system_event( stream, event_type_byte )
+				"args": args
 			}
 		else:
 			event = self._read_event( stream, event_type_byte )
+			if event == null: return null
 
 			if ( event_type_byte & 0x80 ) == 0:
 				event_type_byte = self.last_event_type
@@ -228,17 +240,17 @@ func _read_system_event( stream, event_type_byte ):
 			0x20:
 				if size != 1:
 					print( "MIDI Channel Prefix length is not 1" )
-					breakpoint
+					return null
 				return { "type": MIDISystemEventType.midi_channel_prefix, "prefix": stream.get_u8( ) }
 			0x2F:
 				if size != 0:
 					print( "End of track with unknown data" )
-					breakpoint
+					return null
 				return { "type": MIDISystemEventType.end_of_track }
 			0x51:
 				if size != 3:
 					print( "Tempo length is not 3" )
-					breakpoint
+					return null
 				# beat per microseconds
 				var bpm = stream.get_u8( ) << 16
 				bpm |= stream.get_u8( ) << 8
@@ -247,7 +259,7 @@ func _read_system_event( stream, event_type_byte ):
 			0x54:
 				if size != 5:
 					print( "SMPTE length is not 5" )
-					breakpoint
+					return null
 				var hr = stream.get_u8( )
 				var mm = stream.get_u8( )
 				var se = stream.get_u8( )
@@ -264,7 +276,7 @@ func _read_system_event( stream, event_type_byte ):
 			0x58:
 				if size != 4:
 					print( "Beat length is not 4" )
-					breakpoint
+					return null
 				var numerator = stream.get_u8( )
 				var denominator = stream.get_u8( )
 				var clock = stream.get_u8( )
@@ -279,7 +291,7 @@ func _read_system_event( stream, event_type_byte ):
 			0x59:
 				if size != 2:
 					print( "Key length is not 2" )
-					breakpoint
+					return null
 				var sf = stream.get_u8( )
 				var minor = stream.get_u8( ) == 1
 				return {
@@ -307,7 +319,7 @@ func _read_system_event( stream, event_type_byte ):
 		}
 
 	print( "Unknown system event type: %x" % event_type_byte )
-	breakpoint
+	return null
 
 """
 	通常のイベント読み込み
@@ -376,7 +388,7 @@ func _read_event( stream, event_type_byte ):
 			}
 
 	print( "unknown event type: %d" % event_type_byte )
-	breakpoint
+	return null
 
 """
 	可変長数値の読み込み
@@ -423,3 +435,4 @@ func _read_chunk_data( stream ):
 """
 func _read_string( stream, size ):
 	return stream.get_partial_data( size )[1].get_string_from_ascii( )
+
