@@ -436,3 +436,194 @@ func _read_chunk_data( stream ):
 func _read_string( stream, size ):
 	return stream.get_partial_data( size )[1].get_string_from_ascii( )
 
+# -----------------------------------------------------------------------------
+# 書き込み: Writer
+
+"""
+	書き込む
+	@param	smf	SMF structure
+	@return	PoolByteArray
+"""
+func write( smf ):
+	var stream = StreamPeerBuffer.new( )
+	stream.big_endian = true
+	
+	stream.put_utf8_string( "MThd".to_ascii( ) )
+	stream.put_u32( 6 )
+	stream.put_u16( smf.format_type )
+	stream.put_u16( len( smf.tracks ) )
+	stream.put_u16( smf.timebase )
+
+	for t in smf.tracks:
+		self._write_track( stream, t )
+
+"""
+	トラックデータソート用
+"""
+class TrackEventSorter:
+	static func sort( a, b ):
+		if a.time < b.time:
+			return true
+		return false
+
+"""
+	可変長数字を書き込む
+	@param	stream
+	@param	i
+"""
+func _write_variable_int( stream, i ):
+	while true:
+		var v = i & 0x7f
+		i >>= 7
+		if i != 0:
+			stream.put_u8( v | 0x80 )
+		else:
+			stream.put_u8( v )
+			break
+
+"""
+	トラックデータを書き込む
+	@param	stream
+	@param	track
+"""
+func _write_track( stream, track ):
+	var events = track.events.duplicate( )
+	events.sort_custom( TrackEventSorter, "sort" )
+
+	var buf = StreamPeerBuffer.new( )
+	buf.big_endian = true
+	var time = 0
+
+	for e in events:
+		self._write_variable_int( buf, e.time - time )
+		time = e.time
+		match e.type:
+			MIDIEventType.note_off:
+				buf.put_u8( 0x80 | e.channel_number )
+				buf.put_u8( e.note )
+				buf.put_u8( e.velocity )
+			MIDIEventType.note_on:
+				buf.put_u8( 0x90 | e.channel_number )
+				buf.put_u8( e.note )
+				buf.put_u8( e.velocity )
+			MIDIEventType.polyphonic_key_pressure:
+				buf.put_u8( 0xA0 | e.channel_number )
+				buf.put_u8( e.note )
+				buf.put_u8( e.value )
+			MIDIEventType.control_change:
+				buf.put_u8( 0xB0 | e.channel_number )
+				buf.put_u8( e.number )
+				buf.put_u8( e.value )
+			MIDIEventType.program_change:
+				buf.put_u8( 0xC0 | e.channel_number )
+				buf.put_u8( e.number )
+			MIDIEventType.channel_pressure:
+				buf.put_u8( 0xD0 | e.channel_number )
+				buf.put_u8( e.value )
+			MIDIEventType.pitch_bend:
+				buf.put_u8( 0xE0 | e.channel_number )
+				buf.put_u8( e.value & 0x7f )
+				buf.put_u8( ( e.value >> 7 ) & 0x7f )
+			MIDIEventType.system_event:
+				self._write_system_event( buf, e )
+
+	var track_size = buf.get_available_bytes( )
+	stream.put_utf8_string( "MTrk".to_ascii( ) )
+	stream.put_u32( track_size )
+	stream.put_data( buf.get_partial_data( track_size )[1] )
+
+"""
+	システムイベント書き込み
+	@param	stream
+	@param	event
+"""
+func _write_system_event( stream, event ):
+	match event.type:
+		MIDISystemEventType.sys_ex:
+			stream.put_u8( 0xF0 )
+			self._write_variable_int( stream, len( event.data ) )
+			stream.put_data( event.data )
+		MIDISystemEventType.divided_sys_ex:
+			stream.put_u8( 0xF7 )
+			self._write_variable_int( stream, len( event.data ) )
+			stream.put_data( event.data )
+		MIDISystemEventType.text_event:
+			stream.put_u8( 0xFF )
+			stream.put_u8( 0x01 )
+			self._write_variable_int( stream, len( event.text ) )
+			stream.put_data( event.text.to_ascii( ) )
+		MIDISystemEventType.copyright:
+			stream.put_u8( 0xFF )
+			stream.put_u8( 0x02 )
+			self._write_variable_int( stream, len( event.text ) )
+			stream.put_data( event.text.to_ascii( ) )
+		MIDISystemEventType.track_name:
+			stream.put_u8( 0xFF )
+			stream.put_u8( 0x03 )
+			self._write_variable_int( stream, len( event.text ) )
+			stream.put_data( event.text.to_ascii( ) )
+		MIDISystemEventType.instrument_name:
+			stream.put_u8( 0xFF )
+			stream.put_u8( 0x04 )
+			self._write_variable_int( stream, len( event.text ) )
+			stream.put_data( event.text.to_ascii( ) )
+		MIDISystemEventType.lyric:
+			stream.put_u8( 0xFF )
+			stream.put_u8( 0x05 )
+			self._write_variable_int( stream, len( event.text ) )
+			stream.put_data( event.text.to_ascii( ) )
+		MIDISystemEventType.marker:
+			stream.put_u8( 0xFF )
+			stream.put_u8( 0x06 )
+			self._write_variable_int( stream, len( event.text ) )
+			stream.put_data( event.text.to_ascii( ) )
+		MIDISystemEventType.cue_point:
+			stream.put_u8( 0xFF )
+			stream.put_u8( 0x07 )
+			self._write_variable_int( stream, len( event.text ) )
+			stream.put_data( event.text.to_ascii( ) )
+
+		MIDISystemEventType.midi_channel_prefix:
+			stream.put_u8( 0xFF )
+			stream.put_u8( 0x20 )
+			stream.put_u8( 0x01 )
+			stream.put_u8( event.prefix )
+		MIDISystemEventType.end_of_track:
+			stream.put_u8( 0xFF )
+			stream.put_u8( 0x2F )
+			stream.put_u8( 0x00 )
+		MIDISystemEventType.set_tempo:
+			stream.put_u8( 0xFF )
+			stream.put_u8( 0x51 )
+			stream.put_u8( 0x03 )
+			stream.put_u8( ( event.bpm >> 16 ) & 0xFF )
+			stream.put_u8( ( event.bpm >> 8 ) & 0xFF )
+			stream.put_u8( event.bpm & 0xFF )
+		MIDISystemEventType.smpte_offset:
+			stream.put_u8( 0xFF )
+			stream.put_u8( 0x54 )
+			stream.put_u8( 0x05 )
+			stream.put_u8( event.hr )
+			stream.put_u8( event.mm )
+			stream.put_u8( event.se )
+			stream.put_u8( event.fr )
+			stream.put_u8( event.ff )
+		MIDISystemEventType.beat:
+			stream.put_u8( 0xFF )
+			stream.put_u8( 0x58 )
+			stream.put_u8( 0x04 )
+			stream.put_u8( event.numerator )
+			stream.put_u8( event.denominator )
+			stream.put_u8( event.clock )
+			stream.put_u8( event.beat32 )
+		MIDISystemEventType.key:
+			stream.put_u8( 0xFF )
+			stream.put_u8( 0x59 )
+			stream.put_u8( 0x02 )
+			stream.put_u8( event.sf )
+			stream.put_u8( 1 if event.minor else 0 )
+		MIDISystemEventType.unknown:
+			stream.put_u8( 0xFF )
+			stream.put_u8( event.meta_type )
+			stream.put_u8( len( event.data ) )
+			stream.put_data( event.data )
