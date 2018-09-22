@@ -236,8 +236,8 @@ func _process( delta ):
 	if not self.playing:
 		return
 
-	self._process_track( )
 	self.position += self.smf_data.timebase * delta * self.seconds_to_timebase * self.play_speed
+	self._process_track( )
 
 """
 	トラック処理
