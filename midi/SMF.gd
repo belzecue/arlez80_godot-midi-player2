@@ -108,7 +108,7 @@ func read_file( path ):
 	var f = File.new( )
 
 	if not f.file_exists( path ):
-		print( "file %s is not found" % path )
+		print( "file %s does not found" % path )
 		breakpoint
 
 	f.open( path, f.READ )
@@ -192,6 +192,7 @@ func _read_track( input, track_number ):
 			event = self._read_event( stream, event_type_byte )
 			if event == null: return null
 
+			# running status
 			if ( event_type_byte & 0x80 ) == 0:
 				event_type_byte = self.last_event_type
 
@@ -239,7 +240,7 @@ func _read_system_event( stream, event_type_byte ):
 				return { "type": MIDISystemEventType.cue_point, "text": self._read_string( stream, size ) }
 			0x20:
 				if size != 1:
-					print( "MIDI Channel Prefix length is not 1" )
+					print( "MIDI Channel Prefix length is not 1 byte" )
 					return null
 				return { "type": MIDISystemEventType.midi_channel_prefix, "prefix": stream.get_u8( ) }
 			0x2F:
@@ -249,7 +250,7 @@ func _read_system_event( stream, event_type_byte ):
 				return { "type": MIDISystemEventType.end_of_track }
 			0x51:
 				if size != 3:
-					print( "Tempo length is not 3" )
+					print( "Tempo length is not 3 bytes" )
 					return null
 				# beat per microseconds
 				var bpm = stream.get_u8( ) << 16
@@ -258,7 +259,7 @@ func _read_system_event( stream, event_type_byte ):
 				return { "type": MIDISystemEventType.set_tempo, "bpm": bpm }
 			0x54:
 				if size != 5:
-					print( "SMPTE length is not 5" )
+					print( "SMPTE length is not 5 bytes" )
 					return null
 				var hr = stream.get_u8( )
 				var mm = stream.get_u8( )
@@ -275,7 +276,7 @@ func _read_system_event( stream, event_type_byte ):
 				}
 			0x58:
 				if size != 4:
-					print( "Beat length is not 4" )
+					print( "Beat length is not 4 bytes" )
 					return null
 				var numerator = stream.get_u8( )
 				var denominator = stream.get_u8( )
@@ -290,7 +291,7 @@ func _read_system_event( stream, event_type_byte ):
 				}
 			0x59:
 				if size != 2:
-					print( "Key length is not 2" )
+					print( "Key length is not 2 bytes" )
 					return null
 				var sf = stream.get_u8( )
 				var minor = stream.get_u8( ) == 1
