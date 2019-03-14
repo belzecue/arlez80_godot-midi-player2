@@ -92,15 +92,15 @@ const sample_mode_loop_ends_by_key_depression = 3
 	@param	path	File path
 	@return	smf
 """
-func read_file( path ):
-	var f = File.new( )
+func read_file( path:String ):
+	var f:File = File.new( )
 
 	if not f.file_exists( path ):
 		print( "file %s is not found" % path )
 		breakpoint
 
 	f.open( path, f.READ )
-	var stream = StreamPeerBuffer.new( )
+	var stream:StreamPeerBuffer = StreamPeerBuffer.new( )
 	stream.set_data_array( f.get_buffer( f.get_len( ) ) )
 	stream.big_endian = false
 	f.close( )
@@ -112,8 +112,8 @@ func read_file( path ):
 	@param	data	PoolByteArray
 	@return	smf
 """
-func read_data( data ):
-	var stream = StreamPeerBuffer.new( )
+func read_data( data:PoolByteArray ):
+	var stream:StreamPeerBuffer = StreamPeerBuffer.new( )
 	stream.set_data_array( data )
 	stream.big_endian = false
 	return self._read( stream )
@@ -123,7 +123,7 @@ func read_data( data ):
 	@param	input
 	@return	SoundFont
 """
-func _read( input ):
+func _read( input:StreamPeerBuffer ):
 	self._check_chunk( input, "RIFF" )
 	self._check_header( input, "sfbk" )
 
@@ -142,7 +142,7 @@ func _read( input ):
 	@param	input
 	@param	hdr
 """
-func _check_chunk( input, hdr ):
+func _check_chunk( input:StreamPeerBuffer, hdr:String ):
 	self._check_header( input, hdr )
 	input.get_32( )
 
@@ -151,7 +151,7 @@ func _check_chunk( input, hdr ):
 	@param	input
 	@param	hdr
 """
-func _check_header( input, hdr ):
+func _check_header( input:StreamPeerBuffer, hdr:String ):
 	var chk = input.get_string( 4 )
 	if hdr != chk:
 		print( "Doesn't exist " + hdr + " header" )
@@ -163,14 +163,14 @@ func _check_header( input, hdr ):
 	@param	needs_header
 	@param	chunk
 """
-func _read_chunk( stream, needs_header = null ):
-	var header = stream.get_string( 4 )
+func _read_chunk( stream:StreamPeerBuffer, needs_header = null ):
+	var header:String = stream.get_string( 4 )
 	if needs_header != null:
 		if needs_header != header:
 			print( "Doesn't exist " + needs_header + " header" )
 			breakpoint
-	var size = stream.get_u32( )
-	var new_stream = StreamPeerBuffer.new( )
+	var size:int = stream.get_u32( )
+	var new_stream:StreamPeerBuffer = StreamPeerBuffer.new( )
 	new_stream.set_data_array( stream.get_partial_data( size )[1] )
 	new_stream.big_endian = false
 
@@ -185,7 +185,7 @@ func _read_chunk( stream, needs_header = null ):
 	@param	stream
 	@param	chunk
 """
-func _read_info( stream ):
+func _read_info( stream:StreamPeerBuffer ):
 	var chunk = self._read_chunk( stream, "LIST" )
 	self._check_header( chunk.stream, "INFO" )
 
@@ -240,9 +240,9 @@ func _read_info( stream ):
 	@param	stream
 	@param	chunk
 """
-func _read_version_tag( stream ):
-	var major = stream.get_u16( )
-	var minor = stream.get_u16( )
+func _read_version_tag( stream:StreamPeerBuffer ):
+	var major:int = stream.get_u16( )
+	var minor:int = stream.get_u16( )
 
 	return {
 		"major": major,
@@ -254,7 +254,7 @@ func _read_version_tag( stream ):
 	@param	stream
 	@param	chunk
 """
-func _read_sdta( stream ):
+func _read_sdta( stream:StreamPeerBuffer ):
 	var chunk = self._read_chunk( stream, "LIST" )
 	self._check_header( chunk.stream, "sdta" )
 
@@ -276,7 +276,7 @@ func _read_sdta( stream ):
 	@param	stream
 	@param	chunk
 """
-func _read_pdta( stream ):
+func _read_pdta( stream:StreamPeerBuffer ):
 	var chunk = self._read_chunk( stream, "LIST" )
 	self._check_header( chunk.stream, "pdta" )
 
@@ -307,7 +307,7 @@ func _read_pdta( stream ):
 	@param	stream
 	@param	chunk
 """
-func _read_pdta_phdr( stream ):
+func _read_pdta_phdr( stream:StreamPeerBuffer ):
 	var chunk = self._read_chunk( stream, "phdr" )
 	var phdrs = []
 
@@ -339,7 +339,7 @@ func _read_pdta_phdr( stream ):
 	@param	stream
 	@param	chunk
 """
-func _read_pdta_bag( stream ):
+func _read_pdta_bag( stream:StreamPeerBuffer ):
 	var chunk = self._read_chunk( stream )
 	var bags = []
 
@@ -364,7 +364,7 @@ func _read_pdta_bag( stream ):
 	@param	stream
 	@param	chunk
 """
-func _read_pdta_mod( stream ):
+func _read_pdta_mod( stream:StreamPeerBuffer ):
 	var chunk = self._read_chunk( stream )
 	var mods = []
 
@@ -395,7 +395,7 @@ func _read_pdta_mod( stream ):
 	@param	stream
 	@param	chunk
 """
-func _read_pdta_modulator( u ):
+func _read_pdta_modulator( u:int ):
 	return {
 		"type": ( u >> 10 ) & 0x3f,
 		"direction": ( u >> 8 ) & 0x01,
@@ -409,7 +409,7 @@ func _read_pdta_modulator( u ):
 	@param	stream
 	@param	chunk
 """
-func _read_pdta_gen( stream ):
+func _read_pdta_gen( stream:StreamPeerBuffer ):
 	var chunk = self._read_chunk( stream )
 	var gens = []
 
@@ -425,7 +425,7 @@ func _read_pdta_gen( stream ):
 		}
 	
 		gen.gen_oper = chunk.stream.get_u16( )
-		var u = chunk.stream.get_u16( )
+		var u:int = chunk.stream.get_u16( )
 		gen.uamount = u
 		gen.amount = u
 		if 32767 < u:
@@ -439,7 +439,7 @@ func _read_pdta_gen( stream ):
 	@param	stream
 	@param	chunk
 """
-func _read_pdta_inst( stream ):
+func _read_pdta_inst( stream:StreamPeerBuffer ):
 	var chunk = self._read_chunk( stream, "inst" )
 	var insts = []
 
@@ -460,7 +460,7 @@ func _read_pdta_inst( stream ):
 	@param	stream
 	@param	chunk
 """
-func _read_pdta_shdr( stream ):
+func _read_pdta_shdr( stream:StreamPeerBuffer ):
 	var chunk = self._read_chunk( stream, "shdr" )
 	var shdrs = []
 

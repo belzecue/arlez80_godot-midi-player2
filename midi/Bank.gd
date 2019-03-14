@@ -49,13 +49,13 @@ func create_instrument( ):
 """
 	再生周波数計算
 """
-func calc_mix_rate( rate, center_key, target_key ):
+func calc_mix_rate( rate:float, center_key:int, target_key:int ):
 	return round( rate * pow( 2.0, ( target_key - center_key ) / 12.0 ) )
 
 """
 	追加
 """
-func set_preset_sample( program_number, base_sample, base_mix_rate ):
+func set_preset_sample( program_number:int, base_sample:int, base_mix_rate:int ):
 	var mix_rate_table = default_mix_rate_table
 
 	if base_mix_rate != 44100:
@@ -77,13 +77,13 @@ func set_preset_sample( program_number, base_sample, base_mix_rate ):
 """
 	追加
 """
-func set_preset( program_number, preset ):
+func set_preset( program_number:int, preset ):
 	self.presets[program_number] = preset
 
 """
 	指定した楽器を取得
 """
-func get_preset( program_number, bank = 0 ):
+func get_preset( program_number:int, bank:int = 0 ):
 	var pc = program_number | ( bank << 7 )
 
 	if not self.presets.has( pc ):
@@ -103,22 +103,22 @@ func get_preset( program_number, bank = 0 ):
 func read_soundfont( sf, need_program_numbers = null ):
 	var sf_insts = self._read_soundfont_pdta_inst( sf )
 
-	var bag_index = 0
-	var gen_index = 0
+	var bag_index:int = 0
+	var gen_index:int = 0
 	for phdr_index in range( 0, len( sf.pdta.phdr )-1 ):
 		var phdr = sf.pdta.phdr[phdr_index]
 
 		var preset = self.create_preset( )
-		var program_number = phdr.preset | ( phdr.bank << 7 )
+		var program_number:int = phdr.preset | ( phdr.bank << 7 )
 
 		preset.name = phdr.name
 		preset.number = program_number
 
-		var bag_next = sf.pdta.phdr[phdr_index+1].preset_bag_index
-		var bag_count = bag_index
+		var bag_next:int = sf.pdta.phdr[phdr_index+1].preset_bag_index
+		var bag_count:int = bag_index
 		while bag_count < bag_next:
-			var gen_next = sf.pdta.pbag[bag_count+1].gen_ndx
-			var gen_count = gen_index
+			var gen_next:int = sf.pdta.pbag[bag_count+1].gen_ndx
+			var gen_count:int = gen_index
 			var bag = {
 				"preset": preset,
 				"coarse_tune": 0,
@@ -175,13 +175,13 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 		var pbag = preset.bags[pbag_index]
 		for ibag_index in range( 0, pbag.instrument.bags.size( ) ):
 			var ibag = pbag.instrument.bags[ibag_index]
-			var start = ibag.sample.start + ibag.sample_start_offset
-			var end = ibag.sample.end + ibag.sample_end_offset
-			var start_loop = ibag.sample.start_loop + ibag.sample_start_loop_offset
-			var end_loop = ibag.sample.end_loop + ibag.sample_end_loop_offset
-			var mix_rate = ibag.sample.sample_rate * pow( 2.0, ( pbag.coarse_tune + ibag.coarse_tune ) / 12.0 ) * pow( 2.0, ( pbag.fine_tune + ibag.sample.pitch_correction + ibag.fine_tune ) / 1200.0 )
+			var start:int = ibag.sample.start + ibag.sample_start_offset
+			var end:int = ibag.sample.end + ibag.sample_end_offset
+			var start_loop:int = ibag.sample.start_loop + ibag.sample_start_loop_offset
+			var end_loop:int = ibag.sample.end_loop + ibag.sample_end_loop_offset
+			var mix_rate:float = ibag.sample.sample_rate * pow( 2.0, ( pbag.coarse_tune + ibag.coarse_tune ) / 12.0 ) * pow( 2.0, ( pbag.fine_tune + ibag.sample.pitch_correction + ibag.fine_tune ) / 1200.0 )
 
-			var ass = AudioStreamSample.new( )
+			var ass:AudioStreamSample = AudioStreamSample.new( )
 			ass.data = sf.sdta.smpl.subarray( start * 2, end * 2 )
 			ass.format = AudioStreamSample.FORMAT_16_BITS
 			ass.mix_rate = mix_rate
@@ -209,10 +209,10 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 					instrument.mix_rate = self.calc_mix_rate( mix_rate, ibag.original_key, key_number )
 				instrument.stream = ass
 	
-				var a = ibag.adsr.attack_vol_env_time
-				var d = ibag.adsr.decay_vol_env_time
-				var s = ibag.adsr.sustain_vol_env_level
-				var r = ibag.adsr.release_vol_env_time
+				var a:float = ibag.adsr.attack_vol_env_time
+				var d:float = ibag.adsr.decay_vol_env_time
+				var s:float = ibag.adsr.sustain_vol_env_level
+				var r:float = ibag.adsr.release_vol_env_time
 				instrument.ads_state = [
 					{ "time": 0, "volume": 0.0 },
 					{ "time": a, "volume": 1.0 },
@@ -226,15 +226,15 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 
 func _read_soundfont_pdta_inst( sf ):
 	var sf_insts = []
-	var bag_index = 0
-	var gen_index = 0
+	var bag_index:int = 0
+	var gen_index:int = 0
 
 	for inst_index in range(0, len( sf.pdta.inst ) - 1 ):
 		var inst = sf.pdta.inst[inst_index]
 		var sf_inst = {"name": inst.name, "bags": [] }
 
-		var bag_next = sf.pdta.inst[inst_index+1].inst_bag_ndx
-		var bag_count = bag_index
+		var bag_next:int = sf.pdta.inst[inst_index+1].inst_bag_ndx
+		var bag_count:int = bag_index
 		var global_bag = {}
 		while bag_count < bag_next:
 			var bag = {
@@ -258,8 +258,8 @@ func _read_soundfont_pdta_inst( sf ):
 					"release_vol_env_time": 0.001,
 				},
 			}
-			var gen_next = sf.pdta.ibag[bag_count+1].gen_ndx
-			var gen_count = gen_index
+			var gen_next:int = sf.pdta.ibag[bag_count+1].gen_ndx
+			var gen_count:int = gen_index
 			while gen_count < gen_next:
 				var gen = sf.pdta.igen[gen_count]
 				match gen.gen_oper:

@@ -1,6 +1,6 @@
 # Godot MIDI Player
 
-Software MIDI player library for Godot Engine 3.
+Software MIDI player library for Godot Engine 3.1 later
 
 * Changes play speed.
 * Set tempo.

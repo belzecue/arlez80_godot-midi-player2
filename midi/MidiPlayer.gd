@@ -1,37 +1,37 @@
 extends Node
 
-const max_track = 16
-const max_channel = 16
-const max_note_number = 128
-const max_program_number = 128
-const drum_track_channel = 0x09
-const drum_track_bank = 128
+const max_track:int = 16
+const max_channel:int = 16
+const max_note_number:int = 128
+const max_program_number:int = 128
+const drum_track_channel:int = 0x09
+const drum_track_bank:int = 128
 const ADSR = preload( "ADSR.tscn" )
 const SMF = preload( "SMF.gd" )
 const SoundFont = preload( "SoundFont.gd" )
 const Bank = preload( "Bank.gd" )
 
-export var max_polyphony = 64
-export var file = ""
-export var playing = false
-export var channel_mute = [false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false]
-export var play_speed = 1.0
-export var volume_db = -30
-export var key_shift = 0
-export var loop = false
-export var loop_start = 0
-export var soundfont = ""
-export var mix_target = AudioStreamPlayer.MIX_TARGET_STEREO
-export var bus = "Master"
+export var max_polyphony:int = 64
+export var file:String = ""
+export var playing:bool = false
+export var channel_mute:Array = [false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false]
+export var play_speed:float = 1.0
+export var volume_db:float = -30
+export var key_shift:int = 0
+export var loop:bool = false
+export var loop_start:float = 0
+export var soundfont:String = ""
+export var mix_target:int = AudioStreamPlayer.MIX_TARGET_STEREO
+export var bus:String = "Master"
 
 var smf_data = null
-var tempo = 120 setget set_tempo
-var seconds_to_timebase = 2.3
-var position = 0
-var last_position = 0
+var tempo:float = 120 setget set_tempo
+var seconds_to_timebase:float = 2.3
+var position:float = 0
+var last_position:int = 0
 var track_status = null
 var channel_status = []
-var channel_volume_db = 20
+var channel_volume_db:float = 20
 
 var bank = null
 var audio_stream_players = []
@@ -124,7 +124,7 @@ func _analyse_smf( ):
 	self._used_program_numbers = []
 
 	for event_chunk in self.track_status.events:
-		var channel_number = event_chunk.channel_number
+		var channel_number:int = event_chunk.channel_number
 		var channel = channels[channel_number]
 		var event = event_chunk.event
 
@@ -134,7 +134,7 @@ func _analyse_smf( ):
 			#SMF.MIDIEventType.note_on:
 			#	channel.note_on[event.note] = true
 			SMF.MIDIEventType.program_change:
-				var program_number = event.number | ( channel.bank << 7 )
+				var program_number:int = event.number | ( channel.bank << 7 )
 				# channel.program_number = program_number
 				if not( event.number in self._used_program_numbers ):
 					self._used_program_numbers.append( event.number )
@@ -161,8 +161,8 @@ func _analyse_smf( ):
 func _init_channel( ):
 	self.channel_status = []
 	for i in range( max_channel ):
-		var drum_track = ( i == drum_track_channel )
-		var bank = 0
+		var drum_track:bool = ( i == drum_track_channel )
+		var bank:int = 0
 		if drum_track:
 			bank = self.drum_track_bank
 		self.channel_status.append({
@@ -181,7 +181,7 @@ func _init_channel( ):
 	再生
 	@param	from_position
 """
-func play( from_position = 0 ):
+func play( from_position:float = 0 ):
 	self._prepare_to_play( )
 	self.playing = true
 	self.seek( from_position )
@@ -189,12 +189,12 @@ func play( from_position = 0 ):
 """
 	シーク
 """
-func seek( to_position ):
+func seek( to_position:float ):
 	self._stop_all_notes( )
 	self.position = to_position
 
-	var pointer = 0
-	var length = len(self.track_status.events)
+	var pointer:int = 0
+	var length:int = len(self.track_status.events)
 	while pointer < length:
 		var event_chunk = self.track_status.events[pointer]
 		if self.position < event_chunk.time:
@@ -212,7 +212,7 @@ func stop( ):
 """
 	テンポ設定
 """
-func set_tempo( bpm ):
+func set_tempo( bpm:float ):
 	tempo = bpm
 	self.seconds_to_timebase = tempo / 60.0
 	self.emit_signal( "changed_tempo", bpm )
@@ -230,7 +230,7 @@ func _stop_all_notes( ):
 """
 	毎フレーム処理
 """
-func _process( delta ):
+func _process( delta:float ):
 	if self.smf_data == null:
 		return
 	if not self.playing:
@@ -247,7 +247,7 @@ func _process_track( ):
 	if track.events == null:
 		return
 
-	var length = len(track.events)
+	var length:int = len(track.events)
 
 	if length <= track.event_pointer:
 		if self.loop:
@@ -291,7 +291,7 @@ func _process_track( ):
 				pass
 
 func _process_track_event_note_off( channel, event ):
-	var key_number = event.note + self.key_shift
+	var key_number:int = event.note + self.key_shift
 	if channel.note_on.has( key_number ):
 		var note_player = channel.note_on[key_number]
 		if note_player != null:
@@ -360,9 +360,9 @@ func _process_track_system_event( channel, event ):
 
 func _get_idle_player( program ):
 	var stopped_audio_stream_player = null
-	var minimum_volume = 100.0
+	var minimum_volume:float = 100.0
 	var oldest_audio_stream_player = null
-	var oldest = 0.0
+	var oldest:float = 0.0
 
 	for audio_stream_player in self.audio_stream_players:
 		if not audio_stream_player.playing:
@@ -381,8 +381,8 @@ func _get_idle_player( program ):
 
 func _update_volume_note( channel ):
 	for note in channel.note_on.values( ):
-		var note_volume = channel.volume * channel.expression * ( note.velocity / 127.0 )
-		var volume_db = note_volume * self.channel_volume_db - self.channel_volume_db + self.volume_db
+		var note_volume:float = channel.volume * channel.expression * ( note.velocity / 127.0 )
+		var volume_db:float = note_volume * self.channel_volume_db - self.channel_volume_db + self.volume_db
 		note.maximum_volume_db = volume_db
 
 func _update_pitch_bend_note( channel ):
@@ -393,7 +393,7 @@ func _update_pitch_bend_note( channel ):
 	現在発音中の音色数を返す
 """
 func get_now_playing_polyphony( ):
-	var polyphony = 0
+	var polyphony:int = 0
 	for audio_stream_player in self.audio_stream_players:
 		if audio_stream_player.playing:
 			polyphony += 1

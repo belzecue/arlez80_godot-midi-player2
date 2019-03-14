@@ -97,14 +97,14 @@ enum MIDISystemEventType {
 # -----------------------------------------------------------------------------
 # 読み込み : Reader
 
-var last_event_type
+var last_event_type:int = 0
 
 """
 	ファイルから読み込み
 	@param	path	File path
 	@return	smf or null(read error)
 """
-func read_file( path ):
+func read_file( path:String ):
 	var f = File.new( )
 
 	if not f.file_exists( path ):
@@ -112,7 +112,7 @@ func read_file( path ):
 		breakpoint
 
 	f.open( path, f.READ )
-	var stream = StreamPeerBuffer.new( )
+	var stream:StreamPeerBuffer = StreamPeerBuffer.new( )
 	stream.set_data_array( f.get_buffer( f.get_len( ) ) )
 	stream.big_endian = true
 	f.close( )
@@ -124,8 +124,8 @@ func read_file( path ):
 	@param	data	PoolByteArray
 	@return	smf or null(read error)
 """
-func read_data( data ):
-	var stream = StreamPeerBuffer.new( )
+func read_data( data:PoolByteArray ):
+	var stream:StreamPeerBuffer = StreamPeerBuffer.new( )
 	stream.set_data_array( data )
 	stream.big_endian = true
 	return self._read( stream )
@@ -135,15 +135,15 @@ func read_data( data ):
 	@param	input
 	@return	smf
 """
-func _read( input ):
+func _read( input:StreamPeerBuffer ):
 	var header = self._read_chunk_data( input )
 	if header.id != "MThd" and header.size != 6:
 		print( "expected MThd header" )
 		return null
 
-	var format_type = header.stream.get_u16( )
-	var track_count = header.stream.get_u16( )
-	var timebase = header.stream.get_u16( )
+	var format_type:int = header.stream.get_u16( )
+	var track_count:int = header.stream.get_u16( )
+	var timebase:int = header.stream.get_u16( )
 
 	var tracks = []
 	for i in range( 0, track_count ):
@@ -165,20 +165,20 @@ func _read( input ):
 	@param	track_number	トラックナンバー
 	@return	track data or null(read error)
 """
-func _read_track( input, track_number ):
+func _read_track( input:StreamPeerBuffer, track_number:int ):
 	var track_chunk = self._read_chunk_data( input )
 	if track_chunk.id != "MTrk":
 		print( "Unknown chunk: " + track_chunk.id )
 		return null
 
-	var stream = track_chunk.stream
-	var time = 0
+	var stream:StreamPeerBuffer = track_chunk.stream
+	var time:int = 0
 	var events = []
 
 	while 0 < stream.get_available_bytes( ):
-		var delta_time = self._read_variable_int( stream )
+		var delta_time:int = self._read_variable_int( stream )
 		time += delta_time
-		var event_type_byte = stream.get_u8( )
+		var event_type_byte:int = stream.get_u8( )
 
 		var event
 		if self._is_system_event( event_type_byte ):
@@ -212,16 +212,16 @@ func _read_track( input, track_number ):
 	@param	b	event type
 	@return	システムイベントならtrueを返す
 """
-func _is_system_event( b ):
+func _is_system_event( b:int ):
 	return ( b & 0xf0 ) == 0xf0
 
 """
 	システムイベントの読み込み
 """
-func _read_system_event( stream, event_type_byte ):
+func _read_system_event( stream:StreamPeerBuffer, event_type_byte:int ):
 	if event_type_byte == 0xff:
-		var meta_type = stream.get_u8( )
-		var size = self._read_variable_int( stream )
+		var meta_type:int = stream.get_u8( )
+		var size:int = self._read_variable_int( stream )
 
 		match meta_type:
 			0x01:
@@ -253,7 +253,7 @@ func _read_system_event( stream, event_type_byte ):
 					print( "Tempo length is not 3 bytes" )
 					return null
 				# beat per microseconds
-				var bpm = stream.get_u8( ) << 16
+				var bpm:int = stream.get_u8( ) << 16
 				bpm |= stream.get_u8( ) << 8
 				bpm |= stream.get_u8( )
 				return { "type": MIDISystemEventType.set_tempo, "bpm": bpm }
@@ -261,11 +261,11 @@ func _read_system_event( stream, event_type_byte ):
 				if size != 5:
 					print( "SMPTE length is not 5 bytes" )
 					return null
-				var hr = stream.get_u8( )
-				var mm = stream.get_u8( )
-				var se = stream.get_u8( )
-				var fr = stream.get_u8( )
-				var ff = stream.get_u8( )
+				var hr:int = stream.get_u8( )
+				var mm:int = stream.get_u8( )
+				var se:int = stream.get_u8( )
+				var fr:int = stream.get_u8( )
+				var ff:int = stream.get_u8( )
 				return {
 					"type": MIDISystemEventType.smpte_offset,
 					"hr": hr,
@@ -278,10 +278,10 @@ func _read_system_event( stream, event_type_byte ):
 				if size != 4:
 					print( "Beat length is not 4 bytes" )
 					return null
-				var numerator = stream.get_u8( )
-				var denominator = stream.get_u8( )
-				var clock = stream.get_u8( )
-				var beat32 = stream.get_u8( )
+				var numerator:int = stream.get_u8( )
+				var denominator:int = stream.get_u8( )
+				var clock:int = stream.get_u8( )
+				var beat32:int = stream.get_u8( )
 				return {
 					"type": MIDISystemEventType.beat,
 					"numerator": numerator,
@@ -293,8 +293,8 @@ func _read_system_event( stream, event_type_byte ):
 				if size != 2:
 					print( "Key length is not 2 bytes" )
 					return null
-				var sf = stream.get_u8( )
-				var minor = stream.get_u8( ) == 1
+				var sf:int = stream.get_u8( )
+				var minor:int = stream.get_u8( ) == 1
 				return {
 					"type": MIDISystemEventType.key,
 					"sf": sf,
@@ -307,13 +307,13 @@ func _read_system_event( stream, event_type_byte ):
 					"data": stream.get_partial_data( size )[1],
 				}
 	elif event_type_byte == 0xf0:
-		var size = self._read_variable_int( stream )
+		var size:int = self._read_variable_int( stream )
 		return {
 			"type": MIDISystemEventType.sys_ex,
 			"data": stream.get_partial_data( size )[1],
 		}
 	elif event_type_byte == 0xf7:
-		var size = self._read_variable_int( stream )
+		var size:int = self._read_variable_int( stream )
 		return {
 			"type": MIDISystemEventType.divided_sys_ex,
 			"data": stream.get_partial_data( size )[1],
@@ -328,8 +328,8 @@ func _read_system_event( stream, event_type_byte ):
 	@param	event_type_byte
 	@return	MIDIEvent
 """
-func _read_event( stream, event_type_byte ):
-	var param = 0
+func _read_event( stream:StreamPeerBuffer, event_type_byte:int ):
+	var param:int = 0
 
 	if ( event_type_byte & 0x80 ) == 0:
 		# running status
@@ -339,7 +339,7 @@ func _read_event( stream, event_type_byte ):
 		param = stream.get_u8( )
 		self.last_event_type = event_type_byte
 
-	var event_type = event_type_byte & 0xf0
+	var event_type:int = event_type_byte & 0xf0
 
 	match event_type:
 		0x80:
@@ -349,7 +349,7 @@ func _read_event( stream, event_type_byte ):
 				"velocity": stream.get_u8( ),
 			}
 		0x90:
-			var velocity = stream.get_u8( )
+			var velocity:int = stream.get_u8( )
 			if velocity == 0:
 				# velocity0のnote_onはnote_off扱いにする
 				return {
@@ -399,11 +399,11 @@ func _read_event( stream, event_type_byte ):
 	@param	stream
 	@return	数値
 """
-func _read_variable_int( stream ):
-	var result = 0
+func _read_variable_int( stream:StreamPeerBuffer ):
+	var result:int = 0
 
 	while true:
-		var c = stream.get_u8( )
+		var c:int = stream.get_u8( )
 		if ( c & 0x80 ) != 0:
 			result |= c & 0x7f
 			result <<= 7
@@ -418,10 +418,10 @@ func _read_variable_int( stream ):
 	@param	stream	Stream
 	@return	chunk data
 """
-func _read_chunk_data( stream ):
-	var id = self._read_string( stream, 4 )
-	var size = stream.get_32( )
-	var new_stream = StreamPeerBuffer.new( )
+func _read_chunk_data( stream:StreamPeerBuffer ):
+	var id:String = self._read_string( stream, 4 )
+	var size:int = stream.get_32( )
+	var new_stream:StreamPeerBuffer = StreamPeerBuffer.new( )
 	new_stream.set_data_array( stream.get_partial_data( size )[1] )
 	new_stream.big_endian = true
 
@@ -437,7 +437,7 @@ func _read_chunk_data( stream ):
 	@param	size	string size
 	@return string
 """
-func _read_string( stream, size ):
+func _read_string( stream:StreamPeerBuffer, size:int ):
 	return stream.get_partial_data( size )[1].get_string_from_ascii( )
 
 # -----------------------------------------------------------------------------
@@ -449,10 +449,10 @@ func _read_string( stream, size ):
 	@return	PoolByteArray
 """
 func write( smf ):
-	var stream = StreamPeerBuffer.new( )
+	var stream:StreamPeerBuffer = StreamPeerBuffer.new( )
 	stream.big_endian = true
 	
-	stream.put_utf8_string( "MThd".to_ascii( ) )
+	stream.put_utf8_string( "MThd" )
 	stream.put_u32( 6 )
 	stream.put_u16( smf.format_type )
 	stream.put_u16( len( smf.tracks ) )
@@ -477,7 +477,7 @@ class TrackEventSorter:
 	@param	stream
 	@param	i
 """
-func _write_variable_int( stream, i ):
+func _write_variable_int( stream:StreamPeerBuffer, i:int ):
 	while true:
 		var v = i & 0x7f
 		i >>= 7
@@ -492,13 +492,13 @@ func _write_variable_int( stream, i ):
 	@param	stream
 	@param	track
 """
-func _write_track( stream, track ):
+func _write_track( stream:StreamPeerBuffer, track ):
 	var events = track.events.duplicate( )
 	events.sort_custom( TrackEventSorter, "sort" )
 
-	var buf = StreamPeerBuffer.new( )
+	var buf:StreamPeerBuffer = StreamPeerBuffer.new( )
 	buf.big_endian = true
-	var time = 0
+	var time:int = 0
 
 	for e in events:
 		self._write_variable_int( buf, e.time - time )
@@ -533,8 +533,8 @@ func _write_track( stream, track ):
 			MIDIEventType.system_event:
 				self._write_system_event( buf, e )
 
-	var track_size = buf.get_available_bytes( )
-	stream.put_utf8_string( "MTrk".to_ascii( ) )
+	var track_size:int = buf.get_available_bytes( )
+	stream.put_utf8_string( "MTrk" )
 	stream.put_u32( track_size )
 	stream.put_data( buf.get_partial_data( track_size )[1] )
 
@@ -543,7 +543,7 @@ func _write_track( stream, track ):
 	@param	stream
 	@param	event
 """
-func _write_system_event( stream, event ):
+func _write_system_event( stream:StreamPeerBuffer, event ):
 	match event.type:
 		MIDISystemEventType.sys_ex:
 			stream.put_u8( 0xF0 )
