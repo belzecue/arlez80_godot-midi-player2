@@ -6,22 +6,22 @@ extends AudioStreamPlayer
 
 var releasing:bool = false
 var instrument = null
-var velocity = 0
-var pitch_bend = 0
-var mix_rate = 0
-var using_timer = 0.0
-var timer = 0.0
-var current_volume = 0
-var maximum_volume_db = -8.0
-var minimum_volume_db = -108.0
-var pan = 0.5
+var velocity:int = 0
+var pitch_bend:float = 0
+var mix_rate:float = 0
+var using_timer:float = 0.0
+var timer:float = 0.0
+var current_volume:float = 0.0
+var maximum_volume_db:float = -8.0
+var minimum_volume_db:float = -108.0
+var pan:float = 0.5
 var ads_state = [
-	{ "time": 0, "volume": 1.0 },
+	{ "time": 0.0, "volume": 1.0 },
 	{ "time": 0.2, "volume": 0.95 },
 	# { "time": 0.2, "jump_to": 0.0 },	# not implemented
 ]
 var release_state = [
-	{ "time": 0, "volume": 0.8 },
+	{ "time": 0.0, "volume": 0.8 },
 	{ "time": 0.01, "volume": 0.0 },
 	# { "time": 0.2, "jump_to": 0.0 },	# not implemented
 ]
@@ -42,7 +42,7 @@ func play( from_position:float = 0.0 ):
 	self.using_timer = 0.0
 	self.current_volume = self.ads_state[0].volume
 	self.stream.mix_rate = round( self.mix_rate * ( 1.0 + self.pitch_bend * 0.5 ) )
-	.play( 0.0 )
+	.play( from_position )
 	self._update_volume( )
 
 func start_release( ):

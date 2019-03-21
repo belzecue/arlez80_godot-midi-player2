@@ -18,6 +18,15 @@ var default_release_state = [
 
 # 音色テーブル
 var presets = {}
+var frame_second:float = 0
+
+"""
+	初期化
+"""
+func init( ):
+	var fps:int = ProjectSettings.get_setting("debug/settings/fps/force_fps")
+	if fps == 0: fps = 60
+	self.frame_second = 1.0 / float(fps)
 
 """
 	楽器
@@ -171,6 +180,9 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 		samples.append( sample )
 	"""
 
+	var silent = PoolByteArray( )
+	for i in range( 0, 22050 ): silent.append( 0 )
+
 	for pbag_index in range( 0, preset.bags.size( ) ):
 		var pbag = preset.bags[pbag_index]
 		for ibag_index in range( 0, pbag.instrument.bags.size( ) ):
@@ -180,14 +192,17 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 			var start_loop:int = ibag.sample.start_loop + ibag.sample_start_loop_offset
 			var end_loop:int = ibag.sample.end_loop + ibag.sample_end_loop_offset
 			var mix_rate:float = ibag.sample.sample_rate * pow( 2.0, ( pbag.coarse_tune + ibag.coarse_tune ) / 12.0 ) * pow( 2.0, ( pbag.fine_tune + ibag.sample.pitch_correction + ibag.fine_tune ) / 1200.0 )
+			var silent_samples:int = floor( ibag.sample.sample_rate * self.frame_second )
 
 			var ass:AudioStreamSample = AudioStreamSample.new( )
-			ass.data = sf.sdta.smpl.subarray( start * 2, end * 2 )
+			var wave:PoolByteArray = silent.subarray( 0, silent_samples * 2 - 1 )
+			wave.append_array( sf.sdta.smpl.subarray( start * 2, end * 2 - 1 ) )
+			ass.data = wave
 			ass.format = AudioStreamSample.FORMAT_16_BITS
 			ass.mix_rate = mix_rate
 			ass.stereo = false #bag.sample.sample_type != SoundFont.sample_link_mono_sample
-			ass.loop_begin = start_loop - start
-			ass.loop_end = end_loop - start
+			ass.loop_begin = start_loop - start + silent_samples
+			ass.loop_end = end_loop - start + silent_samples
 			if ibag.sample_modes == SoundFont.sample_mode_no_loop or ibag.sample_modes == SoundFont.sample_mode_unused_no_loop:
 				ass.loop_mode = AudioStreamSample.LOOP_DISABLED
 			else:

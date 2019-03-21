@@ -26,7 +26,9 @@ export var bus:String = "Master"
 
 var smf_data = null
 var tempo:float = 120 setget set_tempo
+var frame_second:float = 0.0
 var seconds_to_timebase:float = 2.3
+var timebase_to_seconds:float = 1.0 / seconds_to_timebase
 var position:float = 0
 var last_position:int = 0
 var track_status = null
@@ -45,6 +47,10 @@ signal appeared_cue_point( cue_point )
 signal looped
 
 func _ready( ):
+	var fps:int = ProjectSettings.get_setting("debug/settings/fps/force_fps")
+	if fps == 0: fps = 60
+	self.frame_second = 1.0 / float(fps)
+
 	if self.playing:
 		self.play( )
 
@@ -64,6 +70,7 @@ func _prepare_to_play( ):
 	# 楽器
 	if self.bank == null:
 		self.bank = Bank.new( )
+		self.bank.init( )
 		if self.soundfont != "":
 			var sf_reader = SoundFont.new( )
 			var sf2 = sf_reader.read_file( self.soundfont )
@@ -215,6 +222,7 @@ func stop( ):
 func set_tempo( bpm:float ):
 	tempo = bpm
 	self.seconds_to_timebase = tempo / 60.0
+	self.timebase_to_seconds = 1.0 / self.seconds_to_timebase
 	self.emit_signal( "changed_tempo", bpm )
 
 """
@@ -263,11 +271,14 @@ func _process_track( ):
 			if not note_on.playing:
 				channel.note_on.erase( key_number )
 
+	var execute_event_count:int = 0
+
 	while track.event_pointer < length:
 		var event_chunk = track.events[track.event_pointer]
 		if self.position < event_chunk.time:
 			break
 		track.event_pointer += 1
+		execute_event_count += 1
 
 		var channel = self.channel_status[event_chunk.channel_number]
 		var event = event_chunk.event
@@ -276,7 +287,7 @@ func _process_track( ):
 			SMF.MIDIEventType.note_off:
 				self._process_track_event_note_off( channel, event )
 			SMF.MIDIEventType.note_on:
-				self._process_track_event_note_on( channel, event )
+				self._process_track_event_note_on( channel, event, ( self.position - event_chunk.time ) / self.smf_data.timebase * self.timebase_to_seconds )
 			SMF.MIDIEventType.program_change:
 				channel.program = event.number
 			SMF.MIDIEventType.control_change:
@@ -290,6 +301,8 @@ func _process_track( ):
 				# 無視
 				pass
 
+	return execute_event_count
+
 func _process_track_event_note_off( channel, event ):
 	var key_number:int = event.note + self.key_shift
 	if channel.note_on.has( key_number ):
@@ -298,11 +311,11 @@ func _process_track_event_note_off( channel, event ):
 			note_player.start_release( )
 			channel.note_on.erase( key_number )
 
-func _process_track_event_note_on( channel, event ):
+func _process_track_event_note_on( channel, event, delta:float ):
 	if not self.channel_mute[channel.number]:
-		var key_number = event.note + self.key_shift
-		var note_volume = channel.volume * channel.expression * ( event.velocity / 127.0 )
-		var volume_db = note_volume * self.channel_volume_db - self.channel_volume_db + self.volume_db
+		var key_number:int = event.note + self.key_shift
+		var note_volume:float = channel.volume * channel.expression * ( event.velocity / 127.0 )
+		var volume_db:float = note_volume * self.channel_volume_db - self.channel_volume_db + self.volume_db
 		var preset = self.bank.get_preset( channel.program, channel.bank )
 		var instrument = preset.instruments[key_number]
 
@@ -316,7 +329,7 @@ func _process_track_event_note_on( channel, event ):
 				note_player.maximum_volume_db = volume_db
 				note_player.pitch_bend = channel.pitch_bend
 				note_player.set_instrument( instrument )
-				note_player.play( )
+				note_player.play( max( delta, 0.0 ) )
 				if not channel.drum_track:
 					channel.note_on[key_number] = note_player
 
