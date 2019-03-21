@@ -329,7 +329,7 @@ func _process_track_event_note_on( channel, event, delta:float ):
 				note_player.maximum_volume_db = volume_db
 				note_player.pitch_bend = channel.pitch_bend
 				note_player.set_instrument( instrument )
-				note_player.play( max( delta, 0.0 ) )
+				note_player.play( 0.0 )
 				if not channel.drum_track:
 					channel.note_on[key_number] = note_player
 
