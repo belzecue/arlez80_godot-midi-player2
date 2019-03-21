@@ -5,6 +5,7 @@ extends AudioStreamPlayer
 """
 
 var releasing:bool = false
+var request_release:bool = false
 var instrument = null
 var velocity:int = 0
 var pitch_bend:float = 0
@@ -38,6 +39,7 @@ func set_instrument( instrument ):
 
 func play( from_position:float = 0.0 ):
 	self.releasing = false
+	self.request_release = false
 	self.timer = 0.0
 	self.using_timer = 0.0
 	self.current_volume = self.ads_state[0].volume
@@ -46,10 +48,7 @@ func play( from_position:float = 0.0 ):
 	self._update_volume( )
 
 func start_release( ):
-	self.releasing = true
-	self.current_volume = self.release_state[0].volume
-	self.timer = 0.0
-	self._update_volume( )
+	self.request_release = true
 
 func set_pitch_bend( pb:float ):
 	self.pitch_bend = pb
@@ -76,8 +75,7 @@ func _process( delta:float ):
 	var last_state:int = all_states - 1
 	if use_state[last_state].time <= self.timer:
 		self.current_volume = use_state[last_state].volume
-		if self.releasing:
-			self.stop( )
+		if self.releasing: self.stop( )
 	else:
 		for state_number in range( 1, all_states ):
 			var state = use_state[state_number]
@@ -89,6 +87,11 @@ func _process( delta:float ):
 				break
 
 	self._update_volume( )
+
+	if self.request_release and not self.releasing:
+		self.releasing = true
+		self.current_volume = self.release_state[0].volume
+		self.timer = 0.0
 
 func _update_volume( ):
 	var s:float = self.current_volume
