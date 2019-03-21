@@ -5,7 +5,7 @@ Software MIDI player library for Godot Engine 3.1 later
 * Changes play speed.
 * Set tempo.
 * Emit on some events (tempo change, appears lyric ...)
-* Can control as AudioStreamPlayer.
+* Can control like AudioStreamPlayer.
 
 I develop it for use embedding in game.
 
@@ -21,9 +21,7 @@ I develop it for use embedding in game.
 
 * See [wiki](https://bitbucket.org/arlez80/godot-midi-player/wiki/)
 
-### Demo / Screenshot
-
-![screenshot](https://bitbucket.org/arlez80/godot-midi-player/raw/1e78bb018835c38ece7e7d1ff2c825e98d4b0a44/godot-midi-player.png "screenshot")
+### Demo
 
 * [download](https://bitbucket.org/arlez80/godot-midi-player/downloads/demo.zip)
 
