@@ -24,6 +24,7 @@ I develop it for use embedding in game.
 ### Demo
 
 * [download](https://bitbucket.org/arlez80/godot-midi-player/downloads/demo.zip)
+* BGM "failyland_gm.mid" from [IvyMaze]( http://ivymaze.sakura.ne.jp/ )
 
 ## TODO
 
@@ -36,8 +37,10 @@ I develop it for use embedding in game.
 
 ## Known Problem
 
-* Player's timebase is 1/60. - It probably need 1/240 at least.
-* Pitch bend is buggy...
+* Player's timebase is 1/60.
+    * It probably need 1/240 at least.
+* Pitch bend is little buggy.
+    * It probably came from timebase problem.
 * Sometimes appear petit noises.
 
 ## License
@@ -46,4 +49,4 @@ MIT License
 
 ## Author
 
-* @arlez80 あるる / きのもと 結衣
+* @arlez80 あるる / きのもと 結衣 ( Yui Kinomoto )

@@ -2,9 +2,10 @@
 Thumbs.db
 .import/*
 data/*
+dev/*
 *.import
 *.tres
 *.cfg
+*.png
 project.godot
 TestScene.tscn
-*.png
