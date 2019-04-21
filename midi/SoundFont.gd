@@ -95,11 +95,9 @@ const sample_mode_loop_ends_by_key_depression = 3
 func read_file( path:String ):
 	var f:File = File.new( )
 
-	if not f.file_exists( path ):
-		print( "file %s is not found" % path )
+	if f.open( path, f.READ ) != OK:
+		push_error( "error: cant read file %s" % path )
 		breakpoint
-
-	f.open( path, f.READ )
 	var stream:StreamPeerBuffer = StreamPeerBuffer.new( )
 	stream.set_data_array( f.get_buffer( f.get_len( ) ) )
 	stream.big_endian = false
@@ -144,7 +142,8 @@ func _read( input:StreamPeerBuffer ):
 """
 func _check_chunk( input:StreamPeerBuffer, hdr:String ):
 	self._check_header( input, hdr )
-	input.get_32( )
+	if input.get_32( ) != 0:
+		pass
 
 """
 	ヘッダーチェック

@@ -49,8 +49,8 @@ func create_instrument( ):
 	return {
 		"mix_rate": 44100,
 		"stream": null,
-		"ads_state": default_ads_state,
-		"release_state": default_release_state,
+		"ads_state": self.default_ads_state,
+		"release_state": self.default_release_state,
 		"preset": null,
 		# "assine_group": 0,	# reserved
 	}
@@ -197,7 +197,7 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 			var wave:PoolByteArray = sf.sdta.smpl.subarray( start * 2, end * 2 - 1 )
 			ass.data = wave
 			ass.format = AudioStreamSample.FORMAT_16_BITS
-			ass.mix_rate = mix_rate
+			ass.mix_rate = int( mix_rate )
 			ass.stereo = false #bag.sample.sample_type != SoundFont.sample_link_mono_sample
 			ass.loop_begin = start_loop - start
 			ass.loop_end = end_loop - start

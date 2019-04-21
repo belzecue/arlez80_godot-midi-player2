@@ -15,7 +15,7 @@ var timer:float = 0.0
 var current_volume:float = 0.0
 var maximum_volume_db:float = -8.0
 var minimum_volume_db:float = -108.0
-var pan:float = 0.5
+# var pan:float = 0.5
 var ads_state = [
 	{ "time": 0.0, "volume": 1.0 },
 	{ "time": 0.2, "volume": 0.95 },
@@ -97,3 +97,8 @@ func _update_volume( ):
 	var s:float = self.current_volume
 	var t:float = 1.0 - s
 	self.volume_db = s * self.maximum_volume_db + t * self.minimum_volume_db
+
+func change_channel_volume( amp_volume_db:float, base_volume_db:float, channel ):
+	var note_volume:float = channel.volume * channel.expression * ( self.velocity / 127.0 )
+	var volume_db:float = note_volume * amp_volume_db - amp_volume_db + base_volume_db
+	self.maximum_volume_db = volume_db

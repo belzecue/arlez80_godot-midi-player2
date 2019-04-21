@@ -107,11 +107,9 @@ var last_event_type:int = 0
 func read_file( path:String ):
 	var f = File.new( )
 
-	if not f.file_exists( path ):
-		print( "file %s does not found" % path )
+	if f.open( path, f.READ ) != OK:
+		push_error( "cant read file %s" % path )
 		breakpoint
-
-	f.open( path, f.READ )
 	var stream:StreamPeerBuffer = StreamPeerBuffer.new( )
 	stream.set_data_array( f.get_buffer( f.get_len( ) ) )
 	stream.big_endian = true
@@ -536,7 +534,9 @@ func _write_track( stream:StreamPeerBuffer, track ):
 	var track_size:int = buf.get_available_bytes( )
 	stream.put_utf8_string( "MTrk" )
 	stream.put_u32( track_size )
-	stream.put_data( buf.get_partial_data( track_size )[1] )
+	if stream.put_data( buf.get_partial_data( track_size )[1] ) != OK:
+		push_error( "cant write tracksize" )
+		breakpoint
 
 """
 	システムイベント書き込み
@@ -548,46 +548,64 @@ func _write_system_event( stream:StreamPeerBuffer, event ):
 		MIDISystemEventType.sys_ex:
 			stream.put_u8( 0xF0 )
 			self._write_variable_int( stream, len( event.data ) )
-			stream.put_data( event.data )
+			if stream.put_data( event.data ) != OK:
+				push_error( "cant write event data" )
+				breakpoint
 		MIDISystemEventType.divided_sys_ex:
 			stream.put_u8( 0xF7 )
 			self._write_variable_int( stream, len( event.data ) )
-			stream.put_data( event.data )
+			if stream.put_data( event.data ) != OK:
+				push_error( "cant write event data" )
+				breakpoint
 		MIDISystemEventType.text_event:
 			stream.put_u8( 0xFF )
 			stream.put_u8( 0x01 )
 			self._write_variable_int( stream, len( event.text ) )
-			stream.put_data( event.text.to_ascii( ) )
+			if stream.put_data( event.text.to_ascii( ) ) != OK:
+				push_error( "cant write text event" )
+				breakpoint
 		MIDISystemEventType.copyright:
 			stream.put_u8( 0xFF )
 			stream.put_u8( 0x02 )
 			self._write_variable_int( stream, len( event.text ) )
-			stream.put_data( event.text.to_ascii( ) )
+			if stream.put_data( event.text.to_ascii( ) ) != OK:
+				push_error( "cant write copyright text" )
+				breakpoint
 		MIDISystemEventType.track_name:
 			stream.put_u8( 0xFF )
 			stream.put_u8( 0x03 )
 			self._write_variable_int( stream, len( event.text ) )
-			stream.put_data( event.text.to_ascii( ) )
+			if stream.put_data( event.text.to_ascii( ) ) != OK:
+				push_error( "cant write track name text" )
+				breakpoint
 		MIDISystemEventType.instrument_name:
 			stream.put_u8( 0xFF )
 			stream.put_u8( 0x04 )
 			self._write_variable_int( stream, len( event.text ) )
-			stream.put_data( event.text.to_ascii( ) )
+			if stream.put_data( event.text.to_ascii( ) ) != OK:
+				push_error( "cant write instrument name" )
+				breakpoint
 		MIDISystemEventType.lyric:
 			stream.put_u8( 0xFF )
 			stream.put_u8( 0x05 )
 			self._write_variable_int( stream, len( event.text ) )
-			stream.put_data( event.text.to_ascii( ) )
+			if stream.put_data( event.text.to_ascii( ) ) != OK:
+				push_error( "cant write lyric text" )
+				breakpoint
 		MIDISystemEventType.marker:
 			stream.put_u8( 0xFF )
 			stream.put_u8( 0x06 )
 			self._write_variable_int( stream, len( event.text ) )
-			stream.put_data( event.text.to_ascii( ) )
+			if stream.put_data( event.text.to_ascii( ) ) != OK:
+				push_error( "cant write marker text" )
+				breakpoint
 		MIDISystemEventType.cue_point:
 			stream.put_u8( 0xFF )
 			stream.put_u8( 0x07 )
 			self._write_variable_int( stream, len( event.text ) )
-			stream.put_data( event.text.to_ascii( ) )
+			if stream.put_data( event.text.to_ascii( ) )!= OK:
+				push_error( "cant write cue point" )
+				breakpoint
 
 		MIDISystemEventType.midi_channel_prefix:
 			stream.put_u8( 0xFF )
@@ -632,4 +650,6 @@ func _write_system_event( stream:StreamPeerBuffer, event ):
 			stream.put_u8( 0xFF )
 			stream.put_u8( event.meta_type )
 			stream.put_u8( len( event.data ) )
-			stream.put_data( event.data )
+			if stream.put_data( event.data ) != OK:
+				push_error( "cant write event data" )
+				breakpoint

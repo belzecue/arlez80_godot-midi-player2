@@ -98,11 +98,16 @@ class TrackSorter:
 			return true
 		elif b.time < a.time:
 			return false
+		"""
+			# 本当は以下のおまけをいれたいけど、めちゃくちゃエラーが出る
+			# note_offが後にこないと困る
 		else:
 			if a.event.type == SMF.MIDIEventType.note_off:
 				return true
 			elif b.event.type == SMF.MIDIEventType.note_off:
 				return false
+		"""
+		return false
 
 func _init_track( ):
 	self.track_status = {
@@ -287,7 +292,7 @@ func _process_track( ):
 			SMF.MIDIEventType.note_off:
 				self._process_track_event_note_off( channel, event )
 			SMF.MIDIEventType.note_on:
-				self._process_track_event_note_on( channel, event, ( self.position - event_chunk.time ) / self.smf_data.timebase * self.timebase_to_seconds )
+				self._process_track_event_note_on( channel, event )
 			SMF.MIDIEventType.program_change:
 				channel.program = event.number
 			SMF.MIDIEventType.control_change:
@@ -311,7 +316,7 @@ func _process_track_event_note_off( channel, event ):
 			note_player.start_release( )
 			channel.note_on.erase( key_number )
 
-func _process_track_event_note_on( channel, event, delta:float ):
+func _process_track_event_note_on( channel, event ):
 	if not self.channel_mute[channel.number]:
 		var key_number:int = event.note + self.key_shift
 		var note_volume:float = channel.volume * channel.expression * ( event.velocity / 127.0 )
@@ -323,7 +328,7 @@ func _process_track_event_note_on( channel, event, delta:float ):
 			if channel.note_on.has( key_number ):
 				channel.note_on[key_number].start_release( )
 
-			var note_player = self._get_idle_player( channel.program )
+			var note_player = self._get_idle_player( )
 			if note_player != null:
 				note_player.velocity = event.velocity
 				note_player.maximum_volume_db = volume_db
@@ -337,10 +342,10 @@ func _process_track_event_control_change( channel, event ):
 	match event.number:
 		SMF.control_number_volume:
 			channel.volume = event.value / 127.0
-			self._update_volume_note( channel )
+			self._apply_channel_volume_to_notes( channel )
 		SMF.control_number_expression:
 			channel.expression = event.value / 127.0
-			self._update_volume_note( channel )
+			self._apply_channel_volume_to_notes( channel )
 		SMF.control_number_pan:
 			channel.pan = event.value / 127.0
 		SMF.control_number_bank_select_msb:
@@ -371,7 +376,7 @@ func _process_track_system_event( channel, event ):
 			# 無視
 			pass
 
-func _get_idle_player( program ):
+func _get_idle_player( ):
 	var stopped_audio_stream_player = null
 	var minimum_volume:float = 100.0
 	var oldest_audio_stream_player = null
@@ -392,11 +397,9 @@ func _get_idle_player( program ):
 
 	return oldest_audio_stream_player
 
-func _update_volume_note( channel ):
+func _apply_channel_volume_to_notes( channel ):
 	for note in channel.note_on.values( ):
-		var note_volume:float = channel.volume * channel.expression * ( note.velocity / 127.0 )
-		var volume_db:float = note_volume * self.channel_volume_db - self.channel_volume_db + self.volume_db
-		note.maximum_volume_db = volume_db
+		note.change_channel_volume( self.channel_volume_db, self.volume_db, channel )
 
 func _update_pitch_bend_note( channel ):
 	for note in channel.note_on.values( ):
