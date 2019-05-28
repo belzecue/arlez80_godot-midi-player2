@@ -4,3 +4,4 @@
 
 [node name="MidiPlayer" type="Node"]
 script = ExtResource( 1 )
+file = "res://dev/_____test.mid"

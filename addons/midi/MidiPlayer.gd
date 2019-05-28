@@ -44,7 +44,7 @@ signal changed_tempo( tempo )
 signal appeared_lyric( lyric )
 signal appeared_marker( marker )
 signal appeared_cue_point( cue_point )
-signal event( channel, event )
+signal midi_event( channel, event )
 signal looped
 
 func _ready( ):
@@ -228,7 +228,7 @@ func stop( ):
 func set_tempo( bpm:float ):
 	tempo = bpm
 	self.seconds_to_timebase = tempo / 60.0
-	self.timebase_to_seconds = 1.0 / self.seconds_to_timebase
+	self.timebase_to_seconds = 60.0 / tempo
 	self.emit_signal( "changed_tempo", bpm )
 
 """
@@ -250,7 +250,7 @@ func _process( delta:float ):
 	if not self.playing:
 		return
 
-	self.position += self.smf_data.timebase * delta * self.seconds_to_timebase * self.play_speed
+	self.position += float( self.smf_data.timebase ) * delta * self.seconds_to_timebase * self.play_speed
 	self._process_track( )
 
 """
@@ -278,10 +278,11 @@ func _process_track( ):
 				channel.note_on.erase( key_number )
 
 	var execute_event_count:int = 0
+	var current_position:int = int( self.position )
 
 	while track.event_pointer < length:
 		var event_chunk = track.events[track.event_pointer]
-		if self.position < event_chunk.time:
+		if current_position < event_chunk.time:
 			break
 		track.event_pointer += 1
 		execute_event_count += 1
@@ -289,7 +290,7 @@ func _process_track( ):
 		var channel = self.channel_status[event_chunk.channel_number]
 		var event = event_chunk.event
 
-		self.emit_signal( "event", channel, event )
+		self.emit_signal( "midi_event", channel, event )
 
 		match event.type:
 			SMF.MIDIEventType.note_off:
@@ -301,7 +302,7 @@ func _process_track( ):
 			SMF.MIDIEventType.control_change:
 				self._process_track_event_control_change( channel, event )
 			SMF.MIDIEventType.pitch_bend:
-				channel.pitch_bend = event.value / 8192.0 - 1.0
+				channel.pitch_bend = float( event.value ) / 8192.0 - 1.0
 				self._update_pitch_bend_note( channel )
 			SMF.MIDIEventType.system_event:
 				self._process_track_system_event( channel, event )
