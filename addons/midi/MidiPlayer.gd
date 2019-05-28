@@ -11,18 +11,18 @@ const SMF = preload( "SMF.gd" )
 const SoundFont = preload( "SoundFont.gd" )
 const Bank = preload( "Bank.gd" )
 
-export var max_polyphony:int = 64
-export var file:String = ""
-export var playing:bool = false
-export var channel_mute:Array = [false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false]
-export var play_speed:float = 1.0
-export var volume_db:float = -10
-export var key_shift:int = 0
-export var loop:bool = false
-export var loop_start:float = 0
-export var soundfont:String = ""
-export var mix_target:int = AudioStreamPlayer.MIX_TARGET_STEREO
-export var bus:String = "Master"
+export (int, 0, 128) var max_polyphony:int = 64
+export (String, FILE, "*.mid") var file:String = ""
+export (bool) var playing:bool = false
+export (Array) var channel_mute:Array = [false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false]
+export (float) var play_speed:float = 1.0
+export (float, -1000, 0) var volume_db:float = -10
+export (int) var key_shift:int = 0
+export (bool) var loop:bool = false
+export (float) var loop_start:float = 0
+export (String, FILE, "*.sf2") var soundfont:String = ""
+export (int, "MIX_TARGET_STEREO", "MIX_TARGET_SURROUND", "MIX_TARGET_CENTER") var mix_target:int = AudioStreamPlayer.MIX_TARGET_STEREO
+export (String) var bus:String = "Master"
 
 var smf_data = null
 var tempo:float = 120 setget set_tempo
@@ -44,6 +44,7 @@ signal changed_tempo( tempo )
 signal appeared_lyric( lyric )
 signal appeared_marker( marker )
 signal appeared_cue_point( cue_point )
+signal event( channel, event )
 signal looped
 
 func _ready( ):
@@ -287,6 +288,8 @@ func _process_track( ):
 
 		var channel = self.channel_status[event_chunk.channel_number]
 		var event = event_chunk.event
+
+		self.emit_signal( "event", channel, event )
 
 		match event.type:
 			SMF.MIDIEventType.note_off:
