@@ -93,33 +93,36 @@ func _prepare_to_play( ):
 """
 	トラック初期化
 """
-class TrackSorter:
-	static func sort(a, b):
-		if a.time < b.time:
-			return true
-		elif b.time < a.time:
-			return false
-		"""
-			# 本当は以下のおまけをいれたいけど、めちゃくちゃエラーが出る
-			# note_offが後にこないと困る
-		else:
-			if a.event.type == SMF.MIDIEventType.note_off:
-				return true
-			elif b.event.type == SMF.MIDIEventType.note_off:
-				return false
-		"""
-		return false
-
 func _init_track( ):
 	self.track_status = {
 		"events": [],
 		"event_pointer": 0,
 	}
 
-	for track in self.smf_data.tracks:
-		self.track_status.events += track.events
-	if 1 < self.smf_data.tracks.size( ):
-		self.track_status.events.sort_custom( TrackSorter, "sort" )
+	if len( self.smf_data.tracks ) == 1:
+		self.track_status.events = self.smf_data.tracks[0].events
+	else:
+		var tracks = []
+		for track in self.smf_data.tracks:
+			tracks.append({"pointer":0, "data":track})
+
+		var time:int = 0
+		while true:
+			var finished:bool = true
+			var next_time:int = 0x7fffffff
+			for track in tracks:
+				if len(track.data.events) <= track.pointer: continue
+				
+				var e = track.data.events[track.pointer]
+				finished = false
+				if e.time == time:
+					self.track_status.events.append( e )
+					track.pointer += 1
+				if e.time < next_time:
+					next_time = e.time
+			time = next_time
+			if finished: break
+
 	self.last_position = self.track_status.events[len(self.track_status.events)-1].time
 
 """
