@@ -376,7 +376,7 @@ func _process_track_event_control_change( channel, event ):
 func _process_track_system_event( channel, event ):
 	match event.args.type:
 		SMF.MIDISystemEventType.set_tempo:
-			self.tempo = 60000000.0 / event.args.bpm
+			self.tempo = 60000000.0 / float( event.args.bpm )
 		SMF.MIDISystemEventType.lyric:
 			self.emit_signal( "appeared_lyric", event.args.text )
 		SMF.MIDISystemEventType.marker:
