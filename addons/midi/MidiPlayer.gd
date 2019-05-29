@@ -169,7 +169,7 @@ func _analyse_smf( ):
 						else:
 							channel.bank = ( channel.bank & 0x3F80 ) | ( event.value & 0x7F )
 					SMF.control_number_tkool_loop_point:
-						self.loop_start = event_chunk.time
+						self.loop_start = float( event_chunk.time )
 
 """
 	チャンネル初期化
