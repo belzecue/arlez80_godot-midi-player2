@@ -200,7 +200,11 @@ func _init_channel( ):
 func play( from_position:float = 0 ):
 	self._prepare_to_play( )
 	self.playing = true
-	self.seek( from_position )
+	if from_position == 0:
+		self.position = 0
+		self.track_status.event_pointer = 0
+	else:
+		self.seek( from_position )
 
 """
 	シーク
@@ -213,7 +217,7 @@ func seek( to_position:float ):
 	var length:int = len(self.track_status.events)
 	while pointer < length:
 		var event_chunk = self.track_status.events[pointer]
-		if self.position < event_chunk.time:
+		if self.position <= event_chunk.time:
 			break
 		pointer += 1
 	self.track_status.event_pointer = pointer
