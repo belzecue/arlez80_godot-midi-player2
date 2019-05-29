@@ -83,6 +83,7 @@ enum MIDISystemEventType {
 	marker,					# 06
 	cue_point,				# 07
 	midi_channel_prefix,	# 20
+	midi_port_prefix,		# 21
 	end_of_track,			# 2F
 
 	set_tempo,				# 51
@@ -240,7 +241,12 @@ func _read_system_event( stream:StreamPeerBuffer, event_type_byte:int ):
 				if size != 1:
 					print( "MIDI Channel Prefix length is not 1 byte" )
 					return null
-				return { "type": MIDISystemEventType.midi_channel_prefix, "prefix": stream.get_u8( ) }
+				return { "type": MIDISystemEventType.midi_channel_prefix, "channel": stream.get_u8( ) }
+			0x21:
+				if size != 1:
+					print( "MIDI Port Prefix length is not 1 byte" )
+					return null
+				return { "type": MIDISystemEventType.midi_port_prefix, "port": stream.get_u8( ) }
 			0x2F:
 				if size != 0:
 					print( "End of track with unknown data" )
