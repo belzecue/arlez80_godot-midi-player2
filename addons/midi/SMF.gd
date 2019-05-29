@@ -27,6 +27,8 @@ const control_number_channel_volume_lsb = 0x27
 const control_number_calance_lsb = 0x28
 const control_number_pan_lsb = 0x2A
 const control_number_expression_lsb = 0x2B
+const control_number_effect_control1 = 0x2C
+const control_number_effect_control2 = 0x2D
 
 const control_number_hold = 0x40
 const control_number_portament = 0x41
@@ -43,11 +45,40 @@ const control_number_vibrato_rate = 0x4B
 const control_number_vibrato_depth = 0x4C
 const control_number_vibrato_delay = 0x4D
 
+const control_number_source_note = 0x54
+
+const control_number_high_res_velovity_prefix = 0x58
+
+const control_number_effect1_depth = 0x5B
+const control_number_effect2_depth = 0x5C
+const control_number_effect3_depth = 0x5D
+const control_number_effect4_depth = 0x5E
+const control_number_effect5_depth = 0x5F
+
+const control_number_data_increment = 0x60
+const control_number_data_decrement = 0x61
 const control_number_nrpn_lsb = 0x62
 const control_number_nrpn_msb = 0x63
 const control_number_rpn_lsb = 0x64
 const control_number_rpn_msb = 0x65
 const control_number_tkool_loop_point = 0x6F	# CC111
+
+# RPN Control Numbers: 0x00
+const rpn_control_number_pitch_bend_range = 0x00
+const rpn_control_number_channel_fine_tune = 0x01
+const rpn_control_number_channel_cource_tune = 0x02
+const rpn_control_number_tune_program_change = 0x03
+const rpn_control_number_tune_bank_select = 0x04
+# RPN Control Numbers: 0x3D
+const rpn_control_number_3D_azimuth_angle = 0x00
+const rpn_control_number_3D_elevation_angle = 0x01
+const rpn_control_number_3D_gain = 0x02
+const rpn_control_number_3D_distance_ratio = 0x03
+const rpn_control_number_3D_maximum_distance = 0x04
+const rpn_control_number_3D_gain_at_maximum_distance = 0x05
+const rpn_control_number_3D_referance_distance_raito = 0x06
+const rpn_control_number_3D_pan_spread_angle = 0x07
+const rpn_control_number_3D_roll_angle = 0x08
 
 # Manufacture ID
 const manufacture_id_universal_nopn_realtime_sys_ex = 0x7E

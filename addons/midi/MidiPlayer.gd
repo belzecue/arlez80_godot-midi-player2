@@ -38,6 +38,10 @@ var channel_volume_db:float = 20
 var bank = null
 var audio_stream_players = []
 
+var rpn_selected_msb:int = 0
+var rpn_selected_lsb:int = 0
+var rpn_options_pitchbend_range:float = 12.0
+
 var _used_program_numbers = []
 
 signal changed_tempo( tempo )
@@ -369,6 +373,10 @@ func _process_track_event_control_change( channel, event ):
 				channel.bank = self.drum_track_bank
 			else:
 				channel.bank = ( channel.bank & 0x3F80 ) | ( event.value & 0x7F )
+		SMF.control_number_rpn_lsb:
+			self.rpn_selected_lsb = event.value
+		SMF.control_number_rpn_msb:
+			self.rpn_selected_msb = event.value
 		_:
 			# 無視
 			pass
