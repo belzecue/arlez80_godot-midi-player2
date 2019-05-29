@@ -397,6 +397,7 @@ func _process_track_event_control_change_rpn_data_entry_msb( channel, event ):
 			match channel.rpn.selected_lsb:
 				SMF.rpn_control_number_pitch_bend_range:
 					channel.rpn.pitch_bend_range_msb = float( event.value )
+					if 12 < channel.rpn.pitch_bend_range_msb: channel.rpn.pitch_bend_range_msb = 12
 					channel.rpn.pitch_bend_range = channel.rpn.pitch_bend_range_msb + channel.rpn.pitch_bend_range_lsb / 100.0
 				_:
 					pass
