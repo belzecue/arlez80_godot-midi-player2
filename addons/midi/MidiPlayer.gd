@@ -196,8 +196,8 @@ func _init_channel( ):
 				"selected_msb": 0,
 				"selected_lsb": 0,
 
-				"pitch_bend_range": 3.0,
-				"pitch_bend_range_msb": 3.0,
+				"pitch_bend_range": 2.0,
+				"pitch_bend_range_msb": 2.0,
 				"pitch_bend_range_lsb": 0.0,
 			},
 		})
