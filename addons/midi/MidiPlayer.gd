@@ -38,10 +38,6 @@ var channel_volume_db:float = 20
 var bank = null
 var audio_stream_players = []
 
-var rpn_selected_msb:int = 0
-var rpn_selected_lsb:int = 0
-var rpn_options_pitchbend_range:float = 12.0
-
 var _used_program_numbers = []
 
 signal changed_tempo( tempo )
@@ -195,6 +191,15 @@ func _init_channel( ):
 			"pitch_bend": 0.0,
 			"drum_track": drum_track,
 			"pan": 0.5,
+
+			"rpn": {
+				"selected_msb": 0,
+				"selected_lsb": 0,
+
+				"pitch_bend_range": 3.0,
+				"pitch_bend_range_msb": 3.0,
+				"pitch_bend_range_lsb": 0.0,
+			},
 		})
 
 """
@@ -348,6 +353,7 @@ func _process_track_event_note_on( channel, event ):
 				note_player.velocity = event.velocity
 				note_player.maximum_volume_db = volume_db
 				note_player.pitch_bend = channel.pitch_bend
+				note_player.pitch_bend_range = channel.rpn.pitch_bend_range
 				note_player.set_instrument( instrument )
 				note_player.play( 0.0 )
 				if not channel.drum_track:
@@ -374,11 +380,39 @@ func _process_track_event_control_change( channel, event ):
 			else:
 				channel.bank = ( channel.bank & 0x3F80 ) | ( event.value & 0x7F )
 		SMF.control_number_rpn_lsb:
-			self.rpn_selected_lsb = event.value
+			channel.rpn.selected_lsb = event.value
 		SMF.control_number_rpn_msb:
-			self.rpn_selected_msb = event.value
+			channel.rpn.selected_msb = event.value
+		SMF.control_number_data_entry_msb:
+			self._process_track_event_control_change_rpn_data_entry_msb( channel, event )
+		SMF.control_number_data_entry_lsb:
+			self._process_track_event_control_change_rpn_data_entry_lsb( channel, event )
 		_:
 			# 無視
+			pass
+
+func _process_track_event_control_change_rpn_data_entry_msb( channel, event ):
+	match channel.rpn.selected_msb:
+		0:
+			match channel.rpn.selected_lsb:
+				SMF.rpn_control_number_pitch_bend_range:
+					channel.rpn.pitch_bend_range_msb = float( event.value )
+					channel.rpn.pitch_bend_range = channel.rpn.pitch_bend_range_msb + channel.rpn.pitch_bend_range_lsb / 100.0
+				_:
+					pass
+		_:
+			pass
+
+func _process_track_event_control_change_rpn_data_entry_lsb( channel, event ):
+	match channel.rpn.selected_msb:
+		0:
+			match channel.rpn.selected_lsb:
+				SMF.rpn_control_number_pitch_bend_range:
+					channel.rpn.pitch_bend_range_lsb = float( event.value )
+					channel.rpn.pitch_bend_range = channel.rpn.pitch_bend_range_msb + channel.rpn.pitch_bend_range_lsb / 100.0
+				_:
+					pass
+		_:
 			pass
 
 func _process_track_system_event( channel, event ):
@@ -422,6 +456,7 @@ func _apply_channel_volume_to_notes( channel ):
 
 func _update_pitch_bend_note( channel ):
 	for note in channel.note_on.values( ):
+		note.set_pitch_bend_range( channel.rpn.pitch_bend_range )
 		note.set_pitch_bend( channel.pitch_bend )
 
 """
