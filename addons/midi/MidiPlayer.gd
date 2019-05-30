@@ -12,7 +12,7 @@ const SoundFont = preload( "SoundFont.gd" )
 const Bank = preload( "Bank.gd" )
 
 export (int, 0, 128) var max_polyphony:int = 64
-export (String, FILE, "*.mid") var file:String = ""
+export (String, FILE, "*.mid") var file:String = "" setget set_file
 export (bool) var playing:bool = false
 export (Array) var channel_mute:Array = [false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false]
 export (float) var play_speed:float = 1.0
@@ -237,6 +237,14 @@ func seek( to_position:float ):
 func stop( ):
 	self._stop_all_notes( )
 	self.playing = false
+
+"""
+	ファイル変更
+"""
+func set_file( path:String ):
+	file = path
+	self.smf_data = null
+	self.bank = null
 
 """
 	テンポ設定
