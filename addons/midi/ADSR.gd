@@ -44,7 +44,8 @@ func play( from_position:float = 0.0 ):
 	self.timer = 0.0
 	self.using_timer = 0.0
 	self.current_volume = self.ads_state[0].volume
-	self.stream.mix_rate = round( self.mix_rate * pow( 2, self.pitch_bend * self.pitch_bend_range / 12.0 ) )
+	self.stream.mix_rate = self.mix_rate
+	self.pitch_scale = pow( 2, self.pitch_bend * self.pitch_bend_range / 12.0 )
 	.play( from_position )
 	self._update_volume( )
 
@@ -54,8 +55,7 @@ func start_release( ):
 func set_pitch_bend( pb:float ):
 	self.pitch_bend = pb
 	var pos = self.get_playback_position( )
-	self.stream.mix_rate = round( self.mix_rate * pow( 2, self.pitch_bend * self.pitch_bend_range / 12.0 ) )
-	.play( pos )
+	self.pitch_scale = pow( 2, self.pitch_bend * self.pitch_bend_range / 12.0 )
 
 func set_pitch_bend_range( pbr:float ):
 	self.pitch_bend_range = pbr

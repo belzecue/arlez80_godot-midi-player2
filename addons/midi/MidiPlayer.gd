@@ -160,12 +160,12 @@ func _analyse_smf( ):
 				match event.number:
 					SMF.control_number_bank_select_msb:
 						if channel.number == drum_track_channel:
-							channel.bank = drum_track_bank
+							channel.bank = self.drum_track_bank
 						else:
 							channel.bank = ( channel.bank & 0x7F ) | ( event.value << 7 )
 					SMF.control_number_bank_select_lsb:
 						if channel.number == drum_track_channel:
-							channel.bank = drum_track_bank
+							channel.bank = self.drum_track_bank
 						else:
 							channel.bank = ( channel.bank & 0x3F80 ) | ( event.value & 0x7F )
 					SMF.control_number_tkool_loop_point:
