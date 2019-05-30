@@ -206,11 +206,11 @@ func _init_channel( ):
 	再生
 	@param	from_position
 """
-func play( from_position:float = 0 ):
+func play( from_position:float = 0.0 ):
 	self._prepare_to_play( )
 	self.playing = true
-	if from_position == 0:
-		self.position = 0
+	if from_position == 0.0:
+		self.position = 0.0
 		self.track_status.event_pointer = 0
 	else:
 		self.seek( from_position )

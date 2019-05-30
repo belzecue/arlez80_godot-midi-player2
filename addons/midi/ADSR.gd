@@ -54,7 +54,6 @@ func start_release( ):
 
 func set_pitch_bend( pb:float ):
 	self.pitch_bend = pb
-	var pos = self.get_playback_position( )
 	self.pitch_scale = pow( 2, self.pitch_bend * self.pitch_bend_range / 12.0 )
 
 func set_pitch_bend_range( pbr:float ):
