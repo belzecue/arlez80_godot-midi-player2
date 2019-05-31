@@ -33,15 +33,16 @@ I develop it for use embedding in game.
 ## Not TODO
 
 * Supports play format 2
-* Implements some effects (Use godot's mixer!)
+    * SMF.gd can read it. but MIDI Player will not implement it.
+* Implements some effects (Use godot's mixer effect!)
+    * Reverb
+    * Chorus
+    * other effects...
 
 ## Known Problem
 
 * Player's timebase is 1/60.
     * It probably need 1/240 at least.
-* Pitch bend is little buggy.
-    * It probably came from timebase problem.
-* Sometimes appear petit noises.
 
 ## License
 
