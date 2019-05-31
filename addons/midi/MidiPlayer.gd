@@ -71,7 +71,6 @@ func _prepare_to_play( ):
 	# 楽器
 	if self.bank == null:
 		self.bank = Bank.new( )
-		self.bank.init( )
 		if self.soundfont != "":
 			var sf_reader = SoundFont.new( )
 			var sf2 = sf_reader.read_file( self.soundfont )

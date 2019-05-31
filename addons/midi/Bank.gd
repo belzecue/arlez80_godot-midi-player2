@@ -18,15 +18,6 @@ var default_release_state = [
 
 # 音色テーブル
 var presets = {}
-var frame_second:float = 0
-
-"""
-	初期化
-"""
-func init( ):
-	var fps:int = ProjectSettings.get_setting("debug/settings/fps/force_fps")
-	if fps == 0: fps = 60
-	self.frame_second = 1.0 / float(fps)
 
 """
 	楽器
