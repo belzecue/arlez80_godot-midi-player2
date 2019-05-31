@@ -341,7 +341,7 @@ func _process_track( ):
 				self._process_track_event_control_change( channel, event )
 			SMF.MIDIEventType.pitch_bend:
 				channel.pitch_bend = float( event.value ) / 8192.0 - 1.0
-				self._update_pitch_bend_note( channel )
+				self._update_pitch_bend_to_notes( channel )
 			SMF.MIDIEventType.system_event:
 				self._process_track_system_event( channel, event )
 			_:
@@ -477,7 +477,7 @@ func _apply_channel_volume_to_notes( channel ):
 	for note in channel.note_on.values( ):
 		note.change_channel_volume( self.channel_volume_db, self.volume_db, channel )
 
-func _update_pitch_bend_note( channel ):
+func _update_pitch_bend_to_notes( channel ):
 	for note in channel.note_on.values( ):
 		note.set_pitch_bend_range( channel.rpn.pitch_bend_range )
 		note.set_pitch_bend( channel.pitch_bend )
