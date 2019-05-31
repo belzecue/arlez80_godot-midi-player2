@@ -1,45 +1,86 @@
 extends Node
 
+"""
+	MIDI Player by Yui Kinomot @arlez80
+"""
+
+# -----------------------------------------------------------------------------
+# Import
+const ADSR = preload( "ADSR.tscn" )
+const SMF = preload( "SMF.gd" )
+const SoundFont = preload( "SoundFont.gd" )
+const Bank = preload( "Bank.gd" )
+
+# -------------------------------------------------------
+# 定数
 const max_track:int = 16
 const max_channel:int = 16
 const max_note_number:int = 128
 const max_program_number:int = 128
 const drum_track_channel:int = 0x09
 const drum_track_bank:int = 128
-const ADSR = preload( "ADSR.tscn" )
-const SMF = preload( "SMF.gd" )
-const SoundFont = preload( "SoundFont.gd" )
-const Bank = preload( "Bank.gd" )
 
+# -----------------------------------------------------------------------------
+# Export
+
+# 最大発音数
 export (int, 0, 128) var max_polyphony:int = 64
+# ファイル
 export (String, FILE, "*.mid") var file:String = "" setget set_file
+# 再生中か？
 export (bool) var playing:bool = false
+# ミュートチャンネル
 export (Array) var channel_mute:Array = [false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false]
+# 再生速度
 export (float) var play_speed:float = 1.0
+# 音量
 export (float, -1000, 0) var volume_db:float = -20.0
+# キーシフト
 export (int) var key_shift:int = 0
+# ループフラグ
 export (bool) var loop:bool = false
+# ループ開始位置
 export (float) var loop_start:float = 0
+# 全ての音をサウンドフォントから読むか？
 export (bool) var all_load_voices_from_soundfont:bool = false
+# サウンドフォントの再読み込みを行わない
 export (bool) var no_reload_soundfont:bool = false
+# サウンドフォント
 export (String, FILE, "*.sf2") var soundfont:String = ""
+# mix_target same as AudioStreamPlayer's one
 export (int, "MIX_TARGET_STEREO", "MIX_TARGET_SURROUND", "MIX_TARGET_CENTER") var mix_target:int = AudioStreamPlayer.MIX_TARGET_STEREO
+# bus same as AudioStreamPlayer's one
 export (String) var bus:String = "Master"
 
-var smf_data = null setget set_smf_data
-var tempo:float = 120 setget set_tempo
-var frame_second:float = 0.0
-var seconds_to_timebase:float = 2.3
-var timebase_to_seconds:float = 1.0 / seconds_to_timebase
-var position:float = 0
-var last_position:int = 0
-var track_status = null
-var channel_status = []
+# -----------------------------------------------------------------------------
+# 変数
 
+# MIDIデータ
+var smf_data = null setget set_smf_data
+# MIDIトラックデータ smf_dataを再生用に加工したデータが入る
+var track_status = null
+# 現在のテンポ
+var tempo:float = 120 setget set_tempo
+# 秒 -> タイムベース変換係数
+var seconds_to_timebase:float = 2.3
+# タイムベース -> 秒変換係数
+var timebase_to_seconds:float = 1.0 / seconds_to_timebase
+# 位置
+var position:float = 0
+# 最終位置
+var last_position:int = 0
+# チャンネルステータス
+var channel_status = []
+# サウンドフォントを再生用に加工したもの
 var bank = null
+# AudioStreamPlayer
 var audio_stream_players = []
 
+# 曲で使用中のプログラム番号を格納
 var _used_program_numbers = []
+
+# -----------------------------------------------------------------------------
+# シグナル
 
 signal changed_tempo( tempo )
 signal appeared_lyric( lyric )
@@ -48,11 +89,10 @@ signal appeared_cue_point( cue_point )
 signal midi_event( channel, event )
 signal looped
 
+"""
+	準備
+"""
 func _ready( ):
-	var fps:int = ProjectSettings.get_setting("debug/settings/fps/force_fps")
-	if fps == 0: fps = 60
-	self.frame_second = 1.0 / float(fps)
-
 	if self.playing:
 		self.play( )
 
