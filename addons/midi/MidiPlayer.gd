@@ -137,6 +137,7 @@ func _analyse_smf( ):
 			"bank": 0,
 		})
 	self._used_program_numbers = []
+	self.loop_start = 0.0
 
 	for event_chunk in self.track_status.events:
 		var channel_number:int = event_chunk.channel_number
