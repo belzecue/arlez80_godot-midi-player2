@@ -518,16 +518,16 @@ func _process_track_system_event( channel, event ):
 
 func _get_idle_player( ):
 	var stopped_audio_stream_player = null
-	var minimum_volume:float = 100.0
+	var minimum_volume_db:float = 100.0
 	var oldest_audio_stream_player = null
 	var oldest:float = 0.0
 
 	for audio_stream_player in self.audio_stream_players:
 		if not audio_stream_player.playing:
 			return audio_stream_player
-		if audio_stream_player.releasing and audio_stream_player.current_volume < minimum_volume:
+		if audio_stream_player.releasing and audio_stream_player.current_volume_db < minimum_volume_db:
 			stopped_audio_stream_player = audio_stream_player
-			minimum_volume = audio_stream_player.current_volume
+			minimum_volume_db = audio_stream_player.current_volume_db
 		if oldest < audio_stream_player.using_timer:
 			oldest_audio_stream_player = audio_stream_player
 			oldest = audio_stream_player.using_timer

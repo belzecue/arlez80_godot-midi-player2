@@ -8,12 +8,12 @@ const SoundFont = preload( "SoundFont.gd" )
 # デフォルト
 var default_mix_rate_table = [819,868,920,974,1032,1094,1159,1228,1301,1378,1460,1547,1639,1736,1840,1949,2065,2188,2318,2456,2602,2756,2920,3094,3278,3473,3679,3898,4130,4375,4635,4911,5203,5513,5840,6188,6556,6945,7358,7796,8259,8751,9271,9822,10406,11025,11681,12375,13111,13891,14717,15592,16519,17501,18542,19644,20812,22050,23361,24750,26222,27781,29433,31183,33038,35002,37084,39289,41625,44100,46722,49501,52444,55563,58866,62367,66075,70004,74167,78577,83250,88200,93445,99001,104888,111125,117733,124734,132151,140009,148334,157155,166499,176400,186889,198002,209776,222250,235466,249467,264301,280018,296668,314309,332999,352800,373779,396005,419552,444500,470932,498935,528603,560035,593337,628618,665998,705600,747557,792009,839105,889000,941863,997869,1057205,1120070,1186673,1257236]
 var default_ads_state = [
-	{ "time": 0, "volume": 1.0 },
-	{ "time": 0.2, "volume": 0.95 },
+	{ "time": 0, "volume_db": 0.0 },
+	{ "time": 0.2, "volume_db": -144.0 },
 ]
 var default_release_state = [
-	{ "time": 0, "volume": 0.95 },
-	{ "time": 0.01, "volume": 0.0 },
+	{ "time": 0, "volume_db": 0.0 },
+	{ "time": 0.01, "volume_db": -144.0 },
 ]
 
 # 音色テーブル
@@ -220,16 +220,16 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 	
 				var a:float = ibag.adsr.attack_vol_env_time
 				var d:float = ibag.adsr.decay_vol_env_time
-				var s:float = ibag.adsr.sustain_vol_env_level
+				var s:float = ibag.adsr.sustain_vol_env_db
 				var r:float = ibag.adsr.release_vol_env_time
 				instrument.ads_state = [
-					{ "time": 0, "volume": 0.0 },
-					{ "time": a, "volume": 1.0 },
-					{ "time": a+d, "volume": s },
+					{ "time": 0, "volume_db": -144.0 },
+					{ "time": a, "volume_db": 0.0 },
+					{ "time": a+d, "volume_db": s },
 				]
 				instrument.release_state = [
-					{ "time": 0, "volume": s },
-					{ "time": r, "volume": 0.0 },
+					{ "time": 0, "volume_db": s },
+					{ "time": r, "volume_db": -144.0 },
 				]
 				preset.instruments[key_number] = instrument
 
@@ -263,7 +263,7 @@ func _read_soundfont_pdta_inst( sf ):
 				"adsr": {
 					"attack_vol_env_time": 0.001,
 					"decay_vol_env_time": 0.001,
-					"sustain_vol_env_level": 1.0,
+					"sustain_vol_env_db": 0.0,	# dB
 					"release_vol_env_time": 0.001,
 				},
 			}
@@ -309,8 +309,9 @@ func _read_soundfont_pdta_inst( sf ):
 					SoundFont.gen_oper_release_vol_env:
 						bag.adsr.release_vol_env_time = pow( 2.0, gen.amount / 1200.0 )
 					SoundFont.gen_oper_sustain_vol_env:
-						var s = min( max( 0, gen.amount ), 1440 )
-						bag.adsr.sustain_vol_env_level = ( 1440.0 - s ) / 1440.0
+						# -144 db == sound font 1440
+						var s = min( max( 0.0, gen.amount ), 1440.0 ) / 10.0
+						bag.adsr.sustain_vol_env_db = -s
 					SoundFont.gen_oper_sample_modes:
 						bag.sample_modes = gen.uamount
 					SoundFont.gen_oper_sample_id:

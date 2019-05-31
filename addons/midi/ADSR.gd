@@ -21,9 +21,9 @@ var timer:float = 0.0
 var using_timer:float = 0.0
 
 # 現在のADSRボリューム
-var current_volume:float = 0.0
+var current_volume_db:float = 0.0
 # 発音音量
-var note_volume:float = 0.0
+var note_volume_db:float = 0.0
 # 最大音量
 var maximum_volume_db:float = -8.0
 # 自動リリースモード？
@@ -32,14 +32,14 @@ var auto_release_mode:bool = false
 
 # ADSステート
 var ads_state = [
-	{ "time": 0.0, "volume": 1.0 },
-	{ "time": 0.2, "volume": 0.95 },
+	{ "time": 0.0, "volume_db": 0.0 },
+	{ "time": 0.2, "volume_db": -144.0 },
 	# { "time": 0.2, "jump_to": 0.0 },	# not implemented
 ]
 # Rステート
 var release_state = [
-	{ "time": 0.0, "volume": 0.8 },
-	{ "time": 0.01, "volume": 0.0 },
+	{ "time": 0.0, "volume_db": 0.0 },
+	{ "time": 0.01, "volume_db": -144.0 },
 	# { "time": 0.2, "jump_to": 0.0 },	# not implemented
 ]
 
@@ -58,7 +58,7 @@ func play( from_position:float = 0.0 ):
 	self.request_release = false
 	self.timer = 0.0
 	self.using_timer = 0.0
-	self.current_volume = self.ads_state[0].volume
+	self.current_volume_db = self.ads_state[0].volume_db
 	self.stream.mix_rate = self.mix_rate
 	self.pitch_scale = pow( 2, self.pitch_bend * self.pitch_bend_range / 12.0 )
 	.play( from_position )
@@ -92,7 +92,7 @@ func _update_adsr( delta:float ):
 	var all_states:int = use_state.size( )
 	var last_state:int = all_states - 1
 	if use_state[last_state].time <= self.timer:
-		self.current_volume = use_state[last_state].volume
+		self.current_volume_db = use_state[last_state].volume_db
 		if self.releasing: self.stop( )
 		if self.auto_release_mode: self.request_release = true
 	else:
@@ -102,19 +102,19 @@ func _update_adsr( delta:float ):
 				var pre_state = use_state[state_number-1]
 				var s:float = ( state.time - self.timer ) / ( state.time - pre_state.time )
 				var t:float = 1.0 - s
-				self.current_volume = pre_state.volume * s + state.volume * t
+				self.current_volume_db = pre_state.volume_db * s + state.volume_db * t
 				break
 
 	self._update_volume( )
 
 	if self.request_release and not self.releasing:
 		self.releasing = true
-		self.current_volume = self.release_state[0].volume
+		self.current_volume_db = self.release_state[0].volume_db
 		self.timer = 0.0
 
 func _update_volume( ):
-	self.volume_db = linear2db( self.current_volume * self.note_volume ) + self.maximum_volume_db
+	self.volume_db = self.current_volume_db + self.note_volume_db + self.maximum_volume_db
 
 func change_channel_volume( base_volume_db:float, channel ):
-	self.note_volume = float( channel.volume * channel.expression ) * ( float( self.velocity ) / 127.0 )
+	self.note_volume_db = linear2db( float( channel.volume * channel.expression ) * ( float( self.velocity ) / 127.0 ) )
 	self.maximum_volume_db = base_volume_db
