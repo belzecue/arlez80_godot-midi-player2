@@ -34,7 +34,7 @@ export (Array) var channel_mute:Array = [false,false,false,false,false,false,fal
 # 再生速度
 export (float) var play_speed:float = 1.0
 # 音量
-export (float, -1000, 0) var volume_db:float = -20.0
+export (float, -1000, 0) var volume_db:float = -20.0 setget set_volume_db
 # キーシフト
 export (int) var key_shift:int = 0
 # ループフラグ
@@ -322,6 +322,14 @@ func set_tempo( bpm:float ):
 	self.seconds_to_timebase = tempo / 60.0
 	self.timebase_to_seconds = 60.0 / tempo
 	self.emit_signal( "changed_tempo", bpm )
+
+"""
+	音量設定
+"""
+func set_volume_db( vdb:float ):
+	volume_db = vdb
+	for channel in self.channel_status:
+		self._apply_channel_volume_to_notes( channel )
 
 """
 	全音を止める
