@@ -136,13 +136,11 @@ func _analyse_smf( ):
 	var channels = []
 	for i in range( max_channel ):
 		channels.append({
-			#"note_on": {},
-			#"program_number": 0,
 			"number": i,
 			"bank": 0,
 		})
-	self._used_program_numbers = [0,128]
 	self.loop_start = 0.0
+	self._used_program_numbers = [0, self.drum_track_bank << 7]	# GrandPiano and Standard Kit
 
 	for event_chunk in self.track_status.events:
 		var channel_number:int = event_chunk.channel_number

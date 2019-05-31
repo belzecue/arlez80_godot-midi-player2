@@ -90,7 +90,7 @@ func get_preset( program_number:int, bank:int = 0 ):
 	if not self.presets.has( pc ):
 		if self.drum_track_bank == bank:
 			# ドラムの場合（Standard Kitを選択）
-			pc = drum_track_bank
+			pc = self.drum_track_bank << 7
 		else:
 			# 通常楽器の場合（Bank #0を選択）
 			pc = program_number
