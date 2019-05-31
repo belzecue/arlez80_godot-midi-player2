@@ -244,7 +244,7 @@ func _read_soundfont_pdta_inst( sf ):
 
 		var bag_next:int = sf.pdta.inst[inst_index+1].inst_bag_ndx
 		var bag_count:int = bag_index
-		var global_bag = {}
+		var global_bag = null
 		while bag_count < bag_next:
 			var bag = {
 				"sample": null,
@@ -267,6 +267,8 @@ func _read_soundfont_pdta_inst( sf ):
 					"release_vol_env_time": 0.001,
 				},
 			}
+			if global_bag != null:
+				bag = deep_copy( global_bag )
 			var gen_next:int = sf.pdta.ibag[bag_count+1].gen_ndx
 			var gen_count:int = gen_index
 			while gen_count < gen_next:
@@ -334,3 +336,16 @@ func _read_soundfont_pdta_inst( sf ):
 
 	return sf_insts
 
+func deep_copy( data ):
+	match typeof( data ):
+		TYPE_DICTIONARY:
+			var t = {}
+			for key in data.keys( ):
+				t[key] = self.deep_copy( data[key] )
+			data = t
+		TYPE_ARRAY:
+			var t = []
+			for i in range( 0, len( data ) ):
+				t.append( self.deep_copy( data[i] ) )
+			data = t
+	return data

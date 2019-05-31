@@ -41,8 +41,8 @@ I develop it for use embedding in game.
 
 ## Known Problem
 
-* Player's timebase is 1/60.
-    * It probably need 1/240 at least.
+* Player's timebase is 1/60 sec.
+    * It probably need 1/240 sec at least.
 
 ## License
 
