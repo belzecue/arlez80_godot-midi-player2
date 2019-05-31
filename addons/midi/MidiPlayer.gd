@@ -75,6 +75,13 @@ var channel_status = []
 var bank = null
 # AudioStreamPlayer
 var audio_stream_players = []
+# ドラムトラック用アサイングループ
+var drum_assign_groups = {
+	# Hi-Hats
+	42: 42,	# Closed Hi-Hat
+	44: 42,	# Pedal Hi-Hat
+	46: 42,	# Pedal Hi-Hat
+}
 
 # 曲で使用中のプログラム番号を格納
 var _used_program_numbers = []
@@ -418,10 +425,14 @@ func _process_track_event_note_on( channel, event ):
 		var key_number:int = event.note + self.key_shift
 		var preset = self.bank.get_preset( channel.program, channel.bank )
 		var instrument = preset.instruments[key_number]
+		var assign_group:int = key_number
+		if channel.drum_track:
+			if key_number in self.drum_assign_groups:
+				assign_group = self.drum_assign_groups[key_number]
 
 		if instrument != null:
-			if channel.note_on.has( key_number ):
-				channel.note_on[key_number].start_release( )
+			if channel.note_on.has( assign_group ):
+				channel.note_on[ assign_group ].start_release( )
 
 			var note_player = self._get_idle_player( )
 			if note_player != null:
@@ -432,7 +443,7 @@ func _process_track_event_note_on( channel, event ):
 				note_player.change_channel_volume( self.volume_db, channel )
 				note_player.set_instrument( instrument )
 				note_player.play( 0.0 )
-				channel.note_on[key_number] = note_player
+				channel.note_on[ assign_group ] = note_player
 
 func _process_track_event_control_change( channel, event ):
 	match event.number:
