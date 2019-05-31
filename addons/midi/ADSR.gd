@@ -59,7 +59,7 @@ func set_pitch_bend( pb:float ):
 func set_pitch_bend_range( pbr:float ):
 	self.pitch_bend_range = pbr
 
-func _process( delta:float ):
+func _update_adsr( delta:float ):
 	if not self.playing:
 		return
 

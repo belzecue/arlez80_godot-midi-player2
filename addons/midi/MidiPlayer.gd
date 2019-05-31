@@ -277,6 +277,9 @@ func _process( delta:float ):
 	self.position += float( self.smf_data.timebase ) * delta * self.seconds_to_timebase * self.play_speed
 	self._process_track( )
 
+	for asp in self.audio_stream_players:
+		asp._update_adsr( delta )
+
 """
 	トラック処理
 """
@@ -302,7 +305,7 @@ func _process_track( ):
 				channel.note_on.erase( key_number )
 
 	var execute_event_count:int = 0
-	var current_position:int = int( self.position )
+	var current_position:int = int( floor( self.position ) )
 
 	while track.event_pointer < length:
 		var event_chunk = track.events[track.event_pointer]
