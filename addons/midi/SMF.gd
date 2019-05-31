@@ -64,7 +64,7 @@ const control_number_rpn_msb = 0x65
 const control_number_tkool_loop_point = 0x6F	# CC111
 
 # RPN Control Numbers: 0x00
-const rpn_control_number_pitch_bend_range = 0x00
+const rpn_control_number_pitch_bend_sensitivity = 0x00
 const rpn_control_number_channel_fine_tune = 0x01
 const rpn_control_number_channel_cource_tune = 0x02
 const rpn_control_number_tune_program_change = 0x03

@@ -242,9 +242,9 @@ func _init_channel( ):
 				"selected_msb": 0,
 				"selected_lsb": 0,
 
-				"pitch_bend_range": 2.0,
-				"pitch_bend_range_msb": 2.0,
-				"pitch_bend_range_lsb": 0.0,
+				"pitch_bend_sensitivity": 2.0,
+				"pitch_bend_sensitivity_msb": 2.0,
+				"pitch_bend_sensitivity_lsb": 0.0,
 			},
 		})
 
@@ -415,7 +415,7 @@ func _process_pitch_bend( channel, value:int ):
 	channel.pitch_bend = float( value ) / 8192.0 - 1.0
 
 	for note in channel.note_on.values( ):
-		note.set_pitch_bend_range( channel.rpn.pitch_bend_range )
+		note.set_pitch_bend_sensitivity( channel.rpn.pitch_bend_sensitivity )
 		note.set_pitch_bend( channel.pitch_bend )
 
 func _process_track_event_note_off( channel, event ):
@@ -446,7 +446,7 @@ func _process_track_event_note_on( channel, event ):
 			if note_player != null:
 				note_player.velocity = event.velocity
 				note_player.pitch_bend = channel.pitch_bend
-				note_player.pitch_bend_range = channel.rpn.pitch_bend_range
+				note_player.pitch_bend_sensitivity = channel.rpn.pitch_bend_sensitivity
 				note_player.auto_release_mode = channel.drum_track
 				note_player.change_channel_volume( self.volume_db, channel )
 				note_player.set_instrument( instrument )
@@ -489,10 +489,10 @@ func _process_track_event_control_change_rpn_data_entry_msb( channel, event ):
 	match channel.rpn.selected_msb:
 		0:
 			match channel.rpn.selected_lsb:
-				SMF.rpn_control_number_pitch_bend_range:
-					channel.rpn.pitch_bend_range_msb = float( event.value )
-					if 12 < channel.rpn.pitch_bend_range_msb: channel.rpn.pitch_bend_range_msb = 12
-					channel.rpn.pitch_bend_range = channel.rpn.pitch_bend_range_msb + channel.rpn.pitch_bend_range_lsb / 100.0
+				SMF.rpn_control_number_pitch_bend_sensitivity:
+					channel.rpn.pitch_bend_sensitivity_msb = float( event.value )
+					if 12 < channel.rpn.pitch_bend_sensitivity_msb: channel.rpn.pitch_bend_sensitivity_msb = 12
+					channel.rpn.pitch_bend_sensitivity = channel.rpn.pitch_bend_sensitivity_msb + channel.rpn.pitch_bend_sensitivity_lsb / 100.0
 				_:
 					pass
 		_:
@@ -502,9 +502,9 @@ func _process_track_event_control_change_rpn_data_entry_lsb( channel, event ):
 	match channel.rpn.selected_msb:
 		0:
 			match channel.rpn.selected_lsb:
-				SMF.rpn_control_number_pitch_bend_range:
-					channel.rpn.pitch_bend_range_lsb = float( event.value )
-					channel.rpn.pitch_bend_range = channel.rpn.pitch_bend_range_msb + channel.rpn.pitch_bend_range_lsb / 100.0
+				SMF.rpn_control_number_pitch_bend_sensitivity:
+					channel.rpn.pitch_bend_sensitivity_lsb = float( event.value )
+					channel.rpn.pitch_bend_sensitivity = channel.rpn.pitch_bend_sensitivity_msb + channel.rpn.pitch_bend_sensitivity_lsb / 100.0
 				_:
 					pass
 		_:
