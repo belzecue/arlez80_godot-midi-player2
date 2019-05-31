@@ -238,8 +238,6 @@ func seek( to_position:float ):
 		var channel = self.channel_status[event_chunk.channel_number]
 		var event = event_chunk.event
 
-		self.emit_signal( "midi_event", channel, event )
-
 		match event.type:
 			SMF.MIDIEventType.program_change:
 				channel.program = event.number
