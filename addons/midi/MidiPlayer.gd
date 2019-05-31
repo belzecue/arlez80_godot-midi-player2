@@ -141,7 +141,7 @@ func _analyse_smf( ):
 			"number": i,
 			"bank": 0,
 		})
-	self._used_program_numbers = []
+	self._used_program_numbers = [0,128]
 	self.loop_start = 0.0
 
 	for event_chunk in self.track_status.events:
@@ -150,13 +150,8 @@ func _analyse_smf( ):
 		var event = event_chunk.event
 
 		match event.type:
-			#SMF.MIDIEventType.note_off:
-			#	channel.note_on.erase( event.note )
-			#SMF.MIDIEventType.note_on:
-			#	channel.note_on[event.note] = true
 			SMF.MIDIEventType.program_change:
 				var program_number:int = event.number | ( channel.bank << 7 )
-				# channel.program_number = program_number
 				if not( event.number in self._used_program_numbers ):
 					self._used_program_numbers.append( event.number )
 				if not( program_number in self._used_program_numbers ):
@@ -175,6 +170,8 @@ func _analyse_smf( ):
 							channel.bank = ( channel.bank & 0x3F80 ) | ( event.value & 0x7F )
 					SMF.control_number_tkool_loop_point:
 						self.loop_start = float( event_chunk.time )
+			_:
+				pass
 
 """
 	チャンネル初期化

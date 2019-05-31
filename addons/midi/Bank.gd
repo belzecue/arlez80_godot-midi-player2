@@ -86,12 +86,17 @@ func set_preset( program_number:int, preset ):
 func get_preset( program_number:int, bank:int = 0 ):
 	var pc = program_number | ( bank << 7 )
 
+	# 存在しない場合
 	if not self.presets.has( pc ):
-		if drum_track_bank == bank:
+		if self.drum_track_bank == bank:
+			# ドラムの場合（Standard Kitを選択）
 			pc = drum_track_bank
 		else:
+			# 通常楽器の場合（Bank #0を選択）
 			pc = program_number
+		# それでも存在しない場合
 		if not self.presets.has( pc ):
+			# 一番最初のデフォルト音源を読む
 			pc = self.presets.keys( )[0]
 
 	var preset = self.presets[pc]
