@@ -24,7 +24,7 @@ export (String, FILE, "*.sf2") var soundfont:String = ""
 export (int, "MIX_TARGET_STEREO", "MIX_TARGET_SURROUND", "MIX_TARGET_CENTER") var mix_target:int = AudioStreamPlayer.MIX_TARGET_STEREO
 export (String) var bus:String = "Master"
 
-var smf_data = null
+var smf_data = null setget set_smf_data
 var tempo:float = 120 setget set_tempo
 var frame_second:float = 0.0
 var seconds_to_timebase:float = 2.3
@@ -243,6 +243,12 @@ func stop( ):
 func set_file( path:String ):
 	file = path
 	self.smf_data = null
+
+"""
+	SMFデータ更新
+"""
+func set_smf_data( sd ):
+	smf_data = sd
 	self.bank = null
 
 """
