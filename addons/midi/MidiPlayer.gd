@@ -82,7 +82,15 @@ var drum_assign_groups = {
 	44: 42,	# Pedal Hi-Hat
 	46: 42,	# Pedal Hi-Hat
 }
+# SysEx
+var sys_ex = {
+	"gs_reset": false,
+	"gm_system_on": false,
+	"xg_system_on": false,
+}
 
+# MIDIチェンネルプレフィックス
+var _midi_channel_prefix:int = 0
 # 曲で使用中のプログラム番号を格納
 var _used_program_numbers = []
 
@@ -90,6 +98,10 @@ var _used_program_numbers = []
 # シグナル
 
 signal changed_tempo( tempo )
+signal appeared_text_event( text )
+signal appeared_copyright( copyright )
+signal appeared_track_name( channel_number, name )
+signal appeared_instrument_name( channel_number, name )
 signal appeared_lyric( lyric )
 signal appeared_marker( marker )
 signal appeared_cue_point( cue_point )
@@ -147,6 +159,11 @@ func _init_track( ):
 	self.track_status = {
 		"events": [],
 		"event_pointer": 0,
+	}
+	self.sys_ex = {
+		"gs_reset": false,
+		"gm_system_on": false,
+		"xg_system_on": false,
 	}
 
 	if len( self.smf_data.tracks ) == 1:
@@ -229,14 +246,29 @@ func _init_channel( ):
 			bank = self.drum_track_bank
 		self.channel_status.append({
 			"number": i,
+			"track_name": "Track %d" % i,
+			"instrument_name": "",
 			"note_on": {},
 			"bank": bank,
+
 			"program": 0,
-			"volume": 1.0,
-			"expression": 1.0,
 			"pitch_bend": 0.0,
-			"drum_track": drum_track,
+
+			"volume": 100.0 / 127.0,
+			"expression": 1.0,
+			"reverb": 0.0,		# Effect 1
+			"tremolo": 0.0,		# Effect 2
+			"chorus": 0.0,		# Effect 3
+			"celeste": 0.0,		# Effect 4
+			"phaser": 0.0,		# Effect 5
+			"modulation": 0.0,
+			"hold": 0.0,		# Sustain Pedal
+			"portamento": 0.0,
+			"sostenuto": 0.0,
+			"freeze": 0.0,
 			"pan": 0.5,
+
+			"drum_track": drum_track,
 
 			"rpn": {
 				"selected_msb": 0,
@@ -461,8 +493,26 @@ func _process_track_event_control_change( channel, event ):
 		SMF.control_number_expression:
 			channel.expression = float( event.value ) / 127.0
 			self._apply_channel_volume_to_notes( channel )
+		SMF.control_number_reverb_send_level:
+			channel.reverb = float( event.value ) / 127.0
+		SMF.control_number_tremolo_depth:
+			channel.tremolo = float( event.value ) / 127.0
+		SMF.control_number_chorus_send_level:
+			channel.chorus = float( event.value ) / 127.0
+		SMF.control_number_celeste_depth:
+			channel.celeste = float( event.value ) / 127.0
+		SMF.control_number_phaser_depth:
+			channel.phaser = float( event.value ) / 127.0
 		SMF.control_number_pan:
-			channel.pan = event.value / 127.0
+			channel.pan = float( event.value ) / 127.0
+		SMF.control_number_hold:
+			channel.hold = float( event.value ) / 127.0
+		SMF.control_number_portament:
+			channel.portament = float( event.value ) / 127.0
+		SMF.control_number_sostenuto:
+			channel.sostenuto = float( event.value ) / 127.0
+		SMF.control_number_freeze:
+			channel.freeze = float( event.value ) / 127.0
 		SMF.control_number_bank_select_msb:
 			if channel.drum_track:
 				channel.bank = self.drum_track_bank
@@ -514,15 +564,55 @@ func _process_track_system_event( channel, event ):
 	match event.args.type:
 		SMF.MIDISystemEventType.set_tempo:
 			self.tempo = 60000000.0 / float( event.args.bpm )
+		SMF.MIDISystemEventType.text_event:
+			self.emit_signal( "appeared_text_event", event.args.text )
+		SMF.MIDISystemEventType.copyright:
+			self.emit_signal( "appeared_copyright", event.args.text )
+		SMF.MIDISystemEventType.track_name:
+			self.emit_signal( "appeared_track_name", self._midi_channel_prefix, event.args.text )
+			self.channel_status[self._midi_channel_prefix].track_name = event.args.text
+		SMF.MIDISystemEventType.instrument_name:
+			self.emit_signal( "appeared_instrument_name", self._midi_channel_prefix, event.args.text )
+			self.channel_status[self._midi_channel_prefix].instrument_name = event.args.text
 		SMF.MIDISystemEventType.lyric:
 			self.emit_signal( "appeared_lyric", event.args.text )
 		SMF.MIDISystemEventType.marker:
 			self.emit_signal( "appeared_marker", event.args.text )
 		SMF.MIDISystemEventType.cue_point:
 			self.emit_signal( "appeared_cue_point", event.args.text )
+		SMF.MIDISystemEventType.midi_channel_prefix:
+			self._midi_channel_prefix = event.args.channel
+		SMF.MIDISystemEventType.sys_ex:
+			self._process_track_sys_ex( channel, event.args )
+		SMF.MIDISystemEventType.divided_sys_ex:
+			self._process_track_sys_ex( channel, event.args )
 		_:
 			# 無視
 			pass
+
+func _process_track_sys_ex( channel, event_args ):
+	match event_args.manifacture_id:
+		SMF.manufacture_id_universal_nopn_realtime_sys_ex:
+			if self._is_same_data( event_args.data, [0x7f,0x09,0x01,0xf7] ):
+				self.sys_ex.gm_system_on = true
+		SMF.manufacture_id_roland_corporation:
+			if self._is_same_data( event_args.data, [-1,0x42,0x12,0x40,0x00,0x7f,0x00,0x41,0xf7] ):
+				self.sys_ex.gs_reset = true
+		SMF.manufacture_id_yamaha_corporation:
+			if self._is_same_data( event_args.data, [-1,0x4c,0x00,0x00,0x7E,0x00,0xf7] ):
+				self.sys_ex.xg_system_on = true
+
+func _is_same_data( data_a, data_b ):
+	if len( data_a ) != len( data_b ): return false
+
+	var id:int = 0
+	var incorrect:bool = false
+	for t in data_a:
+		if t != -1 and t != data_b[id]:
+			incorrect = true
+			break
+		id += 1
+	return not incorrect
 
 func _get_idle_player( ):
 	var stopped_audio_stream_player = null

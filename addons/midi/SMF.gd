@@ -49,11 +49,11 @@ const control_number_source_note = 0x54
 
 const control_number_high_res_velovity_prefix = 0x58
 
-const control_number_effect1_depth = 0x5B
-const control_number_effect2_depth = 0x5C
-const control_number_effect3_depth = 0x5D
-const control_number_effect4_depth = 0x5E
-const control_number_effect5_depth = 0x5F
+const control_number_reverb_send_level = 0x5B	# Effect 1
+const control_number_tremolo_depth = 0x5C		# Effect 2
+const control_number_chorus_send_level = 0x5D	# Effect 3
+const control_number_celeste_depth = 0x5E		# Effect 4
+const control_number_phaser_depth = 0x5F		# Effect 5
 
 const control_number_data_increment = 0x60
 const control_number_data_decrement = 0x61
@@ -353,13 +353,15 @@ func _read_system_event( stream:StreamPeerBuffer, event_type_byte:int ):
 		var size:int = self._read_variable_int( stream )
 		return {
 			"type": MIDISystemEventType.sys_ex,
-			"data": stream.get_partial_data( size )[1],
+			"manifacture_id": stream.get_u8( ),
+			"data": stream.get_partial_data( size - 1 )[1],
 		}
 	elif event_type_byte == 0xf7:
 		var size:int = self._read_variable_int( stream )
 		return {
 			"type": MIDISystemEventType.divided_sys_ex,
-			"data": stream.get_partial_data( size )[1],
+			"manifacture_id": stream.get_u8( ),
+			"data": stream.get_partial_data( size - 1 )[1],
 		}
 
 	print( "Unknown system event type: %x" % event_type_byte )
@@ -592,16 +594,19 @@ func _write_system_event( stream:StreamPeerBuffer, event ):
 	match event.type:
 		MIDISystemEventType.sys_ex:
 			stream.put_u8( 0xF0 )
+			stream.put_u8( event.manifacture_id )
 			self._write_variable_int( stream, len( event.data ) )
 			if stream.put_data( event.data ) != OK:
 				push_error( "cant write event data" )
 				breakpoint
 		MIDISystemEventType.divided_sys_ex:
 			stream.put_u8( 0xF7 )
+			stream.put_u8( event.manifacture_id )
 			self._write_variable_int( stream, len( event.data ) )
 			if stream.put_data( event.data ) != OK:
 				push_error( "cant write event data" )
 				breakpoint
+
 		MIDISystemEventType.text_event:
 			stream.put_u8( 0xFF )
 			stream.put_u8( 0x01 )
@@ -657,6 +662,11 @@ func _write_system_event( stream:StreamPeerBuffer, event ):
 			stream.put_u8( 0x20 )
 			stream.put_u8( 0x01 )
 			stream.put_u8( event.prefix )
+		MIDISystemEventType.midi_channel_port:
+			stream.put_u8( 0xFF )
+			stream.put_u8( 0x21 )
+			stream.put_u8( 0x01 )
+			stream.put_u8( event.prefix )
 		MIDISystemEventType.end_of_track:
 			stream.put_u8( 0xFF )
 			stream.put_u8( 0x2F )
@@ -698,3 +708,6 @@ func _write_system_event( stream:StreamPeerBuffer, event ):
 			if stream.put_data( event.data ) != OK:
 				push_error( "cant write event data" )
 				breakpoint
+		_:
+			push_error( "not implemented! %d" % event.type )
+			breakpoint
