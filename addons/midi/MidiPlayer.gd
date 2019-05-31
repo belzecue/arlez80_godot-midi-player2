@@ -229,9 +229,8 @@ func seek( to_position:float ):
 
 	var pointer:int = 0
 	var new_position:int = int( floor( self.position ) )
-	var length:int = len(self.track_status.events)
-	while pointer < length:
-		var event_chunk = self.track_status.events[pointer]
+	var length:int = len( self.track_status.events )
+	for event_chunk in self.track_status.events:
 		if new_position <= event_chunk.time:
 			break
 
@@ -316,7 +315,7 @@ func _process_track( ):
 	if track.events == null:
 		return
 
-	var length:int = len(track.events)
+	var length:int = len( track.events )
 
 	if length <= track.event_pointer:
 		if self.loop:
