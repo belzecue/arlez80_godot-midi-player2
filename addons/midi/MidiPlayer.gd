@@ -228,11 +228,30 @@ func seek( to_position:float ):
 	self.position = to_position
 
 	var pointer:int = 0
+	var new_position:int = int( floor( self.position ) )
 	var length:int = len(self.track_status.events)
 	while pointer < length:
 		var event_chunk = self.track_status.events[pointer]
-		if self.position <= event_chunk.time:
+		if new_position <= event_chunk.time:
 			break
+
+		var channel = self.channel_status[event_chunk.channel_number]
+		var event = event_chunk.event
+
+		self.emit_signal( "midi_event", channel, event )
+
+		match event.type:
+			SMF.MIDIEventType.program_change:
+				channel.program = event.number
+			SMF.MIDIEventType.control_change:
+				self._process_track_event_control_change( channel, event )
+			SMF.MIDIEventType.pitch_bend:
+				self._process_pitch_bend( channel, event.value )
+			SMF.MIDIEventType.system_event:
+				self._process_track_system_event( channel, event )
+			_:
+				# 無視
+				pass
 		pointer += 1
 	self.track_status.event_pointer = pointer
 
@@ -340,8 +359,7 @@ func _process_track( ):
 			SMF.MIDIEventType.control_change:
 				self._process_track_event_control_change( channel, event )
 			SMF.MIDIEventType.pitch_bend:
-				channel.pitch_bend = float( event.value ) / 8192.0 - 1.0
-				self._update_pitch_bend_to_notes( channel )
+				self._process_pitch_bend( channel, event.value )
 			SMF.MIDIEventType.system_event:
 				self._process_track_system_event( channel, event )
 			_:
@@ -349,6 +367,13 @@ func _process_track( ):
 				pass
 
 	return execute_event_count
+
+func _process_pitch_bend( channel, value:int ):
+	channel.pitch_bend = float( value ) / 8192.0 - 1.0
+
+	for note in channel.note_on.values( ):
+		note.set_pitch_bend_range( channel.rpn.pitch_bend_range )
+		note.set_pitch_bend( channel.pitch_bend )
 
 func _process_track_event_note_off( channel, event ):
 	var key_number:int = event.note + self.key_shift
@@ -476,11 +501,6 @@ func _get_idle_player( ):
 func _apply_channel_volume_to_notes( channel ):
 	for note in channel.note_on.values( ):
 		note.change_channel_volume( self.channel_volume_db, self.volume_db, channel )
-
-func _update_pitch_bend_to_notes( channel ):
-	for note in channel.note_on.values( ):
-		note.set_pitch_bend_range( channel.rpn.pitch_bend_range )
-		note.set_pitch_bend( channel.pitch_bend )
 
 """
 	現在発音中の音色数を返す
