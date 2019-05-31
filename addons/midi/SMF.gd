@@ -30,7 +30,7 @@ const control_number_expression_lsb = 0x2B
 const control_number_effect_control1 = 0x2C
 const control_number_effect_control2 = 0x2D
 
-const control_number_hold = 0x40
+const control_number_hold = 0x40		# Sustain Pedal
 const control_number_portament = 0x41
 const control_number_sostenuto = 0x42
 const control_number_soft_pedal = 0x43
@@ -91,6 +91,8 @@ const manufacture_id_casio_computer_co_ltd = 0x44
 const manufacture_id_kamiya_studio_co_ltd = 0x46
 const manufacture_id_akai_electric_co_ltd = 0x47
 
+# 7F
+
 # Enums
 enum MIDIEventType {
 	note_off,					# 8*
@@ -106,6 +108,8 @@ enum MIDIEventType {
 enum MIDISystemEventType {
 	sys_ex,					
 	divided_sys_ex,			
+
+	sequence_number,		# 00
 	text_event,				# 01
 	copyright,				# 02
 	track_name,				# 03
@@ -113,13 +117,15 @@ enum MIDISystemEventType {
 	lyric,					# 05
 	marker,					# 06
 	cue_point,				# 07
+
 	midi_channel_prefix,	# 20
-	midi_port_prefix,		# 21
+	midi_port_prefix,		# 21	not standard
 	end_of_track,			# 2F
 
 	set_tempo,				# 51
 
 	smpte_offset,			# 54
+
 	beat,					# 58
 	key,					# 59
 
@@ -254,6 +260,8 @@ func _read_system_event( stream:StreamPeerBuffer, event_type_byte:int ):
 		var size:int = self._read_variable_int( stream )
 
 		match meta_type:
+			0x00:
+				return { "type": MIDISystemEventType.sequence_number, "number": stream.get_u16( ) }
 			0x01:
 				return { "type": MIDISystemEventType.text_event, "text": self._read_string( stream, size ) }
 			0x02:
