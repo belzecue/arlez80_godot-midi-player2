@@ -13,7 +13,7 @@ var instrument = null
 # 合成情報
 var velocity:int = 0
 var pitch_bend:float = 0
-var pitch_bend_range:float = 12.0
+var pitch_bend_sensitivity:float = 12.0
 var mix_rate:float = 0
 # ADSRタイマー
 var timer:float = 0.0
@@ -60,7 +60,7 @@ func play( from_position:float = 0.0 ):
 	self.using_timer = 0.0
 	self.current_volume_db = self.ads_state[0].volume_db
 	self.stream.mix_rate = self.mix_rate
-	self.pitch_scale = pow( 2, self.pitch_bend * self.pitch_bend_range / 12.0 )
+	self.pitch_scale = pow( 2, self.pitch_bend * self.pitch_bend_sensitivity / 12.0 )
 	.play( from_position )
 	self._update_volume( )
 
@@ -69,10 +69,10 @@ func start_release( ):
 
 func set_pitch_bend( pb:float ):
 	self.pitch_bend = pb
-	self.pitch_scale = pow( 2, self.pitch_bend * self.pitch_bend_range / 12.0 )
+	self.pitch_scale = pow( 2, self.pitch_bend * self.pitch_bend_sensitivity / 12.0 )
 
-func set_pitch_bend_range( pbr:float ):
-	self.pitch_bend_range = pbr
+func set_pitch_bend_sensitivity( pbr:float ):
+	self.pitch_bend_sensitivity = pbr
 
 func _update_adsr( delta:float ):
 	if not self.playing:
