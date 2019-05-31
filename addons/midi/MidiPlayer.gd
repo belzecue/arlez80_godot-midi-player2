@@ -20,6 +20,8 @@ export (float, -1000, 0) var volume_db:float = -10
 export (int) var key_shift:int = 0
 export (bool) var loop:bool = false
 export (float) var loop_start:float = 0
+export (bool) var all_load_voices_from_soundfont:bool = false
+export (bool) var no_reload_soundfont:bool = false
 export (String, FILE, "*.sf2") var soundfont:String = ""
 export (int, "MIX_TARGET_STEREO", "MIX_TARGET_SURROUND", "MIX_TARGET_CENTER") var mix_target:int = AudioStreamPlayer.MIX_TARGET_STEREO
 export (String) var bus:String = "Master"
@@ -74,7 +76,10 @@ func _prepare_to_play( ):
 		if self.soundfont != "":
 			var sf_reader = SoundFont.new( )
 			var sf2 = sf_reader.read_file( self.soundfont )
-			self.bank.read_soundfont( sf2, self._used_program_numbers )
+			var voices = null
+			if not self.all_load_voices_from_soundfont:
+				voices = self._used_program_numbers
+			self.bank.read_soundfont( sf2, voices )
 
 	# 発音機
 	if self.audio_stream_players.size( ) == 0:
@@ -250,7 +255,7 @@ func set_file( path:String ):
 """
 func set_smf_data( sd ):
 	smf_data = sd
-	self.bank = null
+	if not self.no_reload_soundfont: self.bank = null
 
 """
 	テンポ設定
