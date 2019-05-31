@@ -4,24 +4,39 @@ extends AudioStreamPlayer
 	AudioStreamPlayer with ADSR
 """
 
+# リリース中？
 var releasing:bool = false
+# リリース要求
 var request_release:bool = false
+# 楽器情報
 var instrument = null
+# 合成情報
 var velocity:int = 0
 var pitch_bend:float = 0
 var pitch_bend_range:float = 12.0
 var mix_rate:float = 0
-var using_timer:float = 0.0
+# ADSRタイマー
 var timer:float = 0.0
+# 使用時間
+var using_timer:float = 0.0
+
+# 現在のADSRボリューム
 var current_volume:float = 0.0
+# 発音音量
+var note_volume:float = 0.0
+# 最大音量
 var maximum_volume_db:float = -8.0
-var minimum_volume_db:float = -108.0
+# 自動リリースモード？
+var auto_release_mode:bool = false
 # var pan:float = 0.5
+
+# ADSステート
 var ads_state = [
 	{ "time": 0.0, "volume": 1.0 },
 	{ "time": 0.2, "volume": 0.95 },
 	# { "time": 0.2, "jump_to": 0.0 },	# not implemented
 ]
+# Rステート
 var release_state = [
 	{ "time": 0.0, "volume": 0.8 },
 	{ "time": 0.01, "volume": 0.0 },
@@ -67,7 +82,7 @@ func _update_adsr( delta:float ):
 	self.using_timer += delta
 	# self.transform.origin.x = self.pan * self.get_viewport( ).size.x
 
-	# ADSR
+	# ADSR選択
 	var use_state = null
 	if self.releasing:
 		use_state = self.release_state
@@ -79,6 +94,7 @@ func _update_adsr( delta:float ):
 	if use_state[last_state].time <= self.timer:
 		self.current_volume = use_state[last_state].volume
 		if self.releasing: self.stop( )
+		if self.auto_release_mode: self.request_release = true
 	else:
 		for state_number in range( 1, all_states ):
 			var state = use_state[state_number]
@@ -97,11 +113,8 @@ func _update_adsr( delta:float ):
 		self.timer = 0.0
 
 func _update_volume( ):
-	var s:float = self.current_volume
-	var t:float = 1.0 - s
-	self.volume_db = s * self.maximum_volume_db + t * self.minimum_volume_db
+	self.volume_db = linear2db( self.current_volume * self.note_volume ) + self.maximum_volume_db
 
-func change_channel_volume( amp_volume_db:float, base_volume_db:float, channel ):
-	var note_volume:float = channel.volume * channel.expression * ( self.velocity / 127.0 )
-	var volume_db:float = note_volume * amp_volume_db - amp_volume_db + base_volume_db
-	self.maximum_volume_db = volume_db
+func change_channel_volume( base_volume_db:float, channel ):
+	self.note_volume = float( channel.volume * channel.expression ) * ( float( self.velocity ) / 127.0 )
+	self.maximum_volume_db = base_volume_db

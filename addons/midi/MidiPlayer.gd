@@ -16,7 +16,7 @@ export (String, FILE, "*.mid") var file:String = "" setget set_file
 export (bool) var playing:bool = false
 export (Array) var channel_mute:Array = [false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false]
 export (float) var play_speed:float = 1.0
-export (float, -1000, 0) var volume_db:float = -10
+export (float, -1000, 0) var volume_db:float = -20.0
 export (int) var key_shift:int = 0
 export (bool) var loop:bool = false
 export (float) var loop_start:float = 0
@@ -35,7 +35,6 @@ var position:float = 0
 var last_position:int = 0
 var track_status = null
 var channel_status = []
-var channel_volume_db:float = 20
 
 var bank = null
 var audio_stream_players = []
@@ -291,13 +290,10 @@ func _stop_all_notes( ):
 	毎フレーム処理
 """
 func _process( delta:float ):
-	if self.smf_data == null:
-		return
-	if not self.playing:
-		return
-
-	self.position += float( self.smf_data.timebase ) * delta * self.seconds_to_timebase * self.play_speed
-	self._process_track( )
+	if self.smf_data != null:
+		if self.playing:
+			self.position += float( self.smf_data.timebase ) * delta * self.seconds_to_timebase * self.play_speed
+			self._process_track( )
 
 	for asp in self.audio_stream_players:
 		asp._update_adsr( delta )
@@ -368,6 +364,8 @@ func _process_pitch_bend( channel, value:int ):
 		note.set_pitch_bend( channel.pitch_bend )
 
 func _process_track_event_note_off( channel, event ):
+	if channel.drum_track: return
+
 	var key_number:int = event.note + self.key_shift
 	if channel.note_on.has( key_number ):
 		var note_player = channel.note_on[key_number]
@@ -378,8 +376,6 @@ func _process_track_event_note_off( channel, event ):
 func _process_track_event_note_on( channel, event ):
 	if not self.channel_mute[channel.number]:
 		var key_number:int = event.note + self.key_shift
-		var note_volume:float = channel.volume * channel.expression * ( event.velocity / 127.0 )
-		var volume_db:float = note_volume * self.channel_volume_db - self.channel_volume_db + self.volume_db
 		var preset = self.bank.get_preset( channel.program, channel.bank )
 		var instrument = preset.instruments[key_number]
 
@@ -390,21 +386,21 @@ func _process_track_event_note_on( channel, event ):
 			var note_player = self._get_idle_player( )
 			if note_player != null:
 				note_player.velocity = event.velocity
-				note_player.maximum_volume_db = volume_db
 				note_player.pitch_bend = channel.pitch_bend
 				note_player.pitch_bend_range = channel.rpn.pitch_bend_range
+				note_player.auto_release_mode = channel.drum_track
+				note_player.change_channel_volume( self.volume_db, channel )
 				note_player.set_instrument( instrument )
 				note_player.play( 0.0 )
-				if not channel.drum_track:
-					channel.note_on[key_number] = note_player
+				channel.note_on[key_number] = note_player
 
 func _process_track_event_control_change( channel, event ):
 	match event.number:
 		SMF.control_number_volume:
-			channel.volume = event.value / 127.0
+			channel.volume = float( event.value ) / 127.0
 			self._apply_channel_volume_to_notes( channel )
 		SMF.control_number_expression:
-			channel.expression = event.value / 127.0
+			channel.expression = float( event.value ) / 127.0
 			self._apply_channel_volume_to_notes( channel )
 		SMF.control_number_pan:
 			channel.pan = event.value / 127.0
@@ -492,7 +488,7 @@ func _get_idle_player( ):
 
 func _apply_channel_volume_to_notes( channel ):
 	for note in channel.note_on.values( ):
-		note.change_channel_volume( self.channel_volume_db, self.volume_db, channel )
+		note.change_channel_volume( self.volume_db, channel )
 
 """
 	現在発音中の音色数を返す
