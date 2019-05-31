@@ -42,7 +42,7 @@ export (bool) var loop:bool = false
 # ループ開始位置
 export (float) var loop_start:float = 0
 # 全ての音をサウンドフォントから読むか？
-export (bool) var all_load_voices_from_soundfont:bool = false
+export (bool) var load_all_voices_from_soundfont:bool = false
 # サウンドフォントの再読み込みを行わない
 export (bool) var no_reload_soundfont:bool = false
 # サウンドフォント
@@ -135,7 +135,7 @@ func _prepare_to_play( ):
 			var sf_reader = SoundFont.new( )
 			var sf2 = sf_reader.read_file( self.soundfont )
 			var voices = null
-			if not self.all_load_voices_from_soundfont:
+			if not self.load_all_voices_from_soundfont:
 				voices = self._used_program_numbers
 			self.bank.read_soundfont( sf2, voices )
 
