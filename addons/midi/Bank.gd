@@ -189,6 +189,22 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 			var key_range = ibag.key_range
 			if pbag.key_range != null:
 				key_range = pbag.key_range
+
+			# ADSRステート生成
+			var a:float = ibag.adsr.attack_vol_env_time
+			var d:float = ibag.adsr.decay_vol_env_time
+			var s:float = ibag.adsr.sustain_vol_env_db
+			var r:float = ibag.adsr.release_vol_env_time
+			var ads_state = [
+				{ "time": 0, "volume_db": -144.0 },
+				{ "time": a, "volume_db": 0.0 },
+				{ "time": a+d, "volume_db": s },
+			]
+			var release_state = [
+				{ "time": 0, "volume_db": s },
+				{ "time": r, "volume_db": -144.0 },
+			]
+			# 各キーごとに生成
 			for key_number in range( key_range.low, key_range.high + 1 ):
 				#if preset.number == drum_track_bank << 7:
 				#	if 36 <= key_number and key_number <= 40:
@@ -203,19 +219,8 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 					instrument.mix_rate = self.calc_mix_rate( mix_rate, ibag.original_key, key_number )
 				instrument.stream = ass
 	
-				var a:float = ibag.adsr.attack_vol_env_time
-				var d:float = ibag.adsr.decay_vol_env_time
-				var s:float = ibag.adsr.sustain_vol_env_db
-				var r:float = ibag.adsr.release_vol_env_time
-				instrument.ads_state = [
-					{ "time": 0, "volume_db": -144.0 },
-					{ "time": a, "volume_db": 0.0 },
-					{ "time": a+d, "volume_db": s },
-				]
-				instrument.release_state = [
-					{ "time": 0, "volume_db": s },
-					{ "time": r, "volume_db": -144.0 },
-				]
+				instrument.ads_state = ads_state
+				instrument.release_state = release_state
 				preset.instruments[key_number] = instrument
 
 func _read_soundfont_pdta_inst( sf ):
