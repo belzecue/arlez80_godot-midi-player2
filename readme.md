@@ -26,6 +26,16 @@ I develop it for use embedding in game.
 * [download](https://bitbucket.org/arlez80/godot-midi-player/downloads/demo.zip)
 * BGM "failyland_gm.mid" from [IvyMaze]( http://ivymaze.sakura.ne.jp/ )
 
+## Hint
+
+* Set false to `GodotMIDIPlayer.load_all_voices_from_soundfont` to load voices for program change message in MIDI sequence.
+    * of course, `GodotMIDIPlayer.load_all_voices_from_soundfont = true` will be very slow.
+* Set true to `GodotMIDIPlayer.no_reload_soundfont` to disable reload soundfont when changes `GodotMIDIPlayer.file` or `GodotMIDIPlayer.smf_data`.
+    * Set true `GodotMIDIPlayer.load_all_voices_from_soundfont` and `GodotMIDIPlayer.no_reload_soundfont` is better for MIDI player applications.
+    * Set false `GodotMIDIPlayer.load_all_voices_from_soundfont` and `GodotMIDIPlayer.no_reload_soundfont` is better for game applications with low memory foot print.
+* SMF format 0 loading faster than SMF format 1.
+    * because format 1 needs convert.
+
 ## TODO
 
 * See [issues]( https://bitbucket.org/arlez80/godot-midi-player/issues )
