@@ -483,6 +483,8 @@ func _process_track_event_note_on( channel, event ):
 				note_player.velocity = event.velocity
 				note_player.pitch_bend = channel.pitch_bend
 				note_player.pitch_bend_sensitivity = channel.rpn.pitch_bend_sensitivity
+				note_player.modulation = channel.modulation
+				note_player.modulation_sensitivity = channel.rpn.modulation_sensitivity
 				note_player.auto_release_mode = channel.drum_track
 				note_player.change_channel_volume( self.volume_db, channel )
 				note_player.set_instrument( instrument )
