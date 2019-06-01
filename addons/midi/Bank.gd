@@ -258,7 +258,7 @@ func _read_soundfont_pdta_inst( sf ):
 				},
 			}
 			if global_bag != null:
-				bag = deep_copy( global_bag )
+				bag = global_bag.duplicate( true )
 			var gen_next:int = sf.pdta.ibag[bag_count+1].gen_ndx
 			var gen_count:int = gen_index
 			while gen_count < gen_next:
@@ -325,17 +325,3 @@ func _read_soundfont_pdta_inst( sf ):
 		bag_index = bag_next
 
 	return sf_insts
-
-func deep_copy( data ):
-	match typeof( data ):
-		TYPE_DICTIONARY:
-			var t = {}
-			for key in data.keys( ):
-				t[key] = self.deep_copy( data[key] )
-			data = t
-		TYPE_ARRAY:
-			var t = []
-			for i in range( 0, len( data ) ):
-				t.append( self.deep_copy( data[i] ) )
-			data = t
-	return data
