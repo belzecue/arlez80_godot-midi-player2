@@ -277,6 +277,10 @@ func _init_channel( ):
 				"pitch_bend_sensitivity": 2.0,
 				"pitch_bend_sensitivity_msb": 2.0,
 				"pitch_bend_sensitivity_lsb": 0.0,
+
+				"modulation_sensitivity": 0.25,
+				"modulation_sensitivity_msb": 0.25,
+				"modulation_sensitivity_lsb": 0.0,
 			},
 		})
 
@@ -447,8 +451,8 @@ func _process_pitch_bend( channel, value:int ):
 	channel.pitch_bend = float( value ) / 8192.0 - 1.0
 
 	for note in channel.note_on.values( ):
-		note.set_pitch_bend_sensitivity( channel.rpn.pitch_bend_sensitivity )
-		note.set_pitch_bend( channel.pitch_bend )
+		note.pitch_bend_sensitivity = channel.rpn.pitch_bend_sensitivity
+		note.pitch_bend = channel.pitch_bend
 
 func _process_track_event_note_off( channel, event ):
 	if channel.drum_track: return
@@ -490,6 +494,9 @@ func _process_track_event_control_change( channel, event ):
 		SMF.control_number_volume:
 			channel.volume = float( event.value ) / 127.0
 			self._apply_channel_volume_to_notes( channel )
+		SMF.control_number_modulation:
+			channel.modulation = float( event.value ) / 127.0
+			self._apply_channel_modulation( channel )
 		SMF.control_number_expression:
 			channel.expression = float( event.value ) / 127.0
 			self._apply_channel_volume_to_notes( channel )
@@ -534,6 +541,15 @@ func _process_track_event_control_change( channel, event ):
 		_:
 			# 無視
 			pass
+
+func _apply_channel_volume_to_notes( channel ):
+	for note in channel.note_on.values( ):
+		note.change_channel_volume( self.volume_db, channel )
+
+func _apply_channel_modulation( channel ):
+	for note in channel.note_on.values( ):
+		note.modulation_sensitivity = channel.rpn.modulation_sensitivity
+		note.modulation = channel.modulation
 
 func _process_track_event_control_change_rpn_data_entry_msb( channel, event ):
 	match channel.rpn.selected_msb:
@@ -634,10 +650,6 @@ func _get_idle_player( ):
 		return stopped_audio_stream_player
 
 	return oldest_audio_stream_player
-
-func _apply_channel_volume_to_notes( channel ):
-	for note in channel.note_on.values( ):
-		note.change_channel_volume( self.volume_db, channel )
 
 """
 	現在発音中の音色数を返す

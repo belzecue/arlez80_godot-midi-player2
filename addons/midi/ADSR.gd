@@ -12,9 +12,11 @@ var request_release:bool = false
 var instrument = null
 # 合成情報
 var velocity:int = 0
-var pitch_bend:float = 0
+var pitch_bend:float = 0.0
 var pitch_bend_sensitivity:float = 12.0
-var mix_rate:float = 0
+var modulation:float = 0.0
+var modulation_sensitivity:float = 0.5
+var mix_rate:int = 0
 # ADSRタイマー
 var timer:float = 0.0
 # 使用時間
@@ -60,19 +62,11 @@ func play( from_position:float = 0.0 ):
 	self.using_timer = 0.0
 	self.current_volume_db = self.ads_state[0].volume_db
 	self.stream.mix_rate = self.mix_rate
-	self.pitch_scale = pow( 2, self.pitch_bend * self.pitch_bend_sensitivity / 12.0 )
 	.play( from_position )
 	self._update_volume( )
 
 func start_release( ):
 	self.request_release = true
-
-func set_pitch_bend( pb:float ):
-	self.pitch_bend = pb
-	self.pitch_scale = pow( 2, self.pitch_bend * self.pitch_bend_sensitivity / 12.0 )
-
-func set_pitch_bend_sensitivity( pbr:float ):
-	self.pitch_bend_sensitivity = pbr
 
 func _update_adsr( delta:float ):
 	if not self.playing:
@@ -104,6 +98,10 @@ func _update_adsr( delta:float ):
 				var t:float = 1.0 - s
 				self.current_volume_db = pre_state.volume_db * s + state.volume_db * t
 				break
+
+	var pitch_bend = self.pitch_bend * self.pitch_bend_sensitivity / 12.0
+	var modulation = sin( self.using_timer * 32.0 ) * ( self.modulation * self.modulation_sensitivity / 12.0 )
+	self.pitch_scale = pow( 2, modulation + pitch_bend )
 
 	self._update_volume( )
 

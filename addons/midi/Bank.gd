@@ -50,7 +50,7 @@ func create_instrument( ):
 	再生周波数計算
 """
 func calc_mix_rate( rate:float, center_key:int, target_key:int ):
-	return round( rate * pow( 2.0, ( target_key - center_key ) / 12.0 ) )
+	return int( round( rate * pow( 2.0, ( target_key - center_key ) / 12.0 ) ) )
 
 """
 	追加
