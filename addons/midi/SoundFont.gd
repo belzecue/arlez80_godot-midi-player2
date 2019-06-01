@@ -258,7 +258,7 @@ func _read_sdta( stream:StreamPeerBuffer ):
 	self._check_header( chunk.stream, "sdta" )
 
 	var smpl = self._read_chunk( chunk.stream, "smpl" )
-	var smpl_bytes = smpl.stream.get_partial_data( smpl.size )[1]
+	var smpl_bytes:PoolByteArray = smpl.stream.get_partial_data( smpl.size )[1]
 
 	var sm24_bytes = null
 	if 0 < chunk.stream.get_available_bytes( ):
@@ -410,26 +410,23 @@ func _read_pdta_modulator( u:int ):
 """
 func _read_pdta_gen( stream:StreamPeerBuffer ):
 	var chunk = self._read_chunk( stream )
+	var chunk_stream = chunk.stream
 	var gens = []
 
 	if chunk.header.substr( 1, 3 ) != "gen":
 		print( "Doesn't exist *gen header." )
 		breakpoint
 
-	while 0 < chunk.stream.get_available_bytes( ):
-		var gen = {
-			"gen_oper": 0,
-			"amount": 0,
-			"uamount": 0,
-		}
-	
-		gen.gen_oper = chunk.stream.get_u16( )
-		var u:int = chunk.stream.get_u16( )
-		gen.uamount = u
-		gen.amount = u
-		if 32767 < u:
-			gen.amount = - ( 65536 - u )
-		gens.append( gen )
+	while 0 < chunk_stream.get_available_bytes( ):
+		var gen_oper:int = chunk_stream.get_u16( )
+		var uamount:int = chunk_stream.get_u16( )
+		var amount:int = uamount
+		if 32767 < uamount: amount = - ( 65536 - uamount )
+		gens.append({
+			"gen_oper": gen_oper,
+			"uamount": uamount,
+			"amount": amount,
+		})
 
 	return gens
 
@@ -440,16 +437,17 @@ func _read_pdta_gen( stream:StreamPeerBuffer ):
 """
 func _read_pdta_inst( stream:StreamPeerBuffer ):
 	var chunk = self._read_chunk( stream, "inst" )
+	var chunk_stream = chunk.stream
 	var insts = []
 
-	while 0 < chunk.stream.get_available_bytes( ):
+	while 0 < chunk_stream.get_available_bytes( ):
 		var inst = {
 			"name": "",
 			"inst_bag_ndx": 0,
 		}
 	
-		inst.name = chunk.stream.get_string( 20 )
-		inst.inst_bag_ndx = chunk.stream.get_u16( )
+		inst.name = chunk_stream.get_string( 20 )
+		inst.inst_bag_ndx = chunk_stream.get_u16( )
 		insts.append( inst )
 
 	return insts
