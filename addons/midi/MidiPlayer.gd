@@ -174,16 +174,19 @@ func _init_track( ):
 		var finished:bool = false
 		while not finished:
 			finished = true
+
 			var next_time:int = 0x7fffffff
 			for track in tracks:
-				if track.length <= track.pointer: continue
+				var p = track.pointer
+				if track.length <= p: continue
 				finished = false
 				
-				var e = track.events[track.pointer]
+				var e = track.events[p]
 				var e_time = e.time
 				if e_time == time:
 					track_status_events.append( e )
 					track.pointer += 1
+					next_time = e_time
 				elif e_time < next_time:
 					next_time = e_time
 			time = next_time
