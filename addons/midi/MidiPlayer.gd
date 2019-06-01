@@ -156,10 +156,7 @@ func _prepare_to_play( ):
 	トラック初期化
 """
 func _init_track( ):
-	self.track_status = {
-		"events": [],
-		"event_pointer": 0,
-	}
+	var track_status_events:Array = []
 	self.sys_ex = {
 		"gs_reset": false,
 		"gm_system_on": false,
@@ -167,30 +164,35 @@ func _init_track( ):
 	}
 
 	if len( self.smf_data.tracks ) == 1:
-		self.track_status.events = self.smf_data.tracks[0].events
+		track_status_events = self.smf_data.tracks[0].events
 	else:
 		var tracks = []
 		for track in self.smf_data.tracks:
-			tracks.append({"pointer":0, "data":track})
+			tracks.append({"pointer":0, "events":track.events, "length": len( track.events )})
 
 		var time:int = 0
-		while true:
-			var finished:bool = true
+		var finished:bool = false
+		while not finished:
+			finished = true
 			var next_time:int = 0x7fffffff
 			for track in tracks:
-				if len(track.data.events) <= track.pointer: continue
-				
-				var e = track.data.events[track.pointer]
+				if track.length <= track.pointer: continue
 				finished = false
-				if e.time == time:
-					self.track_status.events.append( e )
+				
+				var e = track.events[track.pointer]
+				var e_time = e.time
+				if e_time == time:
+					track_status_events.append( e )
 					track.pointer += 1
-				if e.time < next_time:
-					next_time = e.time
+				elif e_time < next_time:
+					next_time = e_time
 			time = next_time
-			if finished: break
 
-	self.last_position = self.track_status.events[len(self.track_status.events)-1].time
+	self.last_position = track_status_events[len(track_status_events)-1].time
+	self.track_status = {
+		"events": track_status_events,
+		"event_pointer": 0,
+	}
 
 """
 	SMF解析
