@@ -164,21 +164,6 @@ func read_soundfont( sf, need_program_numbers = null ):
 		self.set_preset( program_number, preset )
 
 func _read_soundfont_preset_compose_sample( sf, preset ):
-	"""
-	var samples = []
-	var zero_4bytes = PoolIntArray( [ 0, 0 ] )
-	for bag in preset.bags[0].instrument.bags:
-		var sample = PoolIntArray( )
-		var start = bag.sample.start + bag.sample_start_offset
-		var end = bag.sample.end + bag.sample_end_offset
-		for i in range( 0, ( end - start ) / 2 ):
-			sample.append_array( zero_4bytes )
-		samples.append( sample )
-	"""
-
-	#var silent = PoolByteArray( )
-	#for i in range( 0, 44100 ): silent.append( 0 )
-
 	for pbag_index in range( 0, preset.bags.size( ) ):
 		var pbag = preset.bags[pbag_index]
 		for ibag_index in range( 0, pbag.instrument.bags.size( ) ):
