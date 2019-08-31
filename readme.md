@@ -11,8 +11,8 @@ I develop it for use embedding in game.
 
 ## Try it
 
-1. Copy *.mid to "res://"
-2. Copy *.sf2 to "res://"
+1. Copy *.mid under "res://"
+2. Copy *.sf2 under "res://"
 3. Set MIDI path to MidiPlayer "file" parameter.
 4. Set SoundFont path to MidiPlayer "soundfont" parameter.
 5. Play
@@ -43,7 +43,7 @@ I develop it for use embedding in game.
 ## Not TODO
 
 * Supports play format 2
-    * SMF.gd can read it. but MIDI Player will not implement it.
+    * SMF.gd can read it. but I will not implement it to MIDI Player.
 * Implements some effects (Use godot's mixer effect!)
     * Reverb
     * Chorus
@@ -53,6 +53,7 @@ I develop it for use embedding in game.
 
 * Player's timebase is 1/60 sec.
     * It probably need 1/240 sec at least.
+* Sometimes play sounds with delay.
 
 ## License
 
