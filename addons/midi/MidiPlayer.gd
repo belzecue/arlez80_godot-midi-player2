@@ -649,7 +649,7 @@ func _process_track_sys_ex_reset_all_channels( ):
 		"freeze": 0.0,
 		"pan": 0.5,
 	}
-	var rpn = {
+	var rpn_init_params = {
 		"selected_msb": 0,
 		"selected_lsb": 0,
 
@@ -665,7 +665,8 @@ func _process_track_sys_ex_reset_all_channels( ):
 	for channel in self.channel_status:
 		for name in init_params.keys( ):
 			channel[name] = init_params[name]
-		channel.rpn = rpn.duplicate( true )
+		for name in rpn_init_params.keys( ):
+			channel.rpn[name] = rpn_init_params[name]
 
 func _is_same_data( data_a, data_b ):
 	if len( data_a ) != len( data_b ): return false
