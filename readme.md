@@ -53,7 +53,6 @@ I develop it for use embedding in game.
 
 * Player's timebase is 1/60 sec.
     * It probably need 1/240 sec at least.
-* Sometimes play sounds with delay.
 
 ## License
 
