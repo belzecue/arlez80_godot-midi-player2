@@ -6,6 +6,7 @@ const drum_track_bank = 128
 const SoundFont = preload( "SoundFont.gd" )
 const default_instrument = {
 	"mix_rate": 44100,
+	"mix_pitch": 0.0,
 	"stream": null,
 	"ads_state": [
 		{ "time": 0, "volume_db": 0.0 },
@@ -28,12 +29,6 @@ const default_mix_rate_table = [819,868,920,974,1032,1094,1159,1228,1301,1378,14
 
 # 音色テーブル
 var presets = {}
-
-"""
-	再生周波数計算
-"""
-func calc_mix_rate( rate:float, center_key:int, target_key:int ):
-	return int( round( rate * pow( 2.0, float( target_key - center_key ) / 12.0 ) ) )
 
 """
 	追加
@@ -157,13 +152,13 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 			var end:int = ibag.sample.end + ibag.sample_end_offset
 			var start_loop:int = ibag.sample.start_loop + ibag.sample_start_loop_offset
 			var end_loop:int = ibag.sample.end_loop + ibag.sample_end_loop_offset
-			var mix_rate:float = ibag.sample.sample_rate * pow( 2.0, ( pbag.coarse_tune + ibag.coarse_tune ) / 12.0 ) * pow( 2.0, ( pbag.fine_tune + ibag.sample.pitch_correction + ibag.fine_tune ) / 1200.0 )
+			var mix_pitch:float = ( pbag.coarse_tune + ibag.coarse_tune ) / 12.0 + ( pbag.fine_tune + ibag.sample.pitch_correction + ibag.fine_tune ) / 1200.0
 
 			var ass:AudioStreamSample = AudioStreamSample.new( )
 			var wave:PoolByteArray = sample_base.subarray( start * 2, end * 2 - 1 )
 			ass.data = wave
 			ass.format = AudioStreamSample.FORMAT_16_BITS
-			ass.mix_rate = int( mix_rate )
+			ass.mix_rate = ibag.sample.sample_rate
 			ass.stereo = false #bag.sample.sample_type != SoundFont.sample_link_mono_sample
 			ass.loop_begin = start_loop - start
 			ass.loop_end = end_loop - start
@@ -198,10 +193,10 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 					continue
 				var instrument = self.default_instrument.duplicate( true )
 				instrument.preset = preset
-				if ibag.original_key == 255:
-					instrument.mix_rate = ibag.sample.sample_rate
-				else:
-					instrument.mix_rate = self.calc_mix_rate( mix_rate, ibag.original_key, key_number )
+				instrument.mix_rate = ibag.sample.sample_rate
+				instrument.mix_pitch = mix_pitch
+				if ibag.original_key != 255:
+					instrument.mix_pitch += float( key_number - ibag.original_key ) / 12.0
 				instrument.stream = ass
 	
 				instrument.ads_state = ads_state
