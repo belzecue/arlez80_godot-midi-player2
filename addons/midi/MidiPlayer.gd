@@ -406,11 +406,13 @@ func _process_track( ):
 
 	if length <= track.event_pointer:
 		if self.loop:
+			var diff:float = self.position - track.events[len( track.events ) - 1].time
 			self.seek( self.loop_start )
 			self.emit_signal( "looped" )
+			self.position += diff
 		else:
 			self.playing = false
-		return
+			return
 
 	for channel in self.channel_status:
 		for key_number in channel.note_on.keys( ):
