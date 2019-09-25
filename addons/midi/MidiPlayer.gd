@@ -620,12 +620,52 @@ func _process_track_sys_ex( channel, event_args ):
 		SMF.manufacture_id_universal_nopn_realtime_sys_ex:
 			if self._is_same_data( event_args.data, [0x7f,0x09,0x01,0xf7] ):
 				self.sys_ex.gm_system_on = true
+				self._process_track_sys_ex_reset_all_channels( )
 		SMF.manufacture_id_roland_corporation:
 			if self._is_same_data( event_args.data, [-1,0x42,0x12,0x40,0x00,0x7f,0x00,0x41,0xf7] ):
 				self.sys_ex.gs_reset = true
+				self._process_track_sys_ex_reset_all_channels( )
 		SMF.manufacture_id_yamaha_corporation:
 			if self._is_same_data( event_args.data, [-1,0x4c,0x00,0x00,0x7E,0x00,0xf7] ):
 				self.sys_ex.xg_system_on = true
+				self._process_track_sys_ex_reset_all_channels( )
+
+func _process_track_sys_ex_reset_all_channels( ):
+	var init_params = {
+		"program": 0,
+		"pitch_bend": 0.0,
+	
+		"volume": 100.0 / 127.0,
+		"expression": 1.0,
+		"reverb": 0.0,		# Effect 1
+		"tremolo": 0.0,		# Effect 2
+		"chorus": 0.0,		# Effect 3
+		"celeste": 0.0,		# Effect 4
+		"phaser": 0.0,		# Effect 5
+		"modulation": 0.0,
+		"hold": 0.0,		# Sustain Pedal
+		"portamento": 0.0,
+		"sostenuto": 0.0,
+		"freeze": 0.0,
+		"pan": 0.5,
+	}
+	var rpn = {
+		"selected_msb": 0,
+		"selected_lsb": 0,
+
+		"pitch_bend_sensitivity": 2.0,
+		"pitch_bend_sensitivity_msb": 2.0,
+		"pitch_bend_sensitivity_lsb": 0.0,
+
+		"modulation_sensitivity": 0.25,
+		"modulation_sensitivity_msb": 0.25,
+		"modulation_sensitivity_lsb": 0.0,
+	};
+
+	for channel in self.channel_status:
+		for name in init_params.keys( ):
+			channel[name] = init_params[name]
+		channel.rpn = rpn.duplicate( true )
 
 func _is_same_data( data_a, data_b ):
 	if len( data_a ) != len( data_b ): return false
