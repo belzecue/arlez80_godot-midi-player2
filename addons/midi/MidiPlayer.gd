@@ -267,7 +267,7 @@ func _init_channel( ):
 			"celeste": 0.0,		# Effect 4
 			"phaser": 0.0,		# Effect 5
 			"modulation": 0.0,
-			"hold": 0.0,		# Sustain Pedal
+			"hold": false,		# Sustain Pedal
 			"portamento": 0.0,
 			"sostenuto": 0.0,
 			"freeze": 0.0,
@@ -469,7 +469,8 @@ func _process_track_event_note_off( channel, event ):
 		var note_player = channel.note_on[key_number]
 		if note_player != null:
 			note_player.start_release( )
-			channel.note_on.erase( key_number )
+			if not channel.hold:
+				channel.note_on.erase( key_number )
 
 func _process_track_event_note_on( channel, event ):
 	if not self.channel_mute[channel.number]:
@@ -490,6 +491,7 @@ func _process_track_event_note_on( channel, event ):
 				note_player.velocity = event.velocity
 				note_player.pitch_bend = channel.pitch_bend
 				note_player.pitch_bend_sensitivity = channel.rpn.pitch_bend_sensitivity
+				note_player.hold = channel.hold
 				note_player.modulation = channel.modulation
 				note_player.modulation_sensitivity = channel.rpn.modulation_sensitivity
 				note_player.auto_release_mode = channel.drum_track
@@ -522,7 +524,10 @@ func _process_track_event_control_change( channel, event ):
 		SMF.control_number_pan:
 			channel.pan = float( event.value ) / 127.0
 		SMF.control_number_hold:
-			channel.hold = float( event.value ) / 127.0
+			channel.hold = 64 <= event.value
+			for key_number in channel.note_on.keys( ):
+				var note = channel.note_on[key_number]
+				note.hold = channel.hold
 		SMF.control_number_portament:
 			channel.portament = float( event.value ) / 127.0
 		SMF.control_number_sostenuto:
@@ -643,10 +648,10 @@ func _process_track_sys_ex_reset_all_channels( ):
 		"celeste": 0.0,		# Effect 4
 		"phaser": 0.0,		# Effect 5
 		"modulation": 0.0,
-		"hold": 0.0,		# Sustain Pedal
+		"hold": false,		# Sustain Pedal
 		"portamento": 0.0,
 		"sostenuto": 0.0,
-		"freeze": 0.0,
+		"freeze": false,
 		"pan": 0.5,
 	}
 	var rpn_init_params = {

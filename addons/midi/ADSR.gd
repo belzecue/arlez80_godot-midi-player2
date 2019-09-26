@@ -4,6 +4,8 @@ extends AudioStreamPlayer
 	AudioStreamPlayer with ADSR + Linked by Yui Kinomoto @arlez80
 """
 
+# サステインペダル
+var hold:bool = false
 # リリース中？
 var releasing:bool = false
 # リリース要求
@@ -125,10 +127,13 @@ func _update_adsr( delta:float ):
 
 	self._update_volume( )
 
-	if self.request_release and not self.releasing:
-		self.releasing = true
-		self.current_volume_db = self.release_state[0].volume_db
-		self.timer = 0.0
+	if self.hold:
+		pass
+	else:
+		if self.request_release and not self.releasing:
+			self.releasing = true
+			self.current_volume_db = self.release_state[0].volume_db
+			self.timer = 0.0
 
 func _update_volume( ):
 	var v:float = self.current_volume_db + self.note_volume_db + self.maximum_volume_db
