@@ -51,8 +51,7 @@ func _ready( ):
 func set_instrument( instrument ):
 	self.instrument = instrument
 	self.mix_pitch = instrument.mix_pitch
-	self.stream = instrument.stream.duplicate( )
-	self.stream.mix_rate = instrument.mix_rate
+	self.stream = instrument.stream
 	self.ads_state = instrument.ads_state
 	self.release_state = instrument.release_state
 
