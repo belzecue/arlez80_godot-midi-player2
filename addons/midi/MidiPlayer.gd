@@ -1,7 +1,7 @@
 extends Node
 
 """
-	MIDI Player by Yui Kinomot @arlez80
+	pure GDScript MIDI Player [Godot MIDI Player] by Yui Kinomoto @arlez80
 """
 
 # -----------------------------------------------------------------------------

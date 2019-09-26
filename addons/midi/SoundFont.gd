@@ -1,5 +1,5 @@
 """
-	SoundFont Reader by Yui Kinomoto @arlez80
+	SoundFont reader by Yui Kinomoto @arlez80
 """
 
 """

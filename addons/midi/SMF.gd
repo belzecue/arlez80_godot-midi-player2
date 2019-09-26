@@ -1,5 +1,5 @@
 """
-	SMF reader/writer by Yui Kinomoto @arlez80
+	Standard MIDI File reader/writer by Yui Kinomoto @arlez80
 """
 
 # -----------------------------------------------------------------------------
