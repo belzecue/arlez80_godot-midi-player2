@@ -1,7 +1,7 @@
 extends AudioStreamPlayer
 
 """
-	AudioStreamPlayer with ADSR
+	AudioStreamPlayer with ADSR + Linked by Yui Kinomoto @arlez80
 """
 
 # リリース中？
@@ -16,11 +16,14 @@ var pitch_bend:float = 0.0
 var pitch_bend_sensitivity:float = 12.0
 var modulation:float = 0.0
 var modulation_sensitivity:float = 0.5
-var mix_pitch:float = 0
+var base_pitch:float = 0.0
 # ADSRタイマー
 var timer:float = 0.0
 # 使用時間
 var using_timer:float = 0.0
+# リンク済の音色
+var linked:AudioStreamPlayer = null
+var linked_base_pitch:float = 0.0
 
 # 現在のADSRボリューム
 var current_volume_db:float = 0.0
@@ -46,14 +49,22 @@ var release_state = [
 ]
 
 func _ready( ):
+	self.linked = $Linked
 	self.stop( )
+
+func _check_using_linked( ):
+	return self.instrument != null and 2 <= len( self.instrument.array_stream )
 
 func set_instrument( instrument ):
 	self.instrument = instrument
-	self.mix_pitch = instrument.mix_pitch
-	self.stream = instrument.stream
+	self.base_pitch = instrument.array_base_pitch[0]
+	self.stream = instrument.array_stream[0]
 	self.ads_state = instrument.ads_state
 	self.release_state = instrument.release_state
+
+	if self._check_using_linked( ):
+		self.linked_base_pitch = instrument.array_base_pitch[1]
+		self.linked.stream = instrument.array_stream[1]
 
 func play( from_position:float = 0.0 ):
 	self.releasing = false
@@ -61,8 +72,16 @@ func play( from_position:float = 0.0 ):
 	self.timer = 0.0
 	self.using_timer = 0.0
 	self.current_volume_db = self.ads_state[0].volume_db
+
 	.play( from_position )
+	if self._check_using_linked( ):
+		self.linked.play( from_position )
+
 	self._update_volume( )
+
+func stop( ):
+	.stop( )
+	self.linked.stop( )
 
 func start_release( ):
 	self.request_release = true
@@ -100,7 +119,9 @@ func _update_adsr( delta:float ):
 
 	var pitch_bend = self.pitch_bend * self.pitch_bend_sensitivity / 12.0
 	var modulation = sin( self.using_timer * 32.0 ) * ( self.modulation * self.modulation_sensitivity / 12.0 )
-	self.pitch_scale = pow( 2, self.mix_pitch + modulation + pitch_bend )
+	self.pitch_scale = pow( 2.0, self.base_pitch + modulation + pitch_bend )
+	if self._check_using_linked( ):
+		self.linked.pitch_scale = pow( 2.0, self.linked_base_pitch + modulation + pitch_bend )
 
 	self._update_volume( )
 
@@ -110,7 +131,13 @@ func _update_adsr( delta:float ):
 		self.timer = 0.0
 
 func _update_volume( ):
-	self.volume_db = self.current_volume_db + self.note_volume_db + self.maximum_volume_db
+	var v:float = self.current_volume_db + self.note_volume_db + self.maximum_volume_db
+	if self._check_using_linked( ):
+		v = linear2db( db2linear( v ) / 2.0 )
+		self.volume_db = v
+		self.linked.volume_db = v
+	else:
+		self.volume_db = v
 
 func change_channel_volume( base_volume_db:float, channel ):
 	self.note_volume_db = linear2db( float( channel.volume * channel.expression ) * ( float( self.velocity ) / 127.0 ) )

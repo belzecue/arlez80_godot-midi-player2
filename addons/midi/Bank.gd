@@ -5,9 +5,8 @@
 const drum_track_bank = 128
 const SoundFont = preload( "SoundFont.gd" )
 const default_instrument = {
-	"mix_rate": 44100,
-	"mix_pitch": 0.0,
-	"stream": null,
+	"array_base_pitch": [],
+	"array_stream": [],
 	"ads_state": [
 		{ "time": 0, "volume_db": 0.0 },
 		{ "time": 0.2, "volume_db": -144.0 },
@@ -17,6 +16,8 @@ const default_instrument = {
 		{ "time": 0.01, "volume_db": -144.0 },
 	],
 	"preset": null,
+	# Linked音色
+	"linked": null,
 	# "assine_group": 0,	# reserved
 }
 const default_preset = {
@@ -25,7 +26,6 @@ const default_preset = {
 	"instruments": [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
 	"bags": [],
 }
-const default_mix_rate_table = [819,868,920,974,1032,1094,1159,1228,1301,1378,1460,1547,1639,1736,1840,1949,2065,2188,2318,2456,2602,2756,2920,3094,3278,3473,3679,3898,4130,4375,4635,4911,5203,5513,5840,6188,6556,6945,7358,7796,8259,8751,9271,9822,10406,11025,11681,12375,13111,13891,14717,15592,16519,17501,18542,19644,20812,22050,23361,24750,26222,27781,29433,31183,33038,35002,37084,39289,41625,44100,46722,49501,52444,55563,58866,62367,66075,70004,74167,78577,83250,88200,93445,99001,104888,111125,117733,124734,132151,140009,148334,157155,166499,176400,186889,198002,209776,222250,235466,249467,264301,280018,296668,314309,332999,352800,373779,396005,419552,444500,470932,498935,528603,560035,593337,628618,665998,705600,747557,792009,839105,889000,941863,997869,1057205,1120070,1186673,1257236]
 
 # 音色テーブル
 var presets = {}
@@ -33,20 +33,14 @@ var presets = {}
 """
 	追加
 """
-func set_preset_sample( program_number:int, base_sample:int, base_mix_rate:int ):
-	var mix_rate_table = default_mix_rate_table
-
-	if base_mix_rate != 44100:
-		print( "not implemented" )
-		breakpoint
-
+func set_preset_sample( program_number:int, base_sample:int, base_key:int ):
 	var preset = self.default_preset.duplicate( true )
 	preset.name = "#%03d" % program_number
 	preset.number = program_number
 	for i in range(0,128):
 		var inst = self.default_instrument.duplicate( true )
-		inst.mix_rate = mix_rate_table[i]
-		inst.stream = base_sample
+		inst.array_base_pitch = [ float( i - base_key ) / 12.0 ]
+		inst.array_stream = [ base_sample ]
 		inst.preset = preset
 		preset.instruments[i] = inst
 
@@ -140,68 +134,6 @@ func read_soundfont( sf, need_program_numbers = null ):
 		# 追加
 		self._read_soundfont_preset_compose_sample( sf, preset )
 		self.set_preset( program_number, preset )
-
-func _read_soundfont_preset_compose_sample( sf, preset ):
-	var sample_base = sf.sdta.smpl
-
-	for pbag_index in range( 0, preset.bags.size( ) ):
-		var pbag = preset.bags[pbag_index]
-		for ibag_index in range( 0, pbag.instrument.bags.size( ) ):
-			var ibag = pbag.instrument.bags[ibag_index]
-			var start:int = ibag.sample.start + ibag.sample_start_offset
-			var end:int = ibag.sample.end + ibag.sample_end_offset
-			var start_loop:int = ibag.sample.start_loop + ibag.sample_start_loop_offset
-			var end_loop:int = ibag.sample.end_loop + ibag.sample_end_loop_offset
-			var mix_pitch:float = ( pbag.coarse_tune + ibag.coarse_tune ) / 12.0 + ( pbag.fine_tune + ibag.sample.pitch_correction + ibag.fine_tune ) / 1200.0
-
-			var ass:AudioStreamSample = AudioStreamSample.new( )
-			var wave:PoolByteArray = sample_base.subarray( start * 2, end * 2 - 1 )
-			ass.data = wave
-			ass.format = AudioStreamSample.FORMAT_16_BITS
-			ass.mix_rate = ibag.sample.sample_rate
-			ass.stereo = false #bag.sample.sample_type != SoundFont.sample_link_mono_sample
-			ass.loop_begin = start_loop - start
-			ass.loop_end = end_loop - start
-			if ibag.sample_modes == SoundFont.sample_mode_no_loop or ibag.sample_modes == SoundFont.sample_mode_unused_no_loop:
-				ass.loop_mode = AudioStreamSample.LOOP_DISABLED
-			else:
-				ass.loop_mode = AudioStreamSample.LOOP_FORWARD
-			var key_range = ibag.key_range
-			if pbag.key_range != null:
-				key_range = pbag.key_range
-
-			# ADSRステート生成
-			var a:float = ibag.adsr.attack_vol_env_time
-			var d:float = ibag.adsr.decay_vol_env_time
-			var s:float = ibag.adsr.sustain_vol_env_db
-			var r:float = ibag.adsr.release_vol_env_time
-			var ads_state = [
-				{ "time": 0, "volume_db": -144.0 },
-				{ "time": a, "volume_db": 0.0 },
-				{ "time": a+d, "volume_db": s },
-			]
-			var release_state = [
-				{ "time": 0, "volume_db": s },
-				{ "time": r, "volume_db": -144.0 },
-			]
-			# 各キーごとに生成
-			for key_number in range( key_range.low, key_range.high + 1 ):
-				#if preset.number == drum_track_bank << 7:
-				#	if 36 <= key_number and key_number <= 40:
-				#		print( key_number, " # ", ibag.sample.name );
-				if preset.instruments[key_number] != null:
-					continue
-				var instrument = self.default_instrument.duplicate( true )
-				instrument.preset = preset
-				instrument.mix_rate = ibag.sample.sample_rate
-				instrument.mix_pitch = mix_pitch
-				if ibag.original_key != 255:
-					instrument.mix_pitch += float( key_number - ibag.original_key ) / 12.0
-				instrument.stream = ass
-	
-				instrument.ads_state = ads_state
-				instrument.release_state = release_state
-				preset.instruments[key_number] = instrument
 
 func _read_soundfont_pdta_inst( sf ):
 	var sf_insts = []
@@ -303,3 +235,79 @@ func _read_soundfont_pdta_inst( sf ):
 		bag_index = bag_next
 
 	return sf_insts
+
+func _read_soundfont_preset_compose_sample( sf, preset ):
+	var sample_base = sf.sdta.smpl
+
+	for pbag_index in range( 0, preset.bags.size( ) ):
+		var pbag = preset.bags[pbag_index]
+		for ibag_index in range( 0, pbag.instrument.bags.size( ) ):
+			var ibag = pbag.instrument.bags[ibag_index]
+			var sample = ibag.sample
+			var array_stream:Array = Array( )
+			var array_base_pitch:PoolRealArray = PoolRealArray( )
+
+			for i in range( 0, 2 ):
+				var start:int = sample.start + ibag.sample_start_offset
+				var end:int = sample.end + ibag.sample_end_offset
+				var start_loop:int = sample.start_loop + ibag.sample_start_loop_offset
+				var end_loop:int = sample.end_loop + ibag.sample_end_loop_offset
+				var base_pitch:float = ( pbag.coarse_tune + ibag.coarse_tune ) / 12.0 + ( pbag.fine_tune + ibag.sample.pitch_correction + ibag.fine_tune ) / 1200.0
+			
+				var ass:AudioStreamSample = AudioStreamSample.new( )
+				var wave:PoolByteArray = sample_base.subarray( start * 2, end * 2 - 1 )
+				ass.data = wave
+				ass.format = AudioStreamSample.FORMAT_16_BITS
+				ass.mix_rate = sample.sample_rate
+				ass.stereo = false
+				ass.loop_begin = start_loop - start
+				ass.loop_end = end_loop - start
+				if ibag.sample_modes == SoundFont.sample_mode_no_loop or ibag.sample_modes == SoundFont.sample_mode_unused_no_loop:
+					ass.loop_mode = AudioStreamSample.LOOP_DISABLED
+				else:
+					ass.loop_mode = AudioStreamSample.LOOP_FORWARD
+
+				array_stream.append( ass )
+				array_base_pitch.append( base_pitch )
+
+				if sample.sample_type != SoundFont.sample_link_mono_sample and sample.sample_type != SoundFont.sample_link_rom_mono_sample:
+					sample = sf.pdta.shdr[sample.sample_link]
+				else:
+					break
+
+			var key_range = ibag.key_range
+			if pbag.key_range != null:
+				key_range = pbag.key_range
+
+			# ADSRステート生成
+			var a:float = ibag.adsr.attack_vol_env_time
+			var d:float = ibag.adsr.decay_vol_env_time
+			var s:float = ibag.adsr.sustain_vol_env_db
+			var r:float = ibag.adsr.release_vol_env_time
+			var ads_state = [
+				{ "time": 0.0, "volume_db": -144.0 },
+				{ "time": a, "volume_db": 0.0 },
+				{ "time": a+d, "volume_db": s },
+			]
+			var release_state = [
+				{ "time": 0.0, "volume_db": s },
+				{ "time": r, "volume_db": -144.0 },
+			]
+			# 各キーごとに生成
+			for key_number in range( key_range.low, key_range.high + 1 ):
+				#if preset.number == drum_track_bank << 7:
+				#	if 36 <= key_number and key_number <= 40:
+				#		print( key_number, " # ", ibag.sample.name );
+				if preset.instruments[key_number] != null:
+					continue
+				var instrument = self.default_instrument.duplicate( true )
+				instrument.preset = preset
+				instrument.array_base_pitch = array_base_pitch
+				if ibag.original_key != 255:
+					for k in range( len( instrument.array_base_pitch ) ):
+						instrument.array_base_pitch[k] += float( key_number - ibag.original_key ) / 12.0
+				instrument.array_stream = array_stream
+	
+				instrument.ads_state = ads_state
+				instrument.release_state = release_state
+				preset.instruments[key_number] = instrument
