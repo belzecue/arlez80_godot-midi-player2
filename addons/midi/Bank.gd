@@ -133,7 +133,7 @@ func read_soundfont( sf, need_program_numbers = null ):
 				continue
 		# 追加
 		self._read_soundfont_preset_compose_sample( sf, preset )
-		self.set_preset( program_number, preset )
+		self.presets[program_number] = preset
 
 func _read_soundfont_pdta_inst( sf ):
 	var sf_insts = []
