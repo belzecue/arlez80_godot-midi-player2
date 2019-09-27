@@ -74,7 +74,7 @@ var channel_status = []
 # サウンドフォントを再生用に加工したもの
 var bank = null
 # AudioStreamPlayer
-var audio_stream_players = []
+var audio_stream_players:Array = []
 # ドラムトラック用アサイングループ
 var drum_assign_groups = {
 	# Hi-Hats
@@ -270,7 +270,7 @@ func _init_channel( ):
 			"hold": false,		# Sustain Pedal
 			"portamento": 0.0,
 			"sostenuto": 0.0,
-			"freeze": 0.0,
+			"freeze": false,
 			"pan": 0.5,
 
 			"drum_track": drum_track,
@@ -421,11 +421,11 @@ func _process_track( ):
 				channel.note_on.erase( key_number )
 
 	var execute_event_count:int = 0
-	var current_position:int = int( floor( self.position ) )
+	var current_position:int = int( ceil( self.position ) )
 
 	while track.event_pointer < length:
 		var event_chunk = track.events[track.event_pointer]
-		if current_position < event_chunk.time:
+		if current_position <= event_chunk.time:
 			break
 		track.event_pointer += 1
 		execute_event_count += 1
@@ -455,11 +455,13 @@ func _process_track( ):
 	return execute_event_count
 
 func _process_pitch_bend( channel, value:int ):
-	channel.pitch_bend = float( value ) / 8192.0 - 1.0
+	var pb:float = float( value ) / 8192.0 - 1.0
+	var pbs:float = channel.rpn.pitch_bend_sensitivity
+	channel.pitch_bend = pb
 
 	for note in channel.note_on.values( ):
-		note.pitch_bend_sensitivity = channel.rpn.pitch_bend_sensitivity
-		note.pitch_bend = channel.pitch_bend
+		note.pitch_bend_sensitivity = pbs
+		note.pitch_bend = pb
 
 func _process_track_event_note_off( channel, event ):
 	if channel.drum_track: return
@@ -525,9 +527,7 @@ func _process_track_event_control_change( channel, event ):
 			channel.pan = float( event.value ) / 127.0
 		SMF.control_number_hold:
 			channel.hold = 64 <= event.value
-			for key_number in channel.note_on.keys( ):
-				var note = channel.note_on[key_number]
-				note.hold = channel.hold
+			self._apply_channel_hold( channel )
 		SMF.control_number_portament:
 			channel.portament = float( event.value ) / 127.0
 		SMF.control_number_sostenuto:
@@ -561,9 +561,19 @@ func _apply_channel_volume_to_notes( channel ):
 		note.change_channel_volume( self.volume_db, channel )
 
 func _apply_channel_modulation( channel ):
+	var ms:float = channel.rpn.modulation_sensitivity
+	var m:float = channel.modulation
 	for note in channel.note_on.values( ):
-		note.modulation_sensitivity = channel.rpn.modulation_sensitivity
-		note.modulation = channel.modulation
+		note.modulation_sensitivity = ms
+		note.modulation = m
+
+func _apply_channel_hold( channel ):
+	var hold:bool = channel.hold
+	for key_number in channel.note_on.keys( ):
+		var note = channel.note_on[key_number]
+		note.hold = hold
+		if note.request_release:
+			channel.note_on.erase( key_number )
 
 func _process_track_event_control_change_rpn_data_entry_msb( channel, event ):
 	match channel.rpn.selected_msb:

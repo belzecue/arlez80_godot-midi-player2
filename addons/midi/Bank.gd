@@ -253,7 +253,7 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 				var start_loop:int = sample.start_loop + ibag.sample_start_loop_offset
 				var end_loop:int = sample.end_loop + ibag.sample_end_loop_offset
 				var base_pitch:float = ( pbag.coarse_tune + ibag.coarse_tune ) / 12.0 + ( pbag.fine_tune + ibag.sample.pitch_correction + ibag.fine_tune ) / 1200.0
-			
+
 				var ass:AudioStreamSample = AudioStreamSample.new( )
 				var wave:PoolByteArray = sample_base.subarray( start * 2, end * 2 - 1 )
 				ass.data = wave
@@ -276,14 +276,20 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 					break
 
 			var key_range = ibag.key_range
-			if pbag.key_range != null:
-				key_range = pbag.key_range
+			# おかしくなるヤツが多いので無視させる
+			#if pbag.key_range != null:
+			#	key_range = pbag.key_range
+
+			# 各キーごとに生成
+			if preset.number == 0:
+				printt( len(array_stream), ibag.sample.name, ibag.key_range, pbag.key_range );
 
 			# ADSRステート生成
-			var a:float = ibag.adsr.attack_vol_env_time
-			var d:float = ibag.adsr.decay_vol_env_time
-			var s:float = ibag.adsr.sustain_vol_env_db
-			var r:float = ibag.adsr.release_vol_env_time
+			var adsr = ibag.adsr
+			var a:float = adsr.attack_vol_env_time
+			var d:float = adsr.decay_vol_env_time
+			var s:float = adsr.sustain_vol_env_db
+			var r:float = adsr.release_vol_env_time
 			var ads_state = [
 				{ "time": 0.0, "volume_db": -144.0 },
 				{ "time": a, "volume_db": 0.0 },
@@ -293,7 +299,6 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 				{ "time": 0.0, "volume_db": s },
 				{ "time": r, "volume_db": -144.0 },
 			]
-			# 各キーごとに生成
 			for key_number in range( key_range.low, key_range.high + 1 ):
 				#if preset.number == drum_track_bank << 7:
 				#	if 36 <= key_number and key_number <= 40:
@@ -304,8 +309,9 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 				instrument.preset = preset
 				instrument.array_base_pitch = array_base_pitch
 				if ibag.original_key != 255:
+					var shift_pitch:float = float( key_number - ibag.original_key ) / 12.0
 					for k in range( len( instrument.array_base_pitch ) ):
-						instrument.array_base_pitch[k] += float( key_number - ibag.original_key ) / 12.0
+						instrument.array_base_pitch[k] += shift_pitch
 				instrument.array_stream = array_stream
 	
 				instrument.ads_state = ads_state
