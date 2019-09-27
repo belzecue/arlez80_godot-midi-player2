@@ -243,6 +243,7 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 		var pbag = preset.bags[pbag_index]
 		for ibag_index in range( 0, pbag.instrument.bags.size( ) ):
 			var ibag = pbag.instrument.bags[ibag_index]
+			if ibag.vel_range.high < 100: continue
 			var sample = ibag.sample
 			var array_stream:Array = Array( )
 			var array_base_pitch:PoolRealArray = PoolRealArray( )
