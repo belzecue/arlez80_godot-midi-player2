@@ -280,10 +280,6 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 			#if pbag.key_range != null:
 			#	key_range = pbag.key_range
 
-			# 各キーごとに生成
-			if preset.number == 0:
-				printt( len(array_stream), ibag.sample.name, ibag.key_range, pbag.key_range );
-
 			# ADSRステート生成
 			var adsr = ibag.adsr
 			var a:float = adsr.attack_vol_env_time
