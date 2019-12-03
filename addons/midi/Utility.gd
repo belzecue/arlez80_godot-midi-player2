@@ -22,6 +22,7 @@ static func get_chord_and_scale( notes:Array, music_chord:int = 0 ):
 		]
 	elif sound_count == 4:
 		chord_table = [
+			{ "name": "sus4(13)", "notes": [ 5, 7, 9 ] },
 			{ "name": "aug M7", "notes": [ 4, 8, 11 ] },
 			{ "name": "dim7", "notes": [ 3, 6, 9 ] },
 			{ "name": "7sus4", "notes": [ 5, 7, 10 ] },
@@ -36,6 +37,7 @@ static func get_chord_and_scale( notes:Array, music_chord:int = 0 ):
 	elif sound_count == 3:
 		chord_table = [
 			{ "name": "sus4", "notes": [ 5, 7 ] },
+			{ "name": "sus2", "notes": [ 2, 7 ] },
 			{ "name": "aug", "notes": [ 4, 8 ] },
 			{ "name": "dim", "notes": [ 3, 6 ] },
 			{ "name": "m", "notes": [ 3, 7 ] },
