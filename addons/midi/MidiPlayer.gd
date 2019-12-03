@@ -389,6 +389,12 @@ func stop( ):
 	self.playing = false
 
 """
+	リセット命令を強制的に白光する
+"""
+func send_reset( ):
+	self._process_track_sys_ex_reset_all_channels( )
+
+"""
 	ファイル変更
 """
 func set_file( path:String ):
