@@ -474,7 +474,7 @@ func receive_raw_midi_message( input_event:InputEventMIDI ):
 			# channel pressure プレイヤー自体が未実装
 			pass
 		0x0E:
-			# ピッチベンドがおかしいものを返す
+			# 3.1でおかしい値を返す対応。3.2ではvelocityが0のままのハズなので影響はない
 			var fixed_pitch = ( input_event.velocity << 7 ) | input_event.pitch
 			self._process_pitch_bend( channel, fixed_pitch )
 		0x0F:
