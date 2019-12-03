@@ -488,6 +488,12 @@ func _process_track_event_note_on( channel, event ):
 			if channel.note_on.has( assign_group ):
 				channel.note_on[ assign_group ].start_release( )
 
+			if channel.hold and channel.note_on.has( key_number ):
+				var note_player = channel.note_on[key_number]
+				note_player.hold = false
+				note_player.start_release( )
+				channel.note_on.erase( key_number )
+
 			var note_player = self._get_idle_player( )
 			if note_player != null:
 				note_player.velocity = event.velocity
