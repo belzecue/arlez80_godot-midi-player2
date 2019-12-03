@@ -595,13 +595,13 @@ func _process_track_event_control_change( channel, number:int, value:int ):
 	match number:
 		SMF.control_number_volume:
 			channel.volume = float( value ) / 127.0
-			AudioServer.set_bus_volume_db( AudioServer.get_bus_index( self.midi_channel_bus_name % channel.number ), linear2db( float( channel.volume * channel.expression ) ) )
+			AudioServer.set_bus_volume_db( AudioServer.get_bus_index( self.midi_channel_bus_name % channel.number ), linear2db( channel.volume * channel.expression ) )
 		SMF.control_number_modulation:
 			channel.modulation = float( value ) / 127.0
 			self._apply_channel_modulation( channel )
 		SMF.control_number_expression:
 			channel.expression = float( value ) / 127.0
-			AudioServer.set_bus_volume_db( AudioServer.get_bus_index( self.midi_channel_bus_name % channel.number ), linear2db( float( channel.volume * channel.expression ) ) )
+			AudioServer.set_bus_volume_db( AudioServer.get_bus_index( self.midi_channel_bus_name % channel.number ), linear2db( channel.volume * channel.expression ) )
 		SMF.control_number_reverb_send_level:
 			channel.reverb = float( value ) / 127.0
 			self.channel_audio_effects[channel.number].ae_reverb.wet = channel.reverb * self.reverb_power

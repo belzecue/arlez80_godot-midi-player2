@@ -69,6 +69,7 @@ func play( from_position:float = 0.0 ):
 	self.request_release = false
 	self.timer = 0.0
 	self.using_timer = 0.0
+	self.linked.bus = self.bus
 	self.current_volume_db = self.ads_state[0].volume_db
 
 	.play( from_position )
@@ -132,9 +133,9 @@ func _update_adsr( delta:float ):
 			self.timer = 0.0
 
 func _update_volume( ):
-	var v:float = self.current_volume_db
+	var v:float = self.current_volume_db + linear2db( float( self.velocity ) / 127.0 )
 	if self._check_using_linked( ):
-		v -= 22.0
+		v -= 6.0206
 		if v <= -144.0: v = -144.0
 		self.volume_db = v
 		self.linked.volume_db = v
