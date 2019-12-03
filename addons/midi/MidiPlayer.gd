@@ -20,6 +20,9 @@ const max_program_number:int = 128
 const drum_track_channel:int = 0x09
 const drum_track_bank:int = 128
 
+const midi_master_bus_name:String = "arlez80_GMP_MASTER_BUS"
+const midi_channel_bus_name:String = "arlez80_GMP_CHANNEL_BUS%d"
+
 # -----------------------------------------------------------------------------
 # Export
 
@@ -70,7 +73,7 @@ var position:float = 0
 # 最終位置
 var last_position:int = 0
 # チャンネルステータス
-var channel_status = []
+var channel_status:Array = []
 # サウンドフォントを再生用に加工したもの
 var bank = null
 # AudioStreamPlayer
@@ -93,6 +96,14 @@ var sys_ex = {
 var _midi_channel_prefix:int = 0
 # 曲で使用中のプログラム番号を格納
 var _used_program_numbers = []
+# MIDIチャンネルエフェクト
+var channel_audio_effects:Array = []
+# パンの強さを定義
+var pan_power:float = 0.7
+# リバーブの強さを定義
+var reverb_power:float = 0.5
+# コーラスの強さを定義
+var chorus_power:float = 0.7
 
 # -----------------------------------------------------------------------------
 # シグナル
@@ -112,11 +123,45 @@ signal looped
 	準備
 """
 func _ready( ):
+	AudioServer.add_bus( -1 )
+	var midi_master_bus_idx:int = AudioServer.get_bus_count( ) - 1
+	AudioServer.set_bus_name( midi_master_bus_idx, self.midi_master_bus_name )
+	AudioServer.set_bus_send( midi_master_bus_idx, self.bus )
+
+	for i in range( 0, 16 ):
+		AudioServer.add_bus( -1 )
+		var midi_channel_bus_idx:int = AudioServer.get_bus_count( ) - 1
+		AudioServer.set_bus_name( midi_channel_bus_idx, self.midi_channel_bus_name % i )
+		AudioServer.set_bus_send( midi_channel_bus_idx, self.midi_master_bus_name )
+		var ae_panner = AudioEffectPanner.new( )
+		var ae_reverb = AudioEffectReverb.new( )
+		ae_reverb.wet = 0.03
+		var ae_chorus = AudioEffectChorus.new( )
+		ae_chorus.wet = 0.0
+		AudioServer.add_bus_effect( midi_channel_bus_idx, ae_chorus )
+		AudioServer.add_bus_effect( midi_channel_bus_idx, ae_panner )
+		AudioServer.add_bus_effect( midi_channel_bus_idx, ae_reverb )
+		self.channel_audio_effects.append({
+			"ae_panner": ae_panner,
+			"ae_reverb": ae_reverb,
+			"ae_chorus": ae_chorus,
+		})
+
 	if self.playing:
 		self.play( )
 
 """
-	初期化
+	通知
+"""
+func _notification( what:int ):
+	# 破棄時
+	if what == NOTIFICATION_PREDELETE:
+		AudioServer.remove_bus( AudioServer.get_bus_index( self.midi_master_bus_name ) )
+		for i in range( 0, 16 ):
+			AudioServer.remove_bus( AudioServer.get_bus_index( self.midi_channel_bus_name % i ) )
+
+"""
+	再生前の初期化
 """
 func _prepare_to_play( ):
 	# ファイル読み込み
@@ -386,6 +431,12 @@ func _stop_all_notes( ):
 	毎フレーム処理
 """
 func _process( delta:float ):
+	for channel in self.channel_status:
+		for key_number in channel.note_on.keys( ):
+			var note_on = channel.note_on[key_number]
+			if not note_on.playing:
+				channel.note_on.erase( key_number )
+
 	if self.smf_data != null:
 		if self.playing:
 			self.position += float( self.smf_data.timebase ) * delta * self.seconds_to_timebase * self.play_speed
@@ -413,12 +464,6 @@ func _process_track( ):
 		else:
 			self.playing = false
 			return
-
-	for channel in self.channel_status:
-		for key_number in channel.note_on.keys( ):
-			var note_on = channel.note_on[key_number]
-			if not note_on.playing:
-				channel.note_on.erase( key_number )
 
 	var execute_event_count:int = 0
 	var current_position:int = int( ceil( self.position ) )
@@ -526,6 +571,7 @@ func _process_track_event_note_on( channel, note:int, velocity:int ):
 
 			var note_player = self._get_idle_player( )
 			if note_player != null:
+				note_player.bus = self.midi_channel_bus_name % channel.number
 				note_player.velocity = velocity
 				note_player.pitch_bend = channel.pitch_bend
 				note_player.pitch_bend_sensitivity = channel.rpn.pitch_bend_sensitivity
@@ -551,16 +597,19 @@ func _process_track_event_control_change( channel, number:int, value:int ):
 			self._apply_channel_volume_to_notes( channel )
 		SMF.control_number_reverb_send_level:
 			channel.reverb = float( value ) / 127.0
+			self.channel_audio_effects[channel.number].ae_reverb.wet = channel.reverb * self.reverb_power
 		SMF.control_number_tremolo_depth:
 			channel.tremolo = float( value ) / 127.0
 		SMF.control_number_chorus_send_level:
 			channel.chorus = float( value ) / 127.0
+			self.channel_audio_effects[channel.number].ae_chorus.wet = channel.chorus * self.chorus_power
 		SMF.control_number_celeste_depth:
 			channel.celeste = float( value ) / 127.0
 		SMF.control_number_phaser_depth:
 			channel.phaser = float( value ) / 127.0
 		SMF.control_number_pan:
 			channel.pan = float( value ) / 127.0
+			self.channel_audio_effects[channel.number].ae_panner.pan = ( ( channel.pan * 2 ) - 1.0 ) * self.pan_power
 		SMF.control_number_hold:
 			channel.hold = 64 <= value
 			self._apply_channel_hold( channel )
