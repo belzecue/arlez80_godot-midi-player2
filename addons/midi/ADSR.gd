@@ -134,7 +134,7 @@ func _update_adsr( delta:float ):
 func _update_volume( ):
 	var v:float = self.current_volume_db
 	if self._check_using_linked( ):
-		v = linear2db( db2linear( v ) / 2.0 )
+		v = linear2db( db2linear( v ) / 10.0 )
 		self.volume_db = v
 		self.linked.volume_db = v
 	else:
