@@ -588,6 +588,14 @@ func _process_track_event_control_change( channel, number:int, value:int ):
 			self._process_track_event_control_change_rpn_data_entry_msb( channel, value )
 		SMF.control_number_data_entry_lsb:
 			self._process_track_event_control_change_rpn_data_entry_lsb( channel, value )
+		SMF.control_number_all_sound_off:
+			self._stop_all_notes( )
+		SMF.control_number_all_note_off:
+			for key_number in channel.note_on.keys( ):
+				var note_on = channel.note_on[key_number]
+				note_on.hold = false
+				note_on.start_release( )
+				channel.note_on.erase( key_number )
 		_:
 			# 無視
 			pass

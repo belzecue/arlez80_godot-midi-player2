@@ -62,6 +62,8 @@ const control_number_nrpn_msb = 0x63
 const control_number_rpn_lsb = 0x64
 const control_number_rpn_msb = 0x65
 const control_number_tkool_loop_point = 0x6F	# CC111
+const control_number_all_sound_off = 0x78
+const control_number_all_note_off = 0x7B
 
 # RPN Control Numbers: 0x00
 const rpn_control_number_pitch_bend_sensitivity = 0x00
