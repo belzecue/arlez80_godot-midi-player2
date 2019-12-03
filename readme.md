@@ -44,10 +44,6 @@ I develop it for use embedding in game.
 
 * Supports play format 2
     * SMF.gd can read it. but I will not implement it to MIDI Player.
-* Implements some effects (Use godot's mixer effect!)
-    * Reverb
-    * Chorus
-    * other effects...
 
 ## Known Problem
 
