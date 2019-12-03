@@ -423,6 +423,7 @@ func set_volume_db( vdb:float ):
 """
 func _stop_all_notes( ):
 	for audio_stream_player in self.audio_stream_players:
+		audio_stream_player.hold = false
 		audio_stream_player.stop( )
 
 	for channel in self.channel_status:
@@ -765,6 +766,10 @@ func _process_track_sys_ex_reset_all_channels( ):
 		"modulation_sensitivity_msb": 0.25,
 		"modulation_sensitivity_lsb": 0.0,
 	};
+
+	for audio_stream_player in self.audio_stream_players:
+		audio_stream_player.hold = false
+		audio_stream_player.start_release( )
 
 	for channel in self.channel_status:
 		for name in init_params.keys( ):
