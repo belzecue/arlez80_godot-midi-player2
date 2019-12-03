@@ -127,12 +127,14 @@ func _ready( ):
 	var midi_master_bus_idx:int = AudioServer.get_bus_count( ) - 1
 	AudioServer.set_bus_name( midi_master_bus_idx, self.midi_master_bus_name )
 	AudioServer.set_bus_send( midi_master_bus_idx, self.bus )
+	AudioServer.set_bus_volume_db( midi_master_bus_idx, self.volume_db )
 
 	for i in range( 0, 16 ):
 		AudioServer.add_bus( -1 )
 		var midi_channel_bus_idx:int = AudioServer.get_bus_count( ) - 1
 		AudioServer.set_bus_name( midi_channel_bus_idx, self.midi_channel_bus_name % i )
 		AudioServer.set_bus_send( midi_channel_bus_idx, self.midi_master_bus_name )
+		AudioServer.set_bus_volume_db( midi_channel_bus_idx, 0.0 )
 		var ae_panner = AudioEffectPanner.new( )
 		var ae_reverb = AudioEffectReverb.new( )
 		ae_reverb.wet = 0.03
@@ -414,8 +416,7 @@ func set_tempo( bpm:float ):
 """
 func set_volume_db( vdb:float ):
 	volume_db = vdb
-	for channel in self.channel_status:
-		self._apply_channel_volume_to_notes( channel )
+	AudioServer.set_bus_volume_db( AudioServer.get_bus_index( self.midi_master_bus_name ), vdb )
 
 """
 	全音を止める
@@ -579,7 +580,6 @@ func _process_track_event_note_on( channel, note:int, velocity:int ):
 				note_player.modulation = channel.modulation
 				note_player.modulation_sensitivity = channel.rpn.modulation_sensitivity
 				note_player.auto_release_mode = channel.drum_track
-				note_player.change_channel_volume( self.volume_db, channel )
 				note_player.set_instrument( instrument )
 				note_player.play( 0.0 )
 				channel.note_on[ assign_group ] = note_player
@@ -588,13 +588,13 @@ func _process_track_event_control_change( channel, number:int, value:int ):
 	match number:
 		SMF.control_number_volume:
 			channel.volume = float( value ) / 127.0
-			self._apply_channel_volume_to_notes( channel )
+			AudioServer.set_bus_volume_db( AudioServer.get_bus_index( self.midi_channel_bus_name % channel.number ), linear2db( float( channel.volume * channel.expression ) ) )
 		SMF.control_number_modulation:
 			channel.modulation = float( value ) / 127.0
 			self._apply_channel_modulation( channel )
 		SMF.control_number_expression:
 			channel.expression = float( value ) / 127.0
-			self._apply_channel_volume_to_notes( channel )
+			AudioServer.set_bus_volume_db( AudioServer.get_bus_index( self.midi_channel_bus_name % channel.number ), linear2db( float( channel.volume * channel.expression ) ) )
 		SMF.control_number_reverb_send_level:
 			channel.reverb = float( value ) / 127.0
 			self.channel_audio_effects[channel.number].ae_reverb.wet = channel.reverb * self.reverb_power
@@ -648,10 +648,6 @@ func _process_track_event_control_change( channel, number:int, value:int ):
 		_:
 			# 無視
 			pass
-
-func _apply_channel_volume_to_notes( channel ):
-	for note in channel.note_on.values( ):
-		note.change_channel_volume( self.volume_db, channel )
 
 func _apply_channel_modulation( channel ):
 	var ms:float = channel.rpn.modulation_sensitivity
@@ -790,7 +786,7 @@ func _is_same_data( data_a, data_b ):
 
 func _get_idle_player( ):
 	var stopped_audio_stream_player = null
-	var minimum_volume_db:float = 100.0
+	var minimum_volume_db:float = -100.0
 	var oldest_audio_stream_player = null
 	var oldest:float = 0.0
 

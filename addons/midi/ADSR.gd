@@ -29,10 +29,6 @@ var linked_base_pitch:float = 0.0
 
 # 現在のADSRボリューム
 var current_volume_db:float = 0.0
-# 発音音量
-var note_volume_db:float = 0.0
-# 最大音量
-var maximum_volume_db:float = -8.0
 # 自動リリースモード？
 var auto_release_mode:bool = false
 # var pan:float = 0.5
@@ -136,14 +132,10 @@ func _update_adsr( delta:float ):
 			self.timer = 0.0
 
 func _update_volume( ):
-	var v:float = self.current_volume_db + self.note_volume_db + self.maximum_volume_db
+	var v:float = self.current_volume_db
 	if self._check_using_linked( ):
 		v = linear2db( db2linear( v ) / 2.0 )
 		self.volume_db = v
 		self.linked.volume_db = v
 	else:
 		self.volume_db = v
-
-func change_channel_volume( base_volume_db:float, channel ):
-	self.note_volume_db = linear2db( float( channel.volume * channel.expression ) * ( float( self.velocity ) / 127.0 ) )
-	self.maximum_volume_db = base_volume_db
