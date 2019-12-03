@@ -133,6 +133,7 @@ func _update_adsr( delta:float ):
 
 func _update_volume( ):
 	var v:float = self.current_volume_db + linear2db( float( self.velocity ) / 127.0 )
+	if v <= -144.0: v = -144.0
 	if self._check_using_linked( ):
 		v -= 6.0206	# v = linear2db( db2linear( v ) / 2.0 )
 		if v <= -144.0: v = -144.0
