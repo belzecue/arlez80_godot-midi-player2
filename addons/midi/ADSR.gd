@@ -31,7 +31,6 @@ var linked_base_pitch:float = 0.0
 var current_volume_db:float = 0.0
 # 自動リリースモード？
 var auto_release_mode:bool = false
-# var pan:float = 0.5
 
 # ADSステート
 var ads_state = [
