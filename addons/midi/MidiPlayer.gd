@@ -323,7 +323,7 @@ func seek( to_position:float ):
 			SMF.MIDIEventType.program_change:
 				channel.program = event.number
 			SMF.MIDIEventType.control_change:
-				self._process_track_event_control_change( channel, event )
+				self._process_track_event_control_change( channel, event.number, event.value )
 			SMF.MIDIEventType.pitch_bend:
 				self._process_pitch_bend( channel, event.value )
 			SMF.MIDIEventType.system_event:
@@ -437,13 +437,13 @@ func _process_track( ):
 
 		match event.type:
 			SMF.MIDIEventType.note_off:
-				self._process_track_event_note_off( channel, event )
+				self._process_track_event_note_off( channel, event.note )
 			SMF.MIDIEventType.note_on:
-				self._process_track_event_note_on( channel, event )
+				self._process_track_event_note_on( channel, event.note, event.velocity )
 			SMF.MIDIEventType.program_change:
 				channel.program = event.number
 			SMF.MIDIEventType.control_change:
-				self._process_track_event_control_change( channel, event )
+				self._process_track_event_control_change( channel, event.number, event.value )
 			SMF.MIDIEventType.pitch_bend:
 				self._process_pitch_bend( channel, event.value )
 			SMF.MIDIEventType.system_event:
@@ -454,6 +454,36 @@ func _process_track( ):
 
 	return execute_event_count
 
+func receive_raw_midi_message( input_event:InputEventMIDI ):
+	var channel = self.channel_status[input_event.channel]
+
+	match input_event.message:
+		0x08:
+			self._process_track_event_note_off( channel, input_event.pitch )
+		0x09:
+			# note-on vel0をnote-offにはしてくれている https://github.com/godotengine/godot/blob/master/core/os/midi_driver.cpp#L79
+			self._process_track_event_note_on( channel, input_event.pitch, input_event.velocity )
+		0x0A:
+			# polyphonic key pressure プレイヤー自体が未実装
+			pass
+		0x0B:
+			self._process_track_event_control_change( channel, input_event.controller_number, input_event.controller_value )
+		0x0C:
+			channel.program = input_event.instrument
+		0x0D:
+			# channel pressure プレイヤー自体が未実装
+			pass
+		0x0E:
+			# ピッチベンドがおかしいものを返す
+			var fixed_pitch = ( input_event.velocity << 7 ) | input_event.pitch
+			self._process_pitch_bend( channel, fixed_pitch )
+		0x0F:
+			# InputEventMIDIはMIDI System Eventを飛ばしてこない！
+			pass
+		_:
+			print( "unknown message %x" % input_event.message )
+			breakpoint
+
 func _process_pitch_bend( channel, value:int ):
 	var pb:float = float( value ) / 8192.0 - 1.0
 	var pbs:float = channel.rpn.pitch_bend_sensitivity
@@ -463,10 +493,10 @@ func _process_pitch_bend( channel, value:int ):
 		note.pitch_bend_sensitivity = pbs
 		note.pitch_bend = pb
 
-func _process_track_event_note_off( channel, event ):
+func _process_track_event_note_off( channel, note:int ):
 	if channel.drum_track: return
 
-	var key_number:int = event.note + self.key_shift
+	var key_number:int = note + self.key_shift
 	if channel.note_on.has( key_number ):
 		var note_player = channel.note_on[key_number]
 		if note_player != null:
@@ -474,9 +504,9 @@ func _process_track_event_note_off( channel, event ):
 			if not channel.hold:
 				channel.note_on.erase( key_number )
 
-func _process_track_event_note_on( channel, event ):
+func _process_track_event_note_on( channel, note:int, velocity:int ):
 	if not self.channel_mute[channel.number]:
-		var key_number:int = event.note + self.key_shift
+		var key_number:int = note + self.key_shift
 		var preset = self.bank.get_preset( channel.program, channel.bank )
 		var instrument = preset.instruments[key_number]
 		var assign_group:int = key_number
@@ -496,7 +526,7 @@ func _process_track_event_note_on( channel, event ):
 
 			var note_player = self._get_idle_player( )
 			if note_player != null:
-				note_player.velocity = event.velocity
+				note_player.velocity = velocity
 				note_player.pitch_bend = channel.pitch_bend
 				note_player.pitch_bend_sensitivity = channel.rpn.pitch_bend_sensitivity
 				note_player.hold = channel.hold
@@ -508,56 +538,56 @@ func _process_track_event_note_on( channel, event ):
 				note_player.play( 0.0 )
 				channel.note_on[ assign_group ] = note_player
 
-func _process_track_event_control_change( channel, event ):
-	match event.number:
+func _process_track_event_control_change( channel, number:int, value:int ):
+	match number:
 		SMF.control_number_volume:
-			channel.volume = float( event.value ) / 127.0
+			channel.volume = float( value ) / 127.0
 			self._apply_channel_volume_to_notes( channel )
 		SMF.control_number_modulation:
-			channel.modulation = float( event.value ) / 127.0
+			channel.modulation = float( value ) / 127.0
 			self._apply_channel_modulation( channel )
 		SMF.control_number_expression:
-			channel.expression = float( event.value ) / 127.0
+			channel.expression = float( value ) / 127.0
 			self._apply_channel_volume_to_notes( channel )
 		SMF.control_number_reverb_send_level:
-			channel.reverb = float( event.value ) / 127.0
+			channel.reverb = float( value ) / 127.0
 		SMF.control_number_tremolo_depth:
-			channel.tremolo = float( event.value ) / 127.0
+			channel.tremolo = float( value ) / 127.0
 		SMF.control_number_chorus_send_level:
-			channel.chorus = float( event.value ) / 127.0
+			channel.chorus = float( value ) / 127.0
 		SMF.control_number_celeste_depth:
-			channel.celeste = float( event.value ) / 127.0
+			channel.celeste = float( value ) / 127.0
 		SMF.control_number_phaser_depth:
-			channel.phaser = float( event.value ) / 127.0
+			channel.phaser = float( value ) / 127.0
 		SMF.control_number_pan:
-			channel.pan = float( event.value ) / 127.0
+			channel.pan = float( value ) / 127.0
 		SMF.control_number_hold:
-			channel.hold = 64 <= event.value
+			channel.hold = 64 <= value
 			self._apply_channel_hold( channel )
 		SMF.control_number_portament:
-			channel.portament = float( event.value ) / 127.0
+			channel.portament = float( value ) / 127.0
 		SMF.control_number_sostenuto:
-			channel.sostenuto = float( event.value ) / 127.0
+			channel.sostenuto = float( value ) / 127.0
 		SMF.control_number_freeze:
-			channel.freeze = float( event.value ) / 127.0
+			channel.freeze = float( value ) / 127.0
 		SMF.control_number_bank_select_msb:
 			if channel.drum_track:
 				channel.bank = self.drum_track_bank
 			else:
-				channel.bank = ( channel.bank & 0x7F ) | ( event.value << 7 )
+				channel.bank = ( channel.bank & 0x7F ) | ( value << 7 )
 		SMF.control_number_bank_select_lsb:
 			if channel.drum_track:
 				channel.bank = self.drum_track_bank
 			else:
-				channel.bank = ( channel.bank & 0x3F80 ) | ( event.value & 0x7F )
+				channel.bank = ( channel.bank & 0x3F80 ) | ( value & 0x7F )
 		SMF.control_number_rpn_lsb:
-			channel.rpn.selected_lsb = event.value
+			channel.rpn.selected_lsb = value
 		SMF.control_number_rpn_msb:
-			channel.rpn.selected_msb = event.value
+			channel.rpn.selected_msb = value
 		SMF.control_number_data_entry_msb:
-			self._process_track_event_control_change_rpn_data_entry_msb( channel, event )
+			self._process_track_event_control_change_rpn_data_entry_msb( channel, value )
 		SMF.control_number_data_entry_lsb:
-			self._process_track_event_control_change_rpn_data_entry_lsb( channel, event )
+			self._process_track_event_control_change_rpn_data_entry_lsb( channel, value )
 		_:
 			# 無視
 			pass
@@ -581,12 +611,12 @@ func _apply_channel_hold( channel ):
 		if note.request_release:
 			channel.note_on.erase( key_number )
 
-func _process_track_event_control_change_rpn_data_entry_msb( channel, event ):
+func _process_track_event_control_change_rpn_data_entry_msb( channel, value:int ):
 	match channel.rpn.selected_msb:
 		0:
 			match channel.rpn.selected_lsb:
 				SMF.rpn_control_number_pitch_bend_sensitivity:
-					channel.rpn.pitch_bend_sensitivity_msb = float( event.value )
+					channel.rpn.pitch_bend_sensitivity_msb = float( value )
 					if 12 < channel.rpn.pitch_bend_sensitivity_msb: channel.rpn.pitch_bend_sensitivity_msb = 12
 					channel.rpn.pitch_bend_sensitivity = channel.rpn.pitch_bend_sensitivity_msb + channel.rpn.pitch_bend_sensitivity_lsb / 100.0
 				_:
@@ -594,12 +624,12 @@ func _process_track_event_control_change_rpn_data_entry_msb( channel, event ):
 		_:
 			pass
 
-func _process_track_event_control_change_rpn_data_entry_lsb( channel, event ):
+func _process_track_event_control_change_rpn_data_entry_lsb( channel, value:int ):
 	match channel.rpn.selected_msb:
 		0:
 			match channel.rpn.selected_lsb:
 				SMF.rpn_control_number_pitch_bend_sensitivity:
-					channel.rpn.pitch_bend_sensitivity_lsb = float( event.value )
+					channel.rpn.pitch_bend_sensitivity_lsb = float( value )
 					channel.rpn.pitch_bend_sensitivity = channel.rpn.pitch_bend_sensitivity_msb + channel.rpn.pitch_bend_sensitivity_lsb / 100.0
 				_:
 					pass
