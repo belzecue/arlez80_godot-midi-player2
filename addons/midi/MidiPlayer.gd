@@ -127,7 +127,6 @@ func _ready( ):
 	var midi_master_bus_idx:int = AudioServer.get_bus_count( ) - 1
 	AudioServer.set_bus_name( midi_master_bus_idx, self.midi_master_bus_name )
 	AudioServer.set_bus_send( midi_master_bus_idx, self.bus )
-	AudioServer.set_bus_volume_db( midi_master_bus_idx, self.volume_db )
 
 	for i in range( 0, 16 ):
 		AudioServer.add_bus( -1 )
@@ -422,7 +421,8 @@ func set_tempo( bpm:float ):
 """
 func set_volume_db( vdb:float ):
 	volume_db = vdb
-	AudioServer.set_bus_volume_db( AudioServer.get_bus_index( self.midi_master_bus_name ), vdb )
+	for channel in self.channel_status:
+		AudioServer.set_bus_volume_db( AudioServer.get_bus_index( self.midi_channel_bus_name % channel.number ), linear2db( channel.volume * channel.expression ) + self.volume_db )
 
 """
 	全音を止める
@@ -595,13 +595,13 @@ func _process_track_event_control_change( channel, number:int, value:int ):
 	match number:
 		SMF.control_number_volume:
 			channel.volume = float( value ) / 127.0
-			AudioServer.set_bus_volume_db( AudioServer.get_bus_index( self.midi_channel_bus_name % channel.number ), linear2db( channel.volume * channel.expression ) )
+			AudioServer.set_bus_volume_db( AudioServer.get_bus_index( self.midi_channel_bus_name % channel.number ), linear2db( channel.volume * channel.expression ) + self.volume_db )
 		SMF.control_number_modulation:
 			channel.modulation = float( value ) / 127.0
 			self._apply_channel_modulation( channel )
 		SMF.control_number_expression:
 			channel.expression = float( value ) / 127.0
-			AudioServer.set_bus_volume_db( AudioServer.get_bus_index( self.midi_channel_bus_name % channel.number ), linear2db( channel.volume * channel.expression ) )
+			AudioServer.set_bus_volume_db( AudioServer.get_bus_index( self.midi_channel_bus_name % channel.number ), linear2db( channel.volume * channel.expression ) + self.volume_db )
 		SMF.control_number_reverb_send_level:
 			channel.reverb = float( value ) / 127.0
 			self.channel_audio_effects[channel.number].ae_reverb.wet = channel.reverb * self.reverb_power
