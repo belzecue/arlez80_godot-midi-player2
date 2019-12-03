@@ -389,7 +389,7 @@ func stop( ):
 	self.playing = false
 
 """
-	リセット命令を強制的に白光する
+	リセット命令を強制的に発行する
 """
 func send_reset( ):
 	self._process_track_sys_ex_reset_all_channels( )
