@@ -15,6 +15,9 @@ const default_instrument = {
 		{ "time": 0, "volume_db": 0.0 },
 		{ "time": 0.01, "volume_db": -144.0 },
 	],
+	"volume_db": 0.0,
+	"vel_range_min": 0,
+	"vel_range_max": 127,
 	"preset": null,
 	# Linked音色
 	"linked": null,
@@ -160,6 +163,7 @@ func _read_soundfont_pdta_inst( sf ):
 			"sample_modes": 0,
 			"key_range": { "high": 127, "low": 0 },
 			"vel_range": { "high": 127, "low": 0 },
+			"volume_db": 0.0,
 			"adsr": {
 				"attack_vol_env_time": 0.001,
 				"decay_vol_env_time": 0.001,
@@ -221,6 +225,9 @@ func _read_soundfont_pdta_inst( sf ):
 						bag.sample = sf.pdta.shdr[gen.amount]
 						if bag.original_key == 255:
 							bag.original_key = bag.sample.original_key
+					SoundFont.gen_oper_initial_attenuation:
+						var s = min( max( 0.0, float( gen.amount ) ), 1440.0 ) / 10.0
+						bag.volume_db = -s
 					#_:
 					#	print( gen.gen_oper )
 				gen_count += 1
@@ -277,6 +284,7 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 					break
 
 			var key_range = ibag.key_range
+			var vel_range = ibag.vel_range
 			# おかしくなるヤツが多いので無視させる
 			#if pbag.key_range != null:
 			#	key_range = pbag.key_range
@@ -287,11 +295,17 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 			var d:float = adsr.decay_vol_env_time
 			var s:float = adsr.sustain_vol_env_db
 			var r:float = adsr.release_vol_env_time
+			var volume_db:float = ibag.volume_db
 			var ads_state = [
 				{ "time": 0.0, "volume_db": -144.0 },
 				{ "time": a, "volume_db": 0.0 },
 				{ "time": a+d, "volume_db": s },
 			]
+			if a <= 0.001:
+				ads_state = [
+					{ "time": 0.0, "volume_db": 0.0 },
+					{ "time": d, "volume_db": s },
+				]
 			var release_state = [
 				{ "time": 0.0, "volume_db": s },
 				{ "time": r, "volume_db": -144.0 },
@@ -299,9 +313,9 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 			for key_number in range( key_range.low, key_range.high + 1 ):
 				#if preset.number == drum_track_bank << 7:
 				#	if 36 <= key_number and key_number <= 40:
-				#		print( key_number, " # ", ibag.sample.name );
-				if preset.instruments[key_number] != null:
-					continue
+				#		print( key_number, " # ", ibag.sample.name, " # ", volume_db );
+				if preset.instruments[key_number] == null:
+					preset.instruments[key_number] = []
 				var instrument = self.default_instrument.duplicate( true )
 				instrument.preset = preset
 				instrument.array_base_pitch = array_base_pitch
@@ -310,7 +324,10 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 					for k in range( len( instrument.array_base_pitch ) ):
 						instrument.array_base_pitch[k] += shift_pitch
 				instrument.array_stream = array_stream
-	
+
+				instrument.volume_db = volume_db
 				instrument.ads_state = ads_state
 				instrument.release_state = release_state
-				preset.instruments[key_number] = instrument
+				instrument.vel_range_min = vel_range.low
+				instrument.vel_range_max = vel_range.high
+				preset.instruments[key_number].append( instrument )

@@ -4,6 +4,10 @@ extends AudioStreamPlayer
 	AudioStreamPlayer with ADSR + Linked by Yui Kinomoto @arlez80
 """
 
+# 発音チャンネル
+var channel_number:int = -1
+# 発音キーナンバー
+var key_number:int = -1
 # サステインペダル
 var hold:bool = false
 # リリース中？
@@ -69,13 +73,12 @@ func play( from_position:float = 0.0 ):
 	self.timer = 0.0
 	self.using_timer = 0.0
 	self.linked.bus = self.bus
-	self.current_volume_db = self.ads_state[0].volume_db
 
 	.play( from_position )
 	if self._check_using_linked( ):
 		self.linked.play( from_position )
 
-	self._update_volume( )
+	self._update_adsr( 0.0 )
 
 func stop( ):
 	.stop( )
@@ -132,10 +135,10 @@ func _update_adsr( delta:float ):
 			self.timer = 0.0
 
 func _update_volume( ):
-	var v:float = self.current_volume_db + linear2db( float( self.velocity ) / 127.0 )
+	var v:float = self.current_volume_db + linear2db( float( self.velocity ) / 127.0 )# + self.instrument.volume_db
 	if v <= -144.0: v = -144.0
 	if self._check_using_linked( ):
-		v -= 6.0206	# v = linear2db( db2linear( v ) / 2.0 )
+		v = linear2db( db2linear( v ) / 4.0 )
 		if v <= -144.0: v = -144.0
 		self.volume_db = v
 		self.linked.volume_db = v

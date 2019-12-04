@@ -99,7 +99,7 @@ var _used_program_numbers = []
 # MIDIチャンネルエフェクト
 var channel_audio_effects:Array = []
 # パンの強さを定義
-var pan_power:float = 0.7
+var pan_power:float = 1.0
 # リバーブの強さを定義
 var reverb_power:float = 0.5
 # コーラスの強さを定義
@@ -127,6 +127,7 @@ func _ready( ):
 	var midi_master_bus_idx:int = AudioServer.get_bus_count( ) - 1
 	AudioServer.set_bus_name( midi_master_bus_idx, self.midi_master_bus_name )
 	AudioServer.set_bus_send( midi_master_bus_idx, self.bus )
+	AudioServer.set_bus_volume_db( AudioServer.get_bus_index( self.midi_master_bus_name ), self.volume_db )
 
 	for i in range( 0, 16 ):
 		AudioServer.add_bus( -1 )
@@ -421,8 +422,7 @@ func set_tempo( bpm:float ):
 """
 func set_volume_db( vdb:float ):
 	volume_db = vdb
-	for channel in self.channel_status:
-		AudioServer.set_bus_volume_db( AudioServer.get_bus_index( self.midi_channel_bus_name % channel.number ), linear2db( channel.volume * channel.expression ) + self.volume_db )
+	AudioServer.set_bus_volume_db( AudioServer.get_bus_index( self.midi_master_bus_name ), self.volume_db )
 
 """
 	全音を止める
@@ -439,12 +439,6 @@ func _stop_all_notes( ):
 	毎フレーム処理
 """
 func _process( delta:float ):
-	for channel in self.channel_status:
-		for key_number in channel.note_on.keys( ):
-			var note_on = channel.note_on[key_number]
-			if not note_on.playing:
-				channel.note_on.erase( key_number )
-
 	if self.smf_data != null:
 		if self.playing:
 			self.position += float( self.smf_data.timebase ) * delta * self.seconds_to_timebase * self.play_speed
@@ -514,7 +508,6 @@ func receive_raw_midi_message( input_event:InputEventMIDI ):
 		0x08:
 			self._process_track_event_note_off( channel, input_event.pitch )
 		0x09:
-			# note-on vel0をnote-offにはしてくれている https://github.com/godotengine/godot/blob/master/core/os/midi_driver.cpp#L79
 			self._process_track_event_note_on( channel, input_event.pitch, input_event.velocity )
 		0x0A:
 			# polyphonic key pressure プレイヤー自体が未実装
@@ -542,43 +535,45 @@ func _process_pitch_bend( channel, value:int ):
 	var pbs:float = channel.rpn.pitch_bend_sensitivity
 	channel.pitch_bend = pb
 
-	for note in channel.note_on.values( ):
-		note.pitch_bend_sensitivity = pbs
-		note.pitch_bend = pb
+	for asp in self.audio_stream_players:
+		if asp.channel_number == channel.number:
+			asp.pitch_bend_sensitivity = pbs
+			asp.pitch_bend = pb
 
-func _process_track_event_note_off( channel, note:int ):
-	if channel.drum_track: return
-
+func _process_track_event_note_off( channel, note:int, force_disable_hold:bool = false ):
 	var key_number:int = note + self.key_shift
 	if channel.note_on.has( key_number ):
-		var note_player = channel.note_on[key_number]
-		if note_player != null:
-			note_player.start_release( )
-			if not channel.hold:
-				channel.note_on.erase( key_number )
+		channel.note_on.erase( key_number )
+
+	if channel.drum_track: return
+
+	for asp in self.audio_stream_players:
+		if asp.channel_number == channel.number and asp.key_number == key_number:
+			if force_disable_hold: asp.hold = false
+			asp.start_release( )
 
 func _process_track_event_note_on( channel, note:int, velocity:int ):
-	if not self.channel_mute[channel.number]:
-		var key_number:int = note + self.key_shift
-		var preset = self.bank.get_preset( channel.program, channel.bank )
-		var instrument = preset.instruments[key_number]
-		var assign_group:int = key_number
-		if channel.drum_track:
-			if key_number in self.drum_assign_groups:
-				assign_group = self.drum_assign_groups[key_number]
+	if self.channel_mute[channel.number]: return
 
-		if instrument != null:
-			if channel.note_on.has( assign_group ):
-				channel.note_on[ assign_group ].start_release( )
+	var key_number:int = note + self.key_shift
+	var preset = self.bank.get_preset( channel.program, channel.bank )
+	var instruments = preset.instruments[key_number]
+	if instruments == null: return
 
-			if channel.hold and channel.note_on.has( key_number ):
-				var note_player = channel.note_on[key_number]
-				note_player.hold = false
-				note_player.start_release( )
-				channel.note_on.erase( key_number )
+	var assign_group:int = key_number
+	if channel.drum_track:
+		if key_number in self.drum_assign_groups:
+			assign_group = self.drum_assign_groups[key_number]
 
+	if channel.note_on.has( assign_group ):
+		self._process_track_event_note_off( channel, note, true )
+
+	for instrument in instruments:
+		if instrument.vel_range_min <= key_number and key_number <= instrument.vel_range_max:
 			var note_player = self._get_idle_player( )
 			if note_player != null:
+				note_player.channel_number = channel.number
+				note_player.key_number = key_number
 				note_player.bus = self.midi_channel_bus_name % channel.number
 				note_player.velocity = velocity
 				note_player.pitch_bend = channel.pitch_bend
@@ -589,19 +584,20 @@ func _process_track_event_note_on( channel, note:int, velocity:int ):
 				note_player.auto_release_mode = channel.drum_track
 				note_player.set_instrument( instrument )
 				note_player.play( 0.0 )
-				channel.note_on[ assign_group ] = note_player
+
+	channel.note_on[ assign_group ] = true
 
 func _process_track_event_control_change( channel, number:int, value:int ):
 	match number:
 		SMF.control_number_volume:
 			channel.volume = float( value ) / 127.0
-			AudioServer.set_bus_volume_db( AudioServer.get_bus_index( self.midi_channel_bus_name % channel.number ), linear2db( channel.volume * channel.expression ) + self.volume_db )
+			AudioServer.set_bus_volume_db( AudioServer.get_bus_index( self.midi_channel_bus_name % channel.number ), linear2db( channel.volume * channel.expression ) )
 		SMF.control_number_modulation:
 			channel.modulation = float( value ) / 127.0
 			self._apply_channel_modulation( channel )
 		SMF.control_number_expression:
 			channel.expression = float( value ) / 127.0
-			AudioServer.set_bus_volume_db( AudioServer.get_bus_index( self.midi_channel_bus_name % channel.number ), linear2db( channel.volume * channel.expression ) + self.volume_db )
+			AudioServer.set_bus_volume_db( AudioServer.get_bus_index( self.midi_channel_bus_name % channel.number ), linear2db( channel.volume * channel.expression ) )
 		SMF.control_number_reverb_send_level:
 			channel.reverb = float( value ) / 127.0
 			self.channel_audio_effects[channel.number].ae_reverb.wet = channel.reverb * self.reverb_power
@@ -647,11 +643,11 @@ func _process_track_event_control_change( channel, number:int, value:int ):
 		SMF.control_number_all_sound_off:
 			self._stop_all_notes( )
 		SMF.control_number_all_note_off:
-			for key_number in channel.note_on.keys( ):
-				var note_on = channel.note_on[key_number]
-				note_on.hold = false
-				note_on.start_release( )
-				channel.note_on.erase( key_number )
+			for asp in self.audio_stream_players:
+				if asp.channel_number == channel.number:
+					asp.hold = false
+					asp.start_release( )
+					channel.note_on.erase( asp.key_number )
 		_:
 			# 無視
 			pass
@@ -659,17 +655,16 @@ func _process_track_event_control_change( channel, number:int, value:int ):
 func _apply_channel_modulation( channel ):
 	var ms:float = channel.rpn.modulation_sensitivity
 	var m:float = channel.modulation
-	for note in channel.note_on.values( ):
-		note.modulation_sensitivity = ms
-		note.modulation = m
+	for asp in self.audio_stream_players:
+		if asp.channel_number == channel.number:
+			asp.modulation_sensitivity = ms
+			asp.modulation = m
 
 func _apply_channel_hold( channel ):
 	var hold:bool = channel.hold
-	for key_number in channel.note_on.keys( ):
-		var note = channel.note_on[key_number]
-		note.hold = hold
-		if note.request_release:
-			channel.note_on.erase( key_number )
+	for asp in self.audio_stream_players:
+		if asp.channel_number == channel.number:
+			asp.hold = hold
 
 func _process_track_event_control_change_rpn_data_entry_msb( channel, value:int ):
 	match channel.rpn.selected_msb:
