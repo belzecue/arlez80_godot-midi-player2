@@ -185,6 +185,8 @@ func _prepare_to_play( ):
 			if not self.load_all_voices_from_soundfont:
 				voices = self._used_program_numbers
 			self.bank.read_soundfont( sf2, voices )
+		else:
+			push_error( "soundfont is empty." )
 
 	# 発音機
 	if self.audio_stream_players.size( ) == 0:
