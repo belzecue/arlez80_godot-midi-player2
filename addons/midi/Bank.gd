@@ -2,7 +2,7 @@
 	Sound Bank by Yui Kinomoto @arlez80
 """
 
-const drum_track_bank = 128
+const drum_track_bank:int = 128
 const SoundFont = preload( "SoundFont.gd" )
 const default_instrument = {
 	"array_base_pitch": [],
