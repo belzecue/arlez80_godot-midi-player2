@@ -71,10 +71,9 @@ func get_preset( program_number:int, bank:int = 0 ):
 			pc = program_number
 		# それでも存在しない場合
 		if not self.presets.has( pc ):
+			if self.presets.empty( ): push_error( "Bank is empty." )
 			# 一番最初のデフォルト音源を読む
 			pc = self.presets.keys( )[0]
-		else:
-			push_error( "Bank is empty." )
 
 	var preset = self.presets[pc]
 	return preset
