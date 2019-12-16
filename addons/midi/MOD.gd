@@ -82,8 +82,8 @@ func _read( stream:StreamPeerBuffer ):
 """
 	サンプルのデータを読み込む
 """
-func _read_sample_informations( stream:StreamPeerBuffer ):
-	var samples = []
+func _read_sample_informations( stream:StreamPeerBuffer ) -> Array:
+	var samples:Array = []
 
 	for i in range( 0, 31 ):
 		var sample = {}
@@ -104,11 +104,11 @@ func _read_sample_informations( stream:StreamPeerBuffer ):
 	パターンを読み込む
 """
 func _read_patterns( stream:StreamPeerBuffer, max_position:int, channels:int ):
-	var patterns = []
+	var patterns:Array = []
 	for position in range( 0, max_position ):
-		var pattern = []
+		var pattern:Array = []
 		for i in range( 0, 64 ):
-			var line = []
+			var line:Array = []
 			for ch in range( 0, channels ):
 				var v1:int = stream.get_u16( )
 				var v2:int = stream.get_u16( )
@@ -126,7 +126,7 @@ func _read_patterns( stream:StreamPeerBuffer, max_position:int, channels:int ):
 """
 	波形データ読み込む
 """
-func _read_sample_data( stream:StreamPeerBuffer, samples ):
+func _read_sample_data( stream:StreamPeerBuffer, samples:Array ):
 	for sample in samples:
 		sample.data = stream.get_partial_data( sample.length )[1]
 
@@ -136,5 +136,5 @@ func _read_sample_data( stream:StreamPeerBuffer, samples ):
 	@param	size	string size
 	@return string
 """
-func _read_string( stream:StreamPeerBuffer, size:int ):
+func _read_string( stream:StreamPeerBuffer, size:int ) -> String:
 	return stream.get_partial_data( size )[1].get_string_from_ascii( )
