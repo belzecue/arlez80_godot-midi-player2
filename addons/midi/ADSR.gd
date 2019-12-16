@@ -40,6 +40,8 @@ var using_timer:float = 0.0
 # リンク済の音色
 var linked:AudioStreamPlayer = null
 var linked_base_pitch:float = 0.0
+# 同時発音数
+var polyphony_count:float = 1.0
 
 # 現在のADSRボリューム
 var current_volume_db:float = 0.0
@@ -147,10 +149,11 @@ func _update_adsr( delta:float ):
 
 func _update_volume( ):
 	var v:float = self.current_volume_db + linear2db( float( self.velocity ) / 127.0 )# + self.instrument.volume_db
+	v = linear2db( db2linear( v ) / self.polyphony_count )
 	if v <= -144.0: v = -144.0
+
 	if self._check_using_linked( ):
-		v = linear2db( db2linear( v ) / 3.0 )
-		if v <= -144.0: v = -144.0
+		v = linear2db( db2linear( v ) / 2.0 )
 		self.volume_db = v
 		self.linked.volume_db = v
 	else:

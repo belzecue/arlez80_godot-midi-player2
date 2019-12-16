@@ -644,6 +644,11 @@ func _process_track_event_note_on( channel:GodotMIDIPlayerChannelStatus, note:in
 	if channel.note_on.has( assign_group ):
 		self._process_track_event_note_off( channel, note, true )
 
+	var polyphony_count:int = 0
+	for instrument in instruments:
+		if instrument.vel_range_min <= key_number and key_number <= instrument.vel_range_max:
+			polyphony_count += 1
+
 	for instrument in instruments:
 		if instrument.vel_range_min <= key_number and key_number <= instrument.vel_range_max:
 			var note_player:AudioStreamPlayerADSR = self._get_idle_player( )
@@ -658,6 +663,7 @@ func _process_track_event_note_on( channel:GodotMIDIPlayerChannelStatus, note:in
 				note_player.modulation = channel.modulation
 				note_player.modulation_sensitivity = channel.rpn.modulation_sensitivity
 				note_player.auto_release_mode = channel.drum_track
+				note_player.polyphony_count = float( polyphony_count )
 				note_player.set_instrument( instrument )
 				note_player.play( 0.0 )
 
@@ -841,7 +847,7 @@ func _get_idle_player( ) -> AudioStreamPlayerADSR:
 	var stopped_audio_stream_player:AudioStreamPlayerADSR = null
 	var minimum_volume_db:float = -100.0
 	var oldest_audio_stream_player:AudioStreamPlayerADSR = null
-	var oldest:float = 0.0
+	var oldest:float = -1.0
 
 	for audio_stream_player in self.audio_stream_players:
 		if not audio_stream_player.playing:
