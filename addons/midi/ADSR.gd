@@ -1,5 +1,7 @@
 extends AudioStreamPlayer
 
+class_name AudioStreamPlayerADSR
+
 """
 	AudioStreamPlayer with ADSR + Linked by Yui Kinomoto @arlez80
 """

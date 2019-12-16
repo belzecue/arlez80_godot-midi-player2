@@ -3,32 +3,36 @@
 """
 
 const drum_track_bank:int = 128
+const ADSR = preload( "ADSR.gd" )
 const SoundFont = preload( "SoundFont.gd" )
-const default_instrument = {
-	"array_base_pitch": [],
-	"array_stream": [],
-	"ads_state": [
-		{ "time": 0, "volume_db": 0.0 },
-		{ "time": 0.2, "volume_db": -144.0 },
-	],
-	"release_state": [
-		{ "time": 0, "volume_db": 0.0 },
-		{ "time": 0.01, "volume_db": -144.0 },
-	],
-	"volume_db": 0.0,
-	"vel_range_min": 0,
-	"vel_range_max": 127,
-	"preset": null,
-	# Linked音色
-	"linked": null,
-	# "assine_group": 0,	# reserved
-}
-const default_preset = {
-	"name": "",
-	"number": 0,
-	"instruments": [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-	"bags": [],
-}
+
+class Instrument:
+	var array_base_pitch:Array = []
+	var array_stream:Array = []
+	var ads_state:Array = []
+	var release_state:Array = []
+	var volume_db:float = 0.0
+	var vel_range_min:int = 0
+	var vel_range_max:int = 127
+	var preset = null
+	var linked = null
+	# var assine_group = 0	# reserved
+
+	func _init( ):
+		self.ads_state = [
+			ADSR.VolumeState.new( 0.0, 0.0 ),
+			ADSR.VolumeState.new( 0.2, -144.0 )
+		]
+		self.release_state = [
+			ADSR.VolumeState.new( 0.0, 0.0 ),
+			ADSR.VolumeState.new( 0.01, -144.0 )
+		]
+
+class Preset:
+	var name:String = ""
+	var number:int = 0
+	var instruments:Array = [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]
+	var bags:Array = []
 
 # 音色テーブル
 var presets = {}
@@ -37,11 +41,11 @@ var presets = {}
 	追加
 """
 func set_preset_sample( program_number:int, base_sample:int, base_key:int ):
-	var preset = self.default_preset.duplicate( true )
+	var preset:Preset = Preset.new( )
 	preset.name = "#%03d" % program_number
 	preset.number = program_number
 	for i in range(0,128):
-		var inst = self.default_instrument.duplicate( true )
+		var inst = Instrument.new( )
 		inst.array_base_pitch = [ float( i - base_key ) / 12.0 ]
 		inst.array_stream = [ base_sample ]
 		inst.preset = preset
@@ -52,7 +56,7 @@ func set_preset_sample( program_number:int, base_sample:int, base_key:int ):
 """
 	追加
 """
-func set_preset( program_number:int, preset ):
+func set_preset( program_number:int, preset:Preset ):
 	self.presets[program_number] = preset
 
 """
@@ -89,7 +93,7 @@ func read_soundfont( sf, need_program_numbers = null ):
 	for phdr_index in range( 0, len( sf.pdta.phdr )-1 ):
 		var phdr = sf.pdta.phdr[phdr_index]
 
-		var preset = self.default_preset.duplicate( true )
+		var preset:Preset = Preset.new( )
 		var program_number:int = phdr.preset | ( phdr.bank << 7 )
 
 		preset.name = phdr.name
@@ -317,7 +321,7 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 				#		print( key_number, " # ", ibag.sample.name, " # ", volume_db );
 				if preset.instruments[key_number] == null:
 					preset.instruments[key_number] = []
-				var instrument = self.default_instrument.duplicate( true )
+				var instrument:Instrument = Instrument.new( )
 				instrument.preset = preset
 				instrument.array_base_pitch = array_base_pitch
 				if ibag.original_key != 255:

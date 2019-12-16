@@ -24,6 +24,115 @@ const midi_master_bus_name:String = "arlez80_GMP_MASTER_BUS"
 const midi_channel_bus_name:String = "arlez80_GMP_CHANNEL_BUS%d"
 
 # -----------------------------------------------------------------------------
+# Classes
+class GodotMIDIPlayerChannelAudioEffect:
+	var ae_panner:AudioEffectPanner = null
+	var ae_reverb:AudioEffectReverb = null
+	var ae_chorus:AudioEffectChorus = null
+
+class GodotMIDIPlayerSysEx:
+	var gs_reset:bool
+	var gm_system_on:bool
+	var xg_system_on:bool
+
+	func _init( ):
+		self.initialize( )
+
+	func initialize( ):
+		self.gs_reset = false
+		self.gm_system_on = false
+		self.xg_system_on = false
+
+class GodotMIDIPlayerTrackStatus:
+	var events:Array = []
+	var event_pointer:int = 0
+
+class GodotMIDIPlayerChannelStatus:
+	var number:int
+	var track_name:String
+	var instrument_name:String
+	var note_on:Dictionary
+
+	var bank:int
+	var program:int
+	var pitch_bend:float
+
+	var volume:float
+	var expression:float
+	var reverb:float		# Effect 1
+	var tremolo:float		# Effect 2
+	var chorus:float		# Effect 3
+	var celeste:float		# Effect 4
+	var phaser:float		# Effect 5
+	var modulation:float
+	var hold:bool			# Sustain Pedal
+	var portamento:float
+	var sostenuto:float
+	var freeze:bool
+	var pan:float
+	
+	var drum_track:bool
+
+	var rpn:GodotMIDIPlayerChannelStatusRPN
+
+	func _init( number:int, bank:int = 0, drum_track:bool = false ):
+		self.number = number
+		self.track_name = "Track %d" % number
+		self.instrument_name = "Track %d" % number
+		self.bank = bank
+		self.drum_track = drum_track
+		self.rpn = GodotMIDIPlayerChannelStatusRPN.new( )
+		self.initialize( )
+
+	func initialize( ):
+		self.note_on = {}
+		self.program = 0
+
+		self.pitch_bend = 0.0
+		self.volume = 100.0 / 127.0
+		self.expression = 1.0
+		self.reverb = 0.0
+		self.tremolo = 0.0
+		self.chorus = 0.0
+		self.celeste = 0.0
+		self.phaser = 0.0
+		self.modulation = 0.0
+		self.hold = false
+		self.portamento = 0.0
+		self.sostenuto = 0.0
+		self.freeze = false
+		self.pan = 0.5
+
+		self.rpn.initialize( )
+
+class GodotMIDIPlayerChannelStatusRPN:
+	var selected_msb:int
+	var selected_lsb:int
+	
+	var pitch_bend_sensitivity:float
+	var pitch_bend_sensitivity_msb:float
+	var pitch_bend_sensitivity_lsb:float
+	
+	var modulation_sensitivity:float
+	var modulation_sensitivity_msb:float
+	var modulation_sensitivity_lsb:float
+
+	func _init( ):
+		self.initialize( )
+
+	func initialize( ):
+		self.selected_msb = 0
+		self.selected_lsb = 0
+		
+		self.pitch_bend_sensitivity = 2.0
+		self.pitch_bend_sensitivity_msb = 2.0
+		self.pitch_bend_sensitivity_lsb = 0.0
+		
+		self.modulation_sensitivity = 0.25
+		self.modulation_sensitivity_msb = 0.25
+		self.modulation_sensitivity_lsb = 0.0
+
+# -----------------------------------------------------------------------------
 # Export
 
 # 最大発音数
@@ -61,15 +170,15 @@ export (String) var bus:String = "Master"
 # MIDIデータ
 var smf_data = null setget set_smf_data
 # MIDIトラックデータ smf_dataを再生用に加工したデータが入る
-var track_status = null
+onready var track_status:GodotMIDIPlayerTrackStatus = GodotMIDIPlayerTrackStatus.new( )
 # 現在のテンポ
-var tempo:float = 120 setget set_tempo
+var tempo:float = 120.0 setget set_tempo
 # 秒 -> タイムベース変換係数
 var seconds_to_timebase:float = 2.3
 # タイムベース -> 秒変換係数
 var timebase_to_seconds:float = 1.0 / seconds_to_timebase
 # 位置
-var position:float = 0
+var position:float = 0.0
 # 最終位置
 var last_position:int = 0
 # チャンネルステータス
@@ -79,23 +188,19 @@ var bank = null
 # AudioStreamPlayer
 var audio_stream_players:Array = []
 # ドラムトラック用アサイングループ
-var drum_assign_groups = {
+var drum_assign_groups:Dictionary = {
 	# Hi-Hats
 	42: 42,	# Closed Hi-Hat
 	44: 42,	# Pedal Hi-Hat
 	46: 42,	# Pedal Hi-Hat
 }
 # SysEx
-var sys_ex = {
-	"gs_reset": false,
-	"gm_system_on": false,
-	"xg_system_on": false,
-}
+onready var sys_ex:GodotMIDIPlayerSysEx = GodotMIDIPlayerSysEx.new( )
 
 # MIDIチェンネルプレフィックス
 var _midi_channel_prefix:int = 0
 # 曲で使用中のプログラム番号を格納
-var _used_program_numbers = []
+var _used_program_numbers:Array = []
 # MIDIチャンネルエフェクト
 var channel_audio_effects:Array = []
 # パンの強さを定義
@@ -135,19 +240,17 @@ func _ready( ):
 		AudioServer.set_bus_name( midi_channel_bus_idx, self.midi_channel_bus_name % i )
 		AudioServer.set_bus_send( midi_channel_bus_idx, self.midi_master_bus_name )
 		AudioServer.set_bus_volume_db( midi_channel_bus_idx, 0.0 )
-		var ae_panner = AudioEffectPanner.new( )
-		var ae_reverb = AudioEffectReverb.new( )
-		ae_reverb.wet = 0.03
-		var ae_chorus = AudioEffectChorus.new( )
-		ae_chorus.wet = 0.0
-		AudioServer.add_bus_effect( midi_channel_bus_idx, ae_chorus )
-		AudioServer.add_bus_effect( midi_channel_bus_idx, ae_panner )
-		AudioServer.add_bus_effect( midi_channel_bus_idx, ae_reverb )
-		self.channel_audio_effects.append({
-			"ae_panner": ae_panner,
-			"ae_reverb": ae_reverb,
-			"ae_chorus": ae_chorus,
-		})
+
+		var cae = GodotMIDIPlayerChannelAudioEffect.new( )
+		cae.ae_panner = AudioEffectPanner.new( )
+		cae.ae_reverb = AudioEffectReverb.new( )
+		cae.ae_reverb.wet = 0.03
+		cae.ae_chorus = AudioEffectChorus.new( )
+		cae.ae_chorus.wet = 0.0
+		AudioServer.add_bus_effect( midi_channel_bus_idx, cae.ae_chorus )
+		AudioServer.add_bus_effect( midi_channel_bus_idx, cae.ae_panner )
+		AudioServer.add_bus_effect( midi_channel_bus_idx, cae.ae_reverb )
+		self.channel_audio_effects.append( cae )
 
 	if self.playing:
 		self.play( )
@@ -206,11 +309,7 @@ func _prepare_to_play( ):
 """
 func _init_track( ):
 	var track_status_events:Array = []
-	self.sys_ex = {
-		"gs_reset": false,
-		"gm_system_on": false,
-		"xg_system_on": false,
-	}
+	self.sys_ex.initialize( )
 
 	if len( self.smf_data.tracks ) == 1:
 		track_status_events = self.smf_data.tracks[0].events
@@ -241,10 +340,8 @@ func _init_track( ):
 			time = next_time
 
 	self.last_position = track_status_events[len(track_status_events)-1].time
-	self.track_status = {
-		"events": track_status_events,
-		"event_pointer": 0,
-	}
+	self.track_status.events = track_status_events
+	self.track_status.event_pointer = 0
 
 """
 	SMF解析
@@ -296,47 +393,8 @@ func _init_channel( ):
 	for i in range( max_channel ):
 		var drum_track:bool = ( i == drum_track_channel )
 		var bank:int = 0
-		if drum_track:
-			bank = self.drum_track_bank
-		self.channel_status.append({
-			"number": i,
-			"track_name": "Track %d" % i,
-			"instrument_name": "",
-			"note_on": {},
-			"bank": bank,
-
-			"program": 0,
-			"pitch_bend": 0.0,
-
-			"volume": 100.0 / 127.0,
-			"expression": 1.0,
-			"reverb": 0.0,		# Effect 1
-			"tremolo": 0.0,		# Effect 2
-			"chorus": 0.0,		# Effect 3
-			"celeste": 0.0,		# Effect 4
-			"phaser": 0.0,		# Effect 5
-			"modulation": 0.0,
-			"hold": false,		# Sustain Pedal
-			"portamento": 0.0,
-			"sostenuto": 0.0,
-			"freeze": false,
-			"pan": 0.5,
-
-			"drum_track": drum_track,
-
-			"rpn": {
-				"selected_msb": 0,
-				"selected_lsb": 0,
-
-				"pitch_bend_sensitivity": 2.0,
-				"pitch_bend_sensitivity_msb": 2.0,
-				"pitch_bend_sensitivity_lsb": 0.0,
-
-				"modulation_sensitivity": 0.25,
-				"modulation_sensitivity_msb": 0.25,
-				"modulation_sensitivity_lsb": 0.0,
-			},
-		})
+		if drum_track: bank = self.drum_track_bank
+		self.channel_status.append( GodotMIDIPlayerChannelStatus.new( i, bank, drum_track ) )
 
 """
 	再生
@@ -365,7 +423,7 @@ func seek( to_position:float ):
 		if new_position <= event_chunk.time:
 			break
 
-		var channel = self.channel_status[event_chunk.channel_number]
+		var channel:GodotMIDIPlayerChannelStatus = self.channel_status[event_chunk.channel_number]
 		var event = event_chunk.event
 
 		match event.type:
@@ -479,7 +537,7 @@ func _process_track( ):
 		track.event_pointer += 1
 		execute_event_count += 1
 
-		var channel = self.channel_status[event_chunk.channel_number]
+		var channel:GodotMIDIPlayerChannelStatus = self.channel_status[event_chunk.channel_number]
 		var event = event_chunk.event
 
 		self.emit_signal( "midi_event", channel, event )
@@ -504,7 +562,7 @@ func _process_track( ):
 	return execute_event_count
 
 func receive_raw_midi_message( input_event:InputEventMIDI ):
-	var channel = self.channel_status[input_event.channel]
+	var channel:GodotMIDIPlayerChannelStatus = self.channel_status[input_event.channel]
 
 	match input_event.message:
 		0x08:
@@ -532,7 +590,7 @@ func receive_raw_midi_message( input_event:InputEventMIDI ):
 			print( "unknown message %x" % input_event.message )
 			breakpoint
 
-func _process_pitch_bend( channel, value:int ):
+func _process_pitch_bend( channel:GodotMIDIPlayerChannelStatus, value:int ):
 	var pb:float = float( value ) / 8192.0 - 1.0
 	var pbs:float = channel.rpn.pitch_bend_sensitivity
 	channel.pitch_bend = pb
@@ -542,7 +600,7 @@ func _process_pitch_bend( channel, value:int ):
 			asp.pitch_bend_sensitivity = pbs
 			asp.pitch_bend = pb
 
-func _process_track_event_note_off( channel, note:int, force_disable_hold:bool = false ):
+func _process_track_event_note_off( channel:GodotMIDIPlayerChannelStatus, note:int, force_disable_hold:bool = false ):
 	var key_number:int = note + self.key_shift
 	if channel.note_on.has( key_number ):
 		channel.note_on.erase( key_number )
@@ -554,7 +612,7 @@ func _process_track_event_note_off( channel, note:int, force_disable_hold:bool =
 			if force_disable_hold: asp.hold = false
 			asp.start_release( )
 
-func _process_track_event_note_on( channel, note:int, velocity:int ):
+func _process_track_event_note_on( channel:GodotMIDIPlayerChannelStatus, note:int, velocity:int ):
 	if self.channel_mute[channel.number]: return
 
 	var key_number:int = note + self.key_shift
@@ -572,7 +630,7 @@ func _process_track_event_note_on( channel, note:int, velocity:int ):
 
 	for instrument in instruments:
 		if instrument.vel_range_min <= key_number and key_number <= instrument.vel_range_max:
-			var note_player = self._get_idle_player( )
+			var note_player:AudioStreamPlayerADSR = self._get_idle_player( )
 			if note_player != null:
 				note_player.channel_number = channel.number
 				note_player.key_number = key_number
@@ -589,7 +647,7 @@ func _process_track_event_note_on( channel, note:int, velocity:int ):
 
 	channel.note_on[ assign_group ] = true
 
-func _process_track_event_control_change( channel, number:int, value:int ):
+func _process_track_event_control_change( channel:GodotMIDIPlayerChannelStatus, number:int, value:int ):
 	match number:
 		SMF.control_number_volume:
 			channel.volume = float( value ) / 127.0
@@ -654,7 +712,7 @@ func _process_track_event_control_change( channel, number:int, value:int ):
 			# 無視
 			pass
 
-func _apply_channel_modulation( channel ):
+func _apply_channel_modulation( channel:GodotMIDIPlayerChannelStatus ):
 	var ms:float = channel.rpn.modulation_sensitivity
 	var m:float = channel.modulation
 	for asp in self.audio_stream_players:
@@ -662,13 +720,13 @@ func _apply_channel_modulation( channel ):
 			asp.modulation_sensitivity = ms
 			asp.modulation = m
 
-func _apply_channel_hold( channel ):
+func _apply_channel_hold( channel:GodotMIDIPlayerChannelStatus ):
 	var hold:bool = channel.hold
 	for asp in self.audio_stream_players:
 		if asp.channel_number == channel.number:
 			asp.hold = hold
 
-func _process_track_event_control_change_rpn_data_entry_msb( channel, value:int ):
+func _process_track_event_control_change_rpn_data_entry_msb( channel:GodotMIDIPlayerChannelStatus, value:int ):
 	match channel.rpn.selected_msb:
 		0:
 			match channel.rpn.selected_lsb:
@@ -681,7 +739,7 @@ func _process_track_event_control_change_rpn_data_entry_msb( channel, value:int 
 		_:
 			pass
 
-func _process_track_event_control_change_rpn_data_entry_lsb( channel, value:int ):
+func _process_track_event_control_change_rpn_data_entry_lsb( channel:GodotMIDIPlayerChannelStatus, value:int ):
 	match channel.rpn.selected_msb:
 		0:
 			match channel.rpn.selected_lsb:
@@ -693,7 +751,7 @@ func _process_track_event_control_change_rpn_data_entry_lsb( channel, value:int 
 		_:
 			pass
 
-func _process_track_system_event( channel, event ):
+func _process_track_system_event( channel:GodotMIDIPlayerChannelStatus, event ):
 	match event.args.type:
 		SMF.MIDISystemEventType.set_tempo:
 			self.tempo = 60000000.0 / float( event.args.bpm )
@@ -723,7 +781,7 @@ func _process_track_system_event( channel, event ):
 			# 無視
 			pass
 
-func _process_track_sys_ex( channel, event_args ):
+func _process_track_sys_ex( channel:GodotMIDIPlayerChannelStatus, event_args ):
 	match event_args.manifacture_id:
 		SMF.manufacture_id_universal_nopn_realtime_sys_ex:
 			if self._is_same_data( event_args.data, [0x7f,0x09,0x01,0xf7] ):
@@ -739,53 +797,19 @@ func _process_track_sys_ex( channel, event_args ):
 				self._process_track_sys_ex_reset_all_channels( )
 
 func _process_track_sys_ex_reset_all_channels( ):
-	var init_params = {
-		"program": 0,
-		"pitch_bend": 0.0,
-	
-		"volume": 100.0 / 127.0,
-		"expression": 1.0,
-		"reverb": 0.0,		# Effect 1
-		"tremolo": 0.0,		# Effect 2
-		"chorus": 0.0,		# Effect 3
-		"celeste": 0.0,		# Effect 4
-		"phaser": 0.0,		# Effect 5
-		"modulation": 0.0,
-		"hold": false,		# Sustain Pedal
-		"portamento": 0.0,
-		"sostenuto": 0.0,
-		"freeze": false,
-		"pan": 0.5,
-	}
-	var rpn_init_params = {
-		"selected_msb": 0,
-		"selected_lsb": 0,
-
-		"pitch_bend_sensitivity": 2.0,
-		"pitch_bend_sensitivity_msb": 2.0,
-		"pitch_bend_sensitivity_lsb": 0.0,
-
-		"modulation_sensitivity": 0.25,
-		"modulation_sensitivity_msb": 0.25,
-		"modulation_sensitivity_lsb": 0.0,
-	};
-
 	for audio_stream_player in self.audio_stream_players:
 		audio_stream_player.hold = false
 		audio_stream_player.start_release( )
 
 	for channel in self.channel_status:
-		for name in init_params.keys( ):
-			channel[name] = init_params[name]
-		for name in rpn_init_params.keys( ):
-			channel.rpn[name] = rpn_init_params[name]
+		channel.initialize( )
 
 		AudioServer.set_bus_volume_db( AudioServer.get_bus_index( self.midi_channel_bus_name % channel.number ), linear2db( float( channel.volume * channel.expression ) ) )
 		self.channel_audio_effects[channel.number].ae_reverb.wet = channel.reverb * self.reverb_power
 		self.channel_audio_effects[channel.number].ae_chorus.wet = channel.chorus * self.chorus_power
 		self.channel_audio_effects[channel.number].ae_panner.pan = ( ( channel.pan * 2 ) - 1.0 ) * self.pan_power
 
-func _is_same_data( data_a, data_b ):
+func _is_same_data( data_a:Array, data_b:Array ) -> bool:
 	if len( data_a ) != len( data_b ): return false
 
 	var id:int = 0
@@ -797,10 +821,10 @@ func _is_same_data( data_a, data_b ):
 		id += 1
 	return not incorrect
 
-func _get_idle_player( ):
-	var stopped_audio_stream_player = null
+func _get_idle_player( ) -> AudioStreamPlayerADSR:
+	var stopped_audio_stream_player:AudioStreamPlayerADSR = null
 	var minimum_volume_db:float = -100.0
-	var oldest_audio_stream_player = null
+	var oldest_audio_stream_player:AudioStreamPlayerADSR = null
 	var oldest:float = 0.0
 
 	for audio_stream_player in self.audio_stream_players:
@@ -821,7 +845,7 @@ func _get_idle_player( ):
 """
 	現在発音中の音色数を返す
 """
-func get_now_playing_polyphony( ):
+func get_now_playing_polyphony( ) -> int:
 	var polyphony:int = 0
 	for audio_stream_player in self.audio_stream_players:
 		if audio_stream_player.playing:
