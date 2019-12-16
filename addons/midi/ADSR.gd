@@ -4,6 +4,14 @@ extends AudioStreamPlayer
 	AudioStreamPlayer with ADSR + Linked by Yui Kinomoto @arlez80
 """
 
+class VolumeState:
+	var time:float = 0.0
+	var volume_db:float = 0.0
+
+	func _init( time:float = 0.0, volume_db:float = 0.0 ):
+		self.time = time
+		self.volume_db = volume_db
+
 # 発音チャンネル
 var channel_number:int = -1
 # 発音キーナンバー
@@ -37,15 +45,15 @@ var current_volume_db:float = 0.0
 var auto_release_mode:bool = false
 
 # ADSステート
-var ads_state = [
-	{ "time": 0.0, "volume_db": 0.0 },
-	{ "time": 0.2, "volume_db": -144.0 },
+onready var ads_state:Array = [
+	VolumeState.new( 0.0, 0.0 ),
+	VolumeState.new( 0.2, -144.0 )
 	# { "time": 0.2, "jump_to": 0.0 },	# not implemented
 ]
 # Rステート
-var release_state = [
-	{ "time": 0.0, "volume_db": 0.0 },
-	{ "time": 0.01, "volume_db": -144.0 },
+onready var release_state:Array = [
+	VolumeState.new( 0.0, 0.0 ),
+	VolumeState.new( 0.01, -144.0 )
 	# { "time": 0.2, "jump_to": 0.0 },	# not implemented
 ]
 
