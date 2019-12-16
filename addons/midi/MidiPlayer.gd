@@ -840,6 +840,7 @@ func _get_idle_player( ) -> AudioStreamPlayerADSR:
 	if stopped_audio_stream_player != null:
 		return stopped_audio_stream_player
 
+	oldest_audio_stream_player.stop( )
 	return oldest_audio_stream_player
 
 """

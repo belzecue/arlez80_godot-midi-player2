@@ -93,6 +93,7 @@ func play( from_position:float = 0.0 ):
 func stop( ):
 	.stop( )
 	self.linked.stop( )
+	self.hold = false
 
 func start_release( ):
 	self.request_release = true
@@ -148,7 +149,7 @@ func _update_volume( ):
 	var v:float = self.current_volume_db + linear2db( float( self.velocity ) / 127.0 )# + self.instrument.volume_db
 	if v <= -144.0: v = -144.0
 	if self._check_using_linked( ):
-		v = linear2db( db2linear( v ) / 4.0 )
+		v = linear2db( db2linear( v ) / 3.0 )
 		if v <= -144.0: v = -144.0
 		self.volume_db = v
 		self.linked.volume_db = v
