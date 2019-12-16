@@ -6,6 +6,7 @@ const drum_track_bank:int = 128
 const ADSR = preload( "ADSR.gd" )
 const SoundFont = preload( "SoundFont.gd" )
 
+# 音色
 class Instrument:
 	var array_base_pitch:Array = []
 	var array_stream:Array = []
@@ -14,8 +15,7 @@ class Instrument:
 	var volume_db:float = 0.0
 	var vel_range_min:int = 0
 	var vel_range_max:int = 127
-	var preset = null
-	var linked = null
+	var preset:Preset = null
 	# var assine_group = 0	# reserved
 
 	func _init( ):
@@ -34,8 +34,87 @@ class Preset:
 	var instruments:Array = [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]
 	var bags:Array = []
 
+# SoundFont解析用
+class TempSoundFontBag:
+	var preset:Preset
+	var coarse_tune:int
+	var fine_tune:int
+	var key_range:TempSoundFontRange
+	var instrument:TempSoundFontInstrument
+	var pan:float = 0.5
+
+class TempSoundFontInstrument:
+	var name:String = ""
+	var bags:Array = []
+
+class TempSoundFontRange:
+	var low:int
+	var high:int
+
+	func _init( low:int = 0, high:int = 127 ):
+		self.low = low
+		self.high = high
+
+	func duplicate( ) -> TempSoundFontRange:
+		var new:TempSoundFontRange = TempSoundFontRange.new( )
+		new.low = self.low
+		new.high = self.high
+
+		return new
+
+class TempSoundFontInstrumentBag:
+	var sample
+	var sample_id:int = -1
+	var sample_start_offset:int = 0
+	var sample_end_offset:int = 0
+	var sample_start_loop_offset:int = 0
+	var sample_end_loop_offset:int = 0
+	var coarse_tune:int = 0
+	var fine_tune:int = 0
+	var original_key:int = 255
+	var keynum:int = 0
+	var sample_modes:int = 0
+	var key_range:TempSoundFontRange = TempSoundFontRange.new( 0, 127 )
+	var vel_range:TempSoundFontRange = TempSoundFontRange.new( 0, 127 )
+	var volume_db:float = 0.0
+	var adsr:TempSoundFontInstrumentBagADSR = TempSoundFontInstrumentBagADSR.new( )
+
+	func duplicate( ) -> TempSoundFontInstrumentBag:
+		var new:TempSoundFontInstrumentBag = TempSoundFontInstrumentBag.new( )
+		new.sample = self.sample
+		new.sample_id = sample_id
+		new.sample_start_offset = sample_start_offset
+		new.sample_end_offset = sample_end_offset
+		new.sample_start_loop_offset = sample_start_loop_offset
+		new.sample_end_loop_offset = sample_end_loop_offset
+		new.coarse_tune = coarse_tune
+		new.fine_tune = fine_tune
+		new.original_key = original_key
+		new.keynum = keynum
+		new.key_range = key_range.duplicate( )
+		new.vel_range = vel_range.duplicate( )
+		new.volume_db = volume_db
+		new.adsr = adsr.duplicate( )
+
+		return new
+
+class TempSoundFontInstrumentBagADSR:
+	var attack_vol_env_time:float = 0.001	# sec
+	var decay_vol_env_time:float = 0.001	# sec
+	var sustain_vol_env_db:float = 0.0		# dB
+	var release_vol_env_time:float = 0.001	# sec
+
+	func duplicate( ) -> TempSoundFontInstrumentBagADSR:
+		var new:TempSoundFontInstrumentBagADSR = TempSoundFontInstrumentBagADSR.new( )
+		new.attack_vol_env_time = self.attack_vol_env_time
+		new.decay_vol_env_time = self.decay_vol_env_time
+		new.sustain_vol_env_db = self.sustain_vol_env_db
+		new.release_vol_env_time = self.release_vol_env_time
+
+		return new
+
 # 音色テーブル
-var presets = {}
+var presets:Dictionary = {}
 
 """
 	追加
@@ -45,7 +124,7 @@ func set_preset_sample( program_number:int, base_sample:int, base_key:int ):
 	preset.name = "#%03d" % program_number
 	preset.number = program_number
 	for i in range(0,128):
-		var inst = Instrument.new( )
+		var inst:Instrument = Instrument.new( )
 		inst.array_base_pitch = [ float( i - base_key ) / 12.0 ]
 		inst.array_stream = [ base_sample ]
 		inst.preset = preset
@@ -62,8 +141,8 @@ func set_preset( program_number:int, preset:Preset ):
 """
 	指定した楽器を取得
 """
-func get_preset( program_number:int, bank:int = 0 ):
-	var pc = program_number | ( bank << 7 )
+func get_preset( program_number:int, bank:int = 0 ) -> Preset:
+	var pc:int = program_number | ( bank << 7 )
 
 	# 存在しない場合
 	if not self.presets.has( pc ):
@@ -85,13 +164,13 @@ func get_preset( program_number:int, bank:int = 0 ):
 """
 	サウンドフォント読み込み
 """
-func read_soundfont( sf, need_program_numbers = null ):
-	var sf_insts = self._read_soundfont_pdta_inst( sf )
+func read_soundfont( sf:SoundFont.SoundFont, need_program_numbers = null ):
+	var sf_insts:Array = self._read_soundfont_pdta_inst( sf )
 
 	var bag_index:int = 0
 	var gen_index:int = 0
 	for phdr_index in range( 0, len( sf.pdta.phdr )-1 ):
-		var phdr = sf.pdta.phdr[phdr_index]
+		var phdr:SoundFont.SoundFontPresetHeader = sf.pdta.phdr[phdr_index]
 
 		var preset:Preset = Preset.new( )
 		var program_number:int = phdr.preset | ( phdr.bank << 7 )
@@ -104,26 +183,17 @@ func read_soundfont( sf, need_program_numbers = null ):
 		while bag_count < bag_next:
 			var gen_next:int = sf.pdta.pbag[bag_count+1].gen_ndx
 			var gen_count:int = gen_index
-			var bag = {
-				"preset": preset,
-				"coarse_tune": 0,
-				"fine_tune": 0,
-				"key_range": null,
-				"instrument": null,
-				"pan": 0.5,
-			}
+			var bag:TempSoundFontBag = TempSoundFontBag.new( )
+			bag.preset = preset
 			while gen_count < gen_next:
-				var gen = sf.pdta.pgen[gen_count]
+				var gen:SoundFont.SoundFontGenerator = sf.pdta.pgen[gen_count]
 				match gen.gen_oper:
 					SoundFont.gen_oper_coarse_tune:
 						bag.coarse_tune = gen.amount
 					SoundFont.gen_oper_fine_tune:
 						bag.fine_tune = gen.amount
 					SoundFont.gen_oper_key_range:
-						bag.key_range = {
-							"high": gen.uamount >> 8,
-							"low": gen.uamount & 0xFF,
-						}
+						bag.key_range = TempSoundFontRange.new( gen.uamount & 0xFF, gen.uamount >> 8 )
 					SoundFont.gen_oper_pan:
 						bag.pan = float( gen.amount + 500 ) / 1000.0
 					SoundFont.gen_oper_instrument:
@@ -143,45 +213,24 @@ func read_soundfont( sf, need_program_numbers = null ):
 		self._read_soundfont_preset_compose_sample( sf, preset )
 		self.presets[program_number] = preset
 
-func _read_soundfont_pdta_inst( sf ):
-	var sf_insts = []
+func _read_soundfont_pdta_inst( sf:SoundFont.SoundFont ) -> Array:
+	var sf_insts:Array = []
 	var bag_index:int = 0
 	var gen_index:int = 0
 
 	for inst_index in range( 0, len( sf.pdta.inst ) - 1 ):
 		var inst = sf.pdta.inst[inst_index]
-		var sf_inst = {"name": inst.name, "bags": [] }
+		var sf_inst:TempSoundFontInstrument = TempSoundFontInstrument.new( )
 
 		var bag_next:int = sf.pdta.inst[inst_index+1].inst_bag_ndx
 		var bag_count:int = bag_index
-		var global_bag = {
-			"sample": null,
-			"sample_id": -1,
-			"sample_start_offset": 0,
-			"sample_end_offset": 0,
-			"sample_start_loop_offset": 0,
-			"sample_end_loop_offset": 0,
-			"coarse_tune": 0,
-			"fine_tune": 0,
-			"original_key": 255,
-			"keynum": 0,
-			"sample_modes": 0,
-			"key_range": { "high": 127, "low": 0 },
-			"vel_range": { "high": 127, "low": 0 },
-			"volume_db": 0.0,
-			"adsr": {
-				"attack_vol_env_time": 0.001,
-				"decay_vol_env_time": 0.001,
-				"sustain_vol_env_db": 0.0,	# dB
-				"release_vol_env_time": 0.001,
-			},
-		}
+		var global_bag:TempSoundFontInstrumentBag = TempSoundFontInstrumentBag.new( )
 		while bag_count < bag_next:
-			var bag = global_bag.duplicate( true )
+			var bag:TempSoundFontInstrumentBag = global_bag.duplicate( )
 			var gen_next:int = sf.pdta.ibag[bag_count+1].gen_ndx
 			var gen_count:int = gen_index
 			while gen_count < gen_next:
-				var gen = sf.pdta.igen[gen_count]
+				var gen:SoundFont.SoundFontGenerator = sf.pdta.igen[gen_count]
 				match gen.gen_oper:
 					SoundFont.gen_oper_key_range:
 						bag.key_range.high = gen.uamount >> 8
@@ -221,7 +270,7 @@ func _read_soundfont_pdta_inst( sf ):
 						bag.adsr.release_vol_env_time = pow( 2.0, float( gen.amount ) / 1200.0 )
 					SoundFont.gen_oper_sustain_vol_env:
 						# -144 db == sound font 1440
-						var s = min( max( 0.0, float( gen.amount ) ), 1440.0 ) / 10.0
+						var s:float = min( max( 0.0, float( gen.amount ) ), 1440.0 ) / 10.0
 						bag.adsr.sustain_vol_env_db = -s
 					SoundFont.gen_oper_sample_modes:
 						bag.sample_modes = gen.uamount
@@ -231,7 +280,7 @@ func _read_soundfont_pdta_inst( sf ):
 						if bag.original_key == 255:
 							bag.original_key = bag.sample.original_key
 					SoundFont.gen_oper_initial_attenuation:
-						var s = min( max( 0.0, float( gen.amount ) ), 1440.0 ) / 10.0
+						var s:float = min( max( 0.0, float( gen.amount ) ), 1440.0 ) / 10.0
 						bag.volume_db = -s
 					#_:
 					#	print( gen.gen_oper )
@@ -248,15 +297,15 @@ func _read_soundfont_pdta_inst( sf ):
 
 	return sf_insts
 
-func _read_soundfont_preset_compose_sample( sf, preset ):
-	var sample_base = sf.sdta.smpl
+func _read_soundfont_preset_compose_sample( sf:SoundFont.SoundFont, preset:Preset ):
+	var sample_base:PoolByteArray = sf.sdta.smpl
 
 	for pbag_index in range( 0, preset.bags.size( ) ):
-		var pbag = preset.bags[pbag_index]
+		var pbag:TempSoundFontBag= preset.bags[pbag_index]
 		for ibag_index in range( 0, pbag.instrument.bags.size( ) ):
-			var ibag = pbag.instrument.bags[ibag_index]
+			var ibag:TempSoundFontInstrumentBag = pbag.instrument.bags[ibag_index]
 			if ibag.vel_range.high < 100: continue
-			var sample = ibag.sample
+			var sample:SoundFont.SoundFontSampleHeader = ibag.sample
 			var array_stream:Array = Array( )
 			var array_base_pitch:PoolRealArray = PoolRealArray( )
 
@@ -288,32 +337,32 @@ func _read_soundfont_preset_compose_sample( sf, preset ):
 				else:
 					break
 
-			var key_range = ibag.key_range
-			var vel_range = ibag.vel_range
+			var key_range:TempSoundFontRange = ibag.key_range
+			var vel_range:TempSoundFontRange = ibag.vel_range
 			# おかしくなるヤツが多いので無視させる
 			#if pbag.key_range != null:
 			#	key_range = pbag.key_range
 
 			# ADSRステート生成
-			var adsr = ibag.adsr
+			var adsr:TempSoundFontInstrumentBagADSR = ibag.adsr
 			var a:float = adsr.attack_vol_env_time
 			var d:float = adsr.decay_vol_env_time
 			var s:float = adsr.sustain_vol_env_db
 			var r:float = adsr.release_vol_env_time
 			var volume_db:float = ibag.volume_db
-			var ads_state = [
-				{ "time": 0.0, "volume_db": -144.0 },
-				{ "time": a, "volume_db": 0.0 },
-				{ "time": a+d, "volume_db": s },
+			var ads_state:Array = [
+				ADSR.VolumeState.new( 0.0, -144.0 ),
+				ADSR.VolumeState.new( a, 0.0 ),
+				ADSR.VolumeState.new( a+d, s ),
 			]
 			if a <= 0.001:
 				ads_state = [
-					{ "time": 0.0, "volume_db": 0.0 },
-					{ "time": d, "volume_db": s },
+					ADSR.VolumeState.new( 0.0, 0.0 ),
+					ADSR.VolumeState.new( d, s ),
 				]
-			var release_state = [
-				{ "time": 0.0, "volume_db": s },
-				{ "time": r, "volume_db": -144.0 },
+			var release_state:Array = [
+				ADSR.VolumeState.new( 0.0, s ),
+				ADSR.VolumeState.new( r, -144.0 ),
 			]
 			for key_number in range( key_range.low, key_range.high + 1 ):
 				#if preset.number == drum_track_bank << 7:

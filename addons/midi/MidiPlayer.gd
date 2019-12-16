@@ -294,7 +294,7 @@ func _prepare_to_play( ):
 	# 発音機
 	if self.audio_stream_players.size( ) == 0:
 		for i in range( self.max_polyphony ):
-			var audio_stream_player = ADSR.instance( )
+			var audio_stream_player:AudioStreamPlayerADSR = ADSR.instance( )
 			audio_stream_player.mix_target = self.mix_target
 			audio_stream_player.bus = self.bus
 			self.add_child( audio_stream_player )
@@ -314,7 +314,7 @@ func _init_track( ):
 	if len( self.smf_data.tracks ) == 1:
 		track_status_events = self.smf_data.tracks[0].events
 	else:
-		var tracks = []
+		var tracks:Array = []
 		for track in self.smf_data.tracks:
 			tracks.append({"pointer":0, "events":track.events, "length": len( track.events )})
 
@@ -347,7 +347,7 @@ func _init_track( ):
 	SMF解析
 """
 func _analyse_smf( ):
-	var channels = []
+	var channels:Array = []
 	for i in range( max_channel ):
 		channels.append({
 			"number": i,
@@ -616,8 +616,8 @@ func _process_track_event_note_on( channel:GodotMIDIPlayerChannelStatus, note:in
 	if self.channel_mute[channel.number]: return
 
 	var key_number:int = note + self.key_shift
-	var preset = self.bank.get_preset( channel.program, channel.bank )
-	var instruments = preset.instruments[key_number]
+	var preset:Bank.Preset = self.bank.get_preset( channel.program, channel.bank )
+	var instruments:Array = preset.instruments[key_number]
 	if instruments == null: return
 
 	var assign_group:int = key_number
