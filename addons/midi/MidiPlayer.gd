@@ -136,7 +136,7 @@ class GodotMIDIPlayerChannelStatusRPN:
 # Export
 
 # 最大発音数
-export (int, 0, 128) var max_polyphony:int = 64 setget set_max_polyphony
+export (int, 0, 128) var max_polyphony:int = 96 setget set_max_polyphony
 # ファイル
 export (String, FILE, "*.mid") var file:String = "" setget set_file
 # 再生中か？
