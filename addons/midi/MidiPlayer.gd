@@ -136,7 +136,7 @@ class GodotMIDIPlayerChannelStatusRPN:
 # Export
 
 # 最大発音数
-export (int, 0, 128) var max_polyphony:int = 64
+export (int, 0, 128) var max_polyphony:int = 64 setget set_max_polyphony
 # ファイル
 export (String, FILE, "*.mid") var file:String = "" setget set_file
 # 再生中か？
@@ -158,7 +158,7 @@ export (bool) var load_all_voices_from_soundfont:bool = false
 # サウンドフォントの再読み込みを行わない
 export (bool) var no_reload_soundfont:bool = false
 # サウンドフォント
-export (String, FILE, "*.sf2") var soundfont:String = ""
+export (String, FILE, "*.sf2") var soundfont:String = "" setget set_soundfont
 # mix_target same as AudioStreamPlayer's one
 export (int, "MIX_TARGET_STEREO", "MIX_TARGET_SURROUND", "MIX_TARGET_CENTER") var mix_target:int = AudioStreamPlayer.MIX_TARGET_STEREO
 # bus same as AudioStreamPlayer's one
@@ -252,6 +252,10 @@ func _ready( ):
 		AudioServer.add_bus_effect( midi_channel_bus_idx, cae.ae_reverb )
 		self.channel_audio_effects.append( cae )
 
+	self.set_max_polyphony( self.max_polyphony )
+	if self.soundfont != "":
+		self.set_soundfont( self.soundfont )
+
 	if self.playing:
 		self.play( )
 
@@ -280,29 +284,7 @@ func _prepare_to_play( ):
 
 	# 楽器
 	if self.bank == null:
-		self.bank = Bank.new( )
-		if self.soundfont != "":
-			var sf_reader = SoundFont.new( )
-			var sf2 = sf_reader.read_file( self.soundfont )
-			var voices = null
-			if not self.load_all_voices_from_soundfont:
-				voices = self._used_program_numbers
-			self.bank.read_soundfont( sf2, voices )
-		else:
-			push_error( "soundfont is empty." )
-
-	# 発音機
-	if self.audio_stream_players.size( ) == 0:
-		for i in range( self.max_polyphony ):
-			var audio_stream_player:AudioStreamPlayerADSR = ADSR.instance( )
-			audio_stream_player.mix_target = self.mix_target
-			audio_stream_player.bus = self.bus
-			self.add_child( audio_stream_player )
-			self.audio_stream_players.append( audio_stream_player )
-	else:
-		for audio_stream_player in self.audio_stream_players:
-			audio_stream_player.mix_target = self.mix_target
-			audio_stream_player.bus = self.bus
+		push_error( "Sound voices not found. Please set soundfont path or set instrument data to bank." )
 
 """
 	トラック初期化
@@ -460,6 +442,40 @@ func send_reset( ):
 func set_file( path:String ):
 	file = path
 	self.smf_data = null
+
+"""
+	同時発音数変更
+"""
+func set_max_polyphony( mp:int ):
+	max_polyphony = mp
+
+	# 削除
+	for asp in self.audio_stream_players:
+		self.remove_child( asp )
+
+	# 再作成
+	self.audio_stream_players = []
+	for i in range( max_polyphony ):
+		var audio_stream_player:AudioStreamPlayerADSR = ADSR.instance( )
+		audio_stream_player.mix_target = self.mix_target
+		audio_stream_player.bus = self.bus
+		self.add_child( audio_stream_player )
+		self.audio_stream_players.append( audio_stream_player )
+
+"""
+	サウンドフォント変更
+"""
+func set_soundfont( path:String ):
+	soundfont = path
+
+	var sf_reader = SoundFont.new( )
+	var sf2 = sf_reader.read_file( self.soundfont )
+	var voices = null
+	if not self.load_all_voices_from_soundfont:
+		voices = self._used_program_numbers
+
+	self.bank = Bank.new( )
+	self.bank.read_soundfont( sf2, voices )
 
 """
 	SMFデータ更新
