@@ -137,9 +137,106 @@ enum MIDISystemEventType {
 # -----------------------------------------------------------------------------
 # クラス
 class MIDIChunkData:
-	var id:String = ""
-	var size:int = 0
+	var id:String
+	var size:int
 	var stream:StreamPeerBuffer
+
+class SMF:
+	var format_type:int
+	var track_count:int
+	var timebase:int
+	var tracks:Array
+
+	func _init( format_type:int = 0, track_count:int = 0, timebase:int = 480, tracks:Array = [] ):
+		self.format_type = format_type
+		self.track_count = track_count
+		self.timebase = timebase
+		self.tracks = tracks
+
+class MIDITrack:
+	var track_number:int
+	var events:Array
+
+	func _init( track_number:int = 0, events:Array = [] ):
+		self.track_number = track_number
+		self.events = events
+
+class MIDIEventChunk:
+	var time:int	# absolute time
+	var channel_number:int
+	var event:MIDIEvent
+
+	func _init( time:int = 0, channel_number:int = 0, event = null ):
+		self.time = time
+		self.channel_number = channel_number
+		self.event = event
+
+class MIDIEvent:
+	var type:int
+
+class MIDIEventNoteOff extends MIDIEvent:
+	var note:int
+	var velocity:int
+
+	func _init( note:int = 0, velocity:int = 0 ):
+		self.type = MIDIEventType.note_off
+		self.note = note
+		self.velocity = velocity
+
+class MIDIEventNoteOn extends MIDIEvent:
+	var note:int
+	var velocity:int
+
+	func _init( note:int = 0, velocity:int = 0 ):
+		self.type = MIDIEventType.note_on
+		self.note = note
+		self.velocity = velocity
+
+class MIDIEventPolyphonicKeyPressure extends MIDIEvent:
+	var note:int
+	var value:int
+
+	func _init( note:int = 0, value:int = 0 ):
+		self.type = MIDIEventType.polyphonic_key_pressure
+		self.note = note
+		self.value = value
+
+class MIDIEventControlChange extends MIDIEvent:
+	var number:int
+	var value:int
+
+	func _init( number:int = 0, value:int = 0 ):
+		self.type = MIDIEventType.control_change
+		self.number = number
+		self.value = value
+
+class MIDIEventProgramChange extends MIDIEvent:
+	var number:int
+
+	func _init( number:int = 0 ):
+		self.type = MIDIEventType.program_change
+		self.number = number
+
+class MIDIEventChannelPressure extends MIDIEvent:
+	var value:int
+
+	func _init( value:int = 0 ):
+		self.type = MIDIEventType.channel_pressure
+		self.value = value
+
+class MIDIEventPitchBend extends MIDIEvent:
+	var value:int
+
+	func _init( value:int = 0 ):
+		self.type = MIDIEventType.pitch_bend
+		self.value = value
+
+class MIDIEventSystemEvent extends MIDIEvent:
+	var args:Dictionary
+
+	func _init( args:Dictionary = {} ):
+		self.type = MIDIEventType.system_event
+		self.args = args
 
 # -----------------------------------------------------------------------------
 # 読み込み : Reader
@@ -151,7 +248,7 @@ var last_event_type:int = 0
 	@param	path	File path
 	@return	smf or null(read error)
 """
-func read_file( path:String ):
+func read_file( path:String ) -> SMF:
 	var f = File.new( )
 
 	if f.open( path, f.READ ) != OK:
@@ -169,7 +266,7 @@ func read_file( path:String ):
 	@param	data	PoolByteArray
 	@return	smf or null(read error)
 """
-func read_data( data:PoolByteArray ):
+func read_data( data:PoolByteArray ) -> SMF:
 	var stream:StreamPeerBuffer = StreamPeerBuffer.new( )
 	stream.set_data_array( data )
 	stream.big_endian = true
@@ -180,29 +277,25 @@ func read_data( data:PoolByteArray ):
 	@param	input
 	@return	smf
 """
-func _read( input:StreamPeerBuffer ):
+func _read( input:StreamPeerBuffer ) -> SMF:
 	var header:MIDIChunkData = self._read_chunk_data( input )
 	if header.id != "MThd" and header.size != 6:
 		print( "expected MThd header" )
 		return null
 
-	var format_type:int = header.stream.get_u16( )
-	var track_count:int = header.stream.get_u16( )
-	var timebase:int = header.stream.get_u16( )
+	var smf:SMF = SMF.new( )
 
-	var tracks:Array = []
-	for i in range( 0, track_count ):
+	smf.format_type = header.stream.get_u16( )
+	smf.track_count = header.stream.get_u16( )
+	smf.timebase = header.stream.get_u16( )
+
+	for i in range( 0, smf.track_count ):
 		var track = self._read_track( input, i )
 		if track == null:
 			return null
-		tracks.append( track )
+		smf.tracks.append( track )
 
-	return {
-		"format_type": format_type,
-		"track_count": track_count,
-		"timebase": timebase,
-		"tracks": tracks,
-	}
+	return smf
 
 """
 	トラックの読み込み
@@ -210,7 +303,7 @@ func _read( input:StreamPeerBuffer ):
 	@param	track_number	トラックナンバー
 	@return	track data or null(read error)
 """
-func _read_track( input:StreamPeerBuffer, track_number:int ):
+func _read_track( input:StreamPeerBuffer, track_number:int ) -> MIDITrack:
 	var track_chunk:MIDIChunkData = self._read_chunk_data( input )
 	if track_chunk.id != "MTrk":
 		print( "Unknown chunk: " + track_chunk.id )
@@ -225,14 +318,11 @@ func _read_track( input:StreamPeerBuffer, track_number:int ):
 		time += delta_time
 		var event_type_byte:int = stream.get_u8( )
 
-		var event
+		var event:MIDIEvent
 		if self._is_system_event( event_type_byte ):
 			var args = self._read_system_event( stream, event_type_byte )
 			if args == null: return null
-			event = {
-				"type": MIDIEventType.system_event,
-				"args": args
-			}
+			event = MIDIEventSystemEvent.new( args )
 		else:
 			event = self._read_event( stream, event_type_byte )
 			if event == null: return null
@@ -241,16 +331,9 @@ func _read_track( input:StreamPeerBuffer, track_number:int ):
 			if ( event_type_byte & 0x80 ) == 0:
 				event_type_byte = self.last_event_type
 
-		events.append({
-			"time": time,
-			"channel_number": event_type_byte & 0x0f,
-			"event": event,
-		})
+		events.append( MIDIEventChunk.new( time, event_type_byte & 0x0f, event ) )
 
-	return {
-		"track_number": track_number,
-		"events": events,
-	}
+	return MIDITrack.new( track_number, events )
 
 """
 	システムイベントか否かを返す
@@ -382,7 +465,7 @@ func _read_system_event( stream:StreamPeerBuffer, event_type_byte:int ):
 	@param	event_type_byte
 	@return	MIDIEvent
 """
-func _read_event( stream:StreamPeerBuffer, event_type_byte:int ):
+func _read_event( stream:StreamPeerBuffer, event_type_byte:int ) -> MIDIEvent:
 	var param:int = 0
 
 	if ( event_type_byte & 0x80 ) == 0:
@@ -397,53 +480,23 @@ func _read_event( stream:StreamPeerBuffer, event_type_byte:int ):
 
 	match event_type:
 		0x80:
-			return {
-				"type": MIDIEventType.note_off,
-				"note": param,
-				"velocity": stream.get_u8( ),
-			}
+			return MIDIEventNoteOff.new( param, stream.get_u8( ) )
 		0x90:
 			var velocity:int = stream.get_u8( )
 			if velocity == 0:
-				# velocity0のnote_onはnote_off扱いにする
-				return {
-					"type": MIDIEventType.note_off,
-					"note": param,
-					"velocity": velocity,
-				}
+				return MIDIEventNoteOff.new( param, velocity )
 			else:
-				return {
-					"type": MIDIEventType.note_on,
-					"note": param,
-					"velocity": velocity,
-				}
+				return MIDIEventNoteOn.new( param, velocity )
 		0xA0:
-			return {
-				"type": MIDIEventType.polyphonic_key_pressure,
-				"note": param,
-				"value": stream.get_u8( ),
-			}
+			return MIDIEventPolyphonicKeyPressure.new( param, stream.get_u8( ) )
 		0xB0:
-			return {
-				"type": MIDIEventType.control_change,
-				"number": param,
-				"value": stream.get_u8( ),
-			}
+			return MIDIEventControlChange.new( param, stream.get_u8( ) )
 		0xC0:
-			return {
-				"type": MIDIEventType.program_change,
-				"number": param,
-			}
+			return MIDIEventProgramChange.new( param )
 		0xD0:
-			return {
-				"type": MIDIEventType.channel_pressure,
-				"value": param,
-			}
+			return MIDIEventChannelPressure.new( param )
 		0xE0:
-			return {
-				"type": MIDIEventType.pitch_bend,
-				"value": param | ( stream.get_u8( ) << 7 ),
-			}
+			return MIDIEventPitchBend.new( param | ( stream.get_u8( ) << 7 ) )
 
 	print( "unknown event type: %d" % event_type_byte )
 	return null
