@@ -4,6 +4,8 @@ extends Node
 	pure GDScript MIDI Player [Godot MIDI Player] by Yui Kinomoto @arlez80
 """
 
+class_name MidiPlayer
+
 # -----------------------------------------------------------------------------
 # Import
 const ADSR = preload( "ADSR.tscn" )
@@ -612,10 +614,7 @@ func _process_pitch_bend( channel:GodotMIDIPlayerChannelStatus, value:int ):
 	var pbs:float = channel.rpn.pitch_bend_sensitivity
 	channel.pitch_bend = pb
 
-	for asp in self.audio_stream_players:
-		if asp.channel_number == channel.number:
-			asp.pitch_bend_sensitivity = pbs
-			asp.pitch_bend = pb
+	self._apply_channel_pitch_bend( channel )
 
 func _process_track_event_note_off( channel:GodotMIDIPlayerChannelStatus, note:int, force_disable_hold:bool = false ):
 	var key_number:int = note + self.key_shift
@@ -674,13 +673,13 @@ func _process_track_event_control_change( channel:GodotMIDIPlayerChannelStatus, 
 	match number:
 		SMF.control_number_volume:
 			channel.volume = float( value ) / 127.0
-			AudioServer.set_bus_volume_db( AudioServer.get_bus_index( self.midi_channel_bus_name % channel.number ), linear2db( channel.volume * channel.expression ) )
+			self._apply_channel_volume( channel )
 		SMF.control_number_modulation:
 			channel.modulation = float( value ) / 127.0
 			self._apply_channel_modulation( channel )
 		SMF.control_number_expression:
 			channel.expression = float( value ) / 127.0
-			AudioServer.set_bus_volume_db( AudioServer.get_bus_index( self.midi_channel_bus_name % channel.number ), linear2db( channel.volume * channel.expression ) )
+			self._apply_channel_volume( channel )
 		SMF.control_number_reverb_send_level:
 			channel.reverb = float( value ) / 127.0
 			self.channel_audio_effects[channel.number].ae_reverb.wet = channel.reverb * self.reverb_power
@@ -734,6 +733,23 @@ func _process_track_event_control_change( channel:GodotMIDIPlayerChannelStatus, 
 		_:
 			# 無視
 			pass
+
+func update_channel_status( channel:GodotMIDIPlayerChannelStatus ):
+	self._apply_channel_volume( channel )
+	self._apply_channel_pitch_bend( channel )
+	self._apply_channel_modulation( channel )
+	self._apply_channel_hold( channel )
+
+func _apply_channel_volume( channel:GodotMIDIPlayerChannelStatus ):
+	AudioServer.set_bus_volume_db( AudioServer.get_bus_index( self.midi_channel_bus_name % channel.number ), linear2db( channel.volume * channel.expression ) )
+
+func _apply_channel_pitch_bend( channel:GodotMIDIPlayerChannelStatus ):
+	var pbs:float = channel.rpn.pitch_bend_sensitivity
+	var pb:float = float( channel.pitch_bend ) / 8192.0 - 1.0
+	for asp in self.audio_stream_players:
+		if asp.channel_number == channel.number:
+			asp.pitch_bend_sensitivity = pbs
+			asp.pitch_bend = pb
 
 func _apply_channel_modulation( channel:GodotMIDIPlayerChannelStatus ):
 	var ms:float = channel.rpn.modulation_sensitivity
