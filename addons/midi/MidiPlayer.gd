@@ -682,19 +682,19 @@ func _process_track_event_control_change( channel:GodotMIDIPlayerChannelStatus, 
 			self._apply_channel_volume( channel )
 		SMF.control_number_reverb_send_level:
 			channel.reverb = float( value ) / 127.0
-			self.channel_audio_effects[channel.number].ae_reverb.wet = channel.reverb * self.reverb_power
+			self._apply_channel_reverb( channel )
 		SMF.control_number_tremolo_depth:
 			channel.tremolo = float( value ) / 127.0
 		SMF.control_number_chorus_send_level:
 			channel.chorus = float( value ) / 127.0
-			self.channel_audio_effects[channel.number].ae_chorus.wet = channel.chorus * self.chorus_power
+			self._apply_channel_chorus( channel )
 		SMF.control_number_celeste_depth:
 			channel.celeste = float( value ) / 127.0
 		SMF.control_number_phaser_depth:
 			channel.phaser = float( value ) / 127.0
 		SMF.control_number_pan:
 			channel.pan = float( value ) / 127.0
-			self.channel_audio_effects[channel.number].ae_panner.pan = ( ( channel.pan * 2 ) - 1.0 ) * self.pan_power
+			self._apply_channel_pan( channel )
 		SMF.control_number_hold:
 			channel.hold = 64 <= value
 			self._apply_channel_hold( channel )
@@ -739,6 +739,9 @@ func update_channel_status( channel:GodotMIDIPlayerChannelStatus ):
 	self._apply_channel_pitch_bend( channel )
 	self._apply_channel_modulation( channel )
 	self._apply_channel_hold( channel )
+	self._apply_channel_reverb( channel )
+	self._apply_channel_chorus( channel )
+	self._apply_channel_pan( channel )
 
 func _apply_channel_volume( channel:GodotMIDIPlayerChannelStatus ):
 	AudioServer.set_bus_volume_db( AudioServer.get_bus_index( self.midi_channel_bus_name % channel.number ), linear2db( channel.volume * channel.expression ) )
@@ -750,6 +753,15 @@ func _apply_channel_pitch_bend( channel:GodotMIDIPlayerChannelStatus ):
 		if asp.channel_number == channel.number:
 			asp.pitch_bend_sensitivity = pbs
 			asp.pitch_bend = pb
+
+func _apply_channel_reverb( channel:GodotMIDIPlayerChannelStatus ):
+	self.channel_audio_effects[channel.number].ae_reverb.wet = channel.reverb * self.reverb_power
+
+func _apply_channel_chorus( channel:GodotMIDIPlayerChannelStatus ):
+	self.channel_audio_effects[channel.number].ae_chorus.wet = channel.chorus * self.chorus_power
+
+func _apply_channel_pan( channel:GodotMIDIPlayerChannelStatus ):
+	self.channel_audio_effects[channel.number].ae_panner.pan = ( ( channel.pan * 2 ) - 1.0 ) * self.pan_power
 
 func _apply_channel_modulation( channel:GodotMIDIPlayerChannelStatus ):
 	var ms:float = channel.rpn.modulation_sensitivity
