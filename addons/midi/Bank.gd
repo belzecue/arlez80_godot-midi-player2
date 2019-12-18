@@ -8,16 +8,17 @@ const SoundFont = preload( "SoundFont.gd" )
 
 # 音色
 class Instrument:
-	var array_base_pitch:Array = []
-	var array_stream:Array = []
-	var ads_state:Array = []
-	var release_state:Array = []
+	var array_base_pitch:Array	# これは本当はPoolRealArrayなんだけど、参照型ではなく値型らしく、代入だけでメモリ使用量が爆発してしまう
+	var array_stream:Array
+	var ads_state:Array
+	var release_state:Array
 	var volume_db:float = 0.0
 	var vel_range_min:int = 0
 	var vel_range_max:int = 127
-	var preset:Preset = null
+	var preset:Preset
 	# var assine_group = 0	# reserved
 
+	"""
 	func _init( ):
 		self.ads_state = [
 			ADSR.VolumeState.new( 0.0, 0.0 ),
@@ -27,6 +28,7 @@ class Instrument:
 			ADSR.VolumeState.new( 0.0, 0.0 ),
 			ADSR.VolumeState.new( 0.01, -144.0 )
 		]
+	"""
 
 class Preset:
 	var name:String = ""
@@ -125,7 +127,7 @@ func set_preset_sample( program_number:int, base_sample:int, base_key:int ):
 	preset.number = program_number
 	for i in range(0,128):
 		var inst:Instrument = Instrument.new( )
-		inst.array_base_pitch = [ float( i - base_key ) / 12.0 ]
+		inst.array_base_pitch = PoolRealArray( [ float( i - base_key ) / 12.0 ] )
 		inst.array_stream = [ base_sample ]
 		inst.preset = preset
 		preset.instruments[i] = inst
@@ -317,8 +319,7 @@ func _read_soundfont_preset_compose_sample( sf:SoundFont.SoundFont, preset:Prese
 				var base_pitch:float = ( pbag.coarse_tune + ibag.coarse_tune ) / 12.0 + ( pbag.fine_tune + ibag.sample.pitch_correction + ibag.fine_tune ) / 1200.0
 
 				var ass:AudioStreamSample = AudioStreamSample.new( )
-				var wave:PoolByteArray = sample_base.subarray( start * 2, end * 2 - 1 )
-				ass.data = wave
+				ass.data = sample_base.subarray( start * 2, end * 2 - 1 )
 				ass.format = AudioStreamSample.FORMAT_16_BITS
 				ass.mix_rate = sample.sample_rate
 				ass.stereo = false
@@ -339,9 +340,6 @@ func _read_soundfont_preset_compose_sample( sf:SoundFont.SoundFont, preset:Prese
 
 			var key_range:TempSoundFontRange = ibag.key_range
 			var vel_range:TempSoundFontRange = ibag.vel_range
-			# おかしくなるヤツが多いので無視させる
-			#if pbag.key_range != null:
-			#	key_range = pbag.key_range
 
 			# ADSRステート生成
 			var adsr:TempSoundFontInstrumentBagADSR = ibag.adsr
