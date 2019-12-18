@@ -65,7 +65,7 @@ class GodotMIDIPlayerChannelStatus:
 	var celeste:float		# Effect 4
 	var phaser:float		# Effect 5
 	var modulation:float
-	var hold:bool			# Sustain Pedal
+	var hold:bool			# Hold 1
 	var portamento:float
 	var sostenuto:float
 	var freeze:bool

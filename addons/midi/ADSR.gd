@@ -18,7 +18,7 @@ class VolumeState:
 var channel_number:int = -1
 # 発音キーナンバー
 var key_number:int = -1
-# サステインペダル
+# Hold 1
 var hold:bool = false
 # リリース中？
 var releasing:bool = false
