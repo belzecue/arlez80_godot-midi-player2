@@ -745,7 +745,7 @@ func _apply_channel_volume( channel:GodotMIDIPlayerChannelStatus ):
 
 func _apply_channel_pitch_bend( channel:GodotMIDIPlayerChannelStatus ):
 	var pbs:float = channel.rpn.pitch_bend_sensitivity
-	var pb:float = float( channel.pitch_bend ) / 8192.0 - 1.0
+	var pb:float = channel.pitch_bend
 	for asp in self.audio_stream_players:
 		if asp.channel_number == channel.number:
 			asp.pitch_bend_sensitivity = pbs
