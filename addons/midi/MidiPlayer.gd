@@ -80,6 +80,7 @@ class GodotMIDIPlayerChannelStatus:
 		self.number = number
 		self.track_name = "Track %d" % number
 		self.instrument_name = "Track %d" % number
+		self.mute = false
 		self.bank = bank
 		self.drum_track = drum_track
 		self.rpn = GodotMIDIPlayerChannelStatusRPN.new( )
@@ -88,7 +89,6 @@ class GodotMIDIPlayerChannelStatus:
 	func initialize( ):
 		self.note_on = {}
 		self.program = 0
-		self.mute = false
 
 		self.pitch_bend = 0.0
 		self.volume = 100.0 / 127.0
