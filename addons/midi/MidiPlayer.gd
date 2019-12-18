@@ -52,6 +52,7 @@ class GodotMIDIPlayerChannelStatus:
 	var track_name:String
 	var instrument_name:String
 	var note_on:Dictionary
+	var mute:bool
 
 	var bank:int
 	var program:int
@@ -87,6 +88,7 @@ class GodotMIDIPlayerChannelStatus:
 	func initialize( ):
 		self.note_on = {}
 		self.program = 0
+		self.mute = false
 
 		self.pitch_bend = 0.0
 		self.volume = 100.0 / 127.0
@@ -141,8 +143,6 @@ export (int, 0, 128) var max_polyphony:int = 96 setget set_max_polyphony
 export (String, FILE, "*.mid") var file:String = "" setget set_file
 # 再生中か？
 export (bool) var playing:bool = false
-# ミュートチャンネル
-export (Array) var channel_mute:Array = [false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false]
 # 再生速度
 export (float) var play_speed:float = 1.0
 # 音量
@@ -182,9 +182,9 @@ var position:float = 0.0
 # 最終位置
 var last_position:int = 0
 # チャンネルステータス
-var channel_status:Array = []
+var channel_status:Array
 # サウンドフォントを再生用に加工したもの
-var bank = null
+var bank:Bank = null
 # AudioStreamPlayer
 var audio_stream_players:Array = []
 # ドラムトラック用アサイングループ
@@ -252,6 +252,13 @@ func _ready( ):
 		AudioServer.add_bus_effect( midi_channel_bus_idx, cae.ae_reverb )
 		self.channel_audio_effects.append( cae )
 
+	self.channel_status = []
+	for i in range( max_channel ):
+		var drum_track:bool = ( i == drum_track_channel )
+		var bank:int = 0
+		if drum_track: bank = self.drum_track_bank
+		self.channel_status.append( GodotMIDIPlayerChannelStatus.new( i, bank, drum_track ) )
+
 	self.set_max_polyphony( self.max_polyphony )
 	if self.soundfont != "":
 		self.set_soundfont( self.soundfont )
@@ -296,6 +303,7 @@ func _init_track( ):
 	if len( self.smf_data.tracks ) == 1:
 		track_status_events = self.smf_data.tracks[0].events
 	else:
+		# Mix multiple tracks to single track
 		var tracks:Array = []
 		for track in self.smf_data.tracks:
 			tracks.append({"pointer":0, "events":track.events, "length": len( track.events )})
@@ -331,10 +339,7 @@ func _init_track( ):
 func _analyse_smf( ):
 	var channels:Array = []
 	for i in range( max_channel ):
-		channels.append({
-			"number": i,
-			"bank": 0,
-		})
+		channels.append({ "number": i, "bank": 0, })
 	self.loop_start = 0.0
 	self._used_program_numbers = [0, self.drum_track_bank << 7]	# GrandPiano and Standard Kit
 
@@ -371,12 +376,8 @@ func _analyse_smf( ):
 	チャンネル初期化
 """
 func _init_channel( ):
-	self.channel_status = []
-	for i in range( max_channel ):
-		var drum_track:bool = ( i == drum_track_channel )
-		var bank:int = 0
-		if drum_track: bank = self.drum_track_bank
-		self.channel_status.append( GodotMIDIPlayerChannelStatus.new( i, bank, drum_track ) )
+	for channel in self.channel_status:
+		channel.initialize( )
 
 """
 	再生
@@ -629,7 +630,7 @@ func _process_track_event_note_off( channel:GodotMIDIPlayerChannelStatus, note:i
 			asp.start_release( )
 
 func _process_track_event_note_on( channel:GodotMIDIPlayerChannelStatus, note:int, velocity:int ):
-	if self.channel_mute[channel.number]: return
+	if channel.mute: return
 
 	var key_number:int = note + self.key_shift
 	var preset:Bank.Preset = self.bank.get_preset( channel.program, channel.bank )

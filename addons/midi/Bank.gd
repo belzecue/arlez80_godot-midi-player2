@@ -6,6 +6,8 @@ const drum_track_bank:int = 128
 const ADSR = preload( "ADSR.gd" )
 const SoundFont = preload( "SoundFont.gd" )
 
+class_name Bank
+
 # 音色
 class Instrument:
 	var array_base_pitch:Array	# これは本当はPoolRealArrayなんだけど、参照型ではなく値型らしく、代入だけでメモリ使用量が爆発してしまう

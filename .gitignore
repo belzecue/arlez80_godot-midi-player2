@@ -3,6 +3,7 @@ Thumbs.db
 .import/*
 data/*
 dev/*
+ui/*
 *.import
 default_bus_layout.tres
 default_env.tres

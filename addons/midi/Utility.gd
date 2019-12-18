@@ -3,6 +3,11 @@
 """
 
 """
+	音色名
+"""
+const program_names:PoolStringArray = PoolStringArray(["Acoustic Piano","Bright Piano","Electric Grand Piano","Honky-tonk Piano","Electric Piano","Electric Piano 2","Harpsichord","Clavi","Celesta","Glockenspiel","Musical box","Vibraphone","Marimba","Xylophone","Tubular Bell","Dulcimer","Drawbar Organ","Percussive Organ","Rock Organ","Church organ","Reed organ","Accordion","Harmonica","Tango Accordion","Nylon Guiter","Steel Guiter","Jazz Guiter","Clean Guiter","Muted Guiter","Overdriven Guitar","Distortion Guitar","Guitar harmonics","Acoustic Bass","Finger Bass","Pick Bass","Fretless Bass","Slap Bass 1","Slap Bass 2","Synth Bass 1","Synth Bass 2","Violin","Viola","Cello","Double bass","Tremolo Strings","Pizzicato Strings","Orchestral Harp","Timpani","Strings 1","Strings 2","Synth Strings 1","Synth Strings 2","Voice Aahs","Voice Oohs","Synth Voice","Orchestra Hit","Trumpet","Trombone","Tuba","Muted Trumpet","French horn","Brass Section","Synth Brass 1","Synth Brass 2","Soprano Sax","Alto Sax","Tenor Sax","Baritone Sax","Oboe","English Horn","Bassoon","Clarinet","Piccolo","Flute","Recorder","Pan Flute","Blown Bottle","Shakuhachi","Whistle","Ocarina","Square Lead","Sawtooth Lead","Calliope Lead","Chiff Lead","Charang Lead","Voice Lead","Fifth Lead","Bass & Lead","Fantasia Pad","Warm Pad","Polysynth Pad","Choir Pad","Bowed Pad","Metallic Pad","Halo Pad","Sweep Pad","Rain","Soundtrack","Crystal","Atmosphere","Brightness","Goblins","Echoes","Sci-Fi","Sitar","Banjo","Shamisen","Koto","Kalimba","Bagpipe","Fiddle","Shanai","Tinkle Bell","Agogo","Steel Drums","Woodblock","Taiko Drum","Melodic Tom","Synth Drum","Reverse Cymbal","Guitar Fret Noise","Breath Noise","Seashore","Bird Tweet","Telephone Ring","Helicopter","Applause","Gunshot"])
+
+"""
 	和音と調を解析する
 	@param	notes			MIDI note numbers
 	@param	music_chord		music chord (default C)
