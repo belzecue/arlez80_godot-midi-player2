@@ -698,7 +698,7 @@ func _process_track_event_control_change( channel:GodotMIDIPlayerChannelStatus, 
 		SMF.control_number_hold:
 			channel.hold = 64 <= value
 			self._apply_channel_hold( channel )
-		SMF.control_number_portament:
+		SMF.control_number_portamento:
 			channel.portamento = float( value ) / 127.0
 		SMF.control_number_sostenuto:
 			channel.sostenuto = float( value ) / 127.0

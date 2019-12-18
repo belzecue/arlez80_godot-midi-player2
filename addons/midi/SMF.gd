@@ -6,92 +6,93 @@
 # 定数
 
 # Control Numbers
-const control_number_bank_select_msb = 0x00
-const control_number_modulation = 0x01
-const control_number_breath_controller = 0x02
-const control_number_foot_controller = 0x04
-const control_number_portamento_time = 0x05
-const control_number_data_entry_msb = 0x06
-const control_number_volume = 0x07
-const control_number_balance = 0x08
-const control_number_pan = 0x0A
-const control_number_expression = 0x0B
+const control_number_bank_select_msb:int = 0x00
+const control_number_modulation:int = 0x01
+const control_number_breath_controller:int = 0x02
+const control_number_foot_controller:int = 0x04
+const control_number_portamento_time:int = 0x05
+const control_number_data_entry_msb:int = 0x06
+const control_number_volume:int = 0x07
+const control_number_balance:int = 0x08
+const control_number_pan:int = 0x0A
+const control_number_expression:int = 0x0B
 
-const control_number_bank_select_lsb = 0x20
-const control_number_modulation_lsb = 0x21
-const control_number_breath_controller_lsb = 0x22
-const control_number_foot_controller_lsb = 0x24
-const control_number_portamento_time_lsb = 0x25
-const control_number_data_entry_lsb = 0x26
-const control_number_channel_volume_lsb = 0x27
-const control_number_calance_lsb = 0x28
-const control_number_pan_lsb = 0x2A
-const control_number_expression_lsb = 0x2B
-const control_number_effect_control1 = 0x2C
-const control_number_effect_control2 = 0x2D
+const control_number_bank_select_lsb:int = 0x20
+const control_number_modulation_lsb:int = 0x21
+const control_number_breath_controller_lsb:int = 0x22
+const control_number_foot_controller_lsb:int = 0x24
+const control_number_portamento_time_lsb:int = 0x25
+const control_number_data_entry_lsb:int = 0x26
+const control_number_channel_volume_lsb:int = 0x27
+const control_number_calance_lsb:int = 0x28
+const control_number_pan_lsb:int = 0x2A
+const control_number_expression_lsb:int = 0x2B
+const control_number_effect_control1:int = 0x2C
+const control_number_effect_control2:int = 0x2D
 
-const control_number_hold = 0x40		# Sustain Pedal
-const control_number_portament = 0x41
-const control_number_sostenuto = 0x42
-const control_number_soft_pedal = 0x43
-const control_number_legato_foot_switch = 0x44
-const control_number_freeze = 0x45
-const control_number_sound_variation = 0x46
-const control_number_timbre = 0x47
-const control_number_release_time = 0x48
-const control_number_attack_time = 0x49
-const control_number_brightness = 0x4A
-const control_number_vibrato_rate = 0x4B
-const control_number_vibrato_depth = 0x4C
-const control_number_vibrato_delay = 0x4D
+const control_number_hold:int = 0x40		# Sustain Pedal
+const control_number_portament:int = 0x41	# miss spell for compatible older version
+const control_number_portamento:int = 0x41
+const control_number_sostenuto:int = 0x42
+const control_number_soft_pedal:int = 0x43
+const control_number_legato_foot_switch:int = 0x44
+const control_number_freeze:int = 0x45
+const control_number_sound_variation:int = 0x46
+const control_number_timbre:int = 0x47
+const control_number_release_time:int = 0x48
+const control_number_attack_time:int = 0x49
+const control_number_brightness:int = 0x4A
+const control_number_vibrato_rate:int = 0x4B
+const control_number_vibrato_depth:int = 0x4C
+const control_number_vibrato_delay:int = 0x4D
 
-const control_number_source_note = 0x54
+const control_number_source_note:int = 0x54
 
-const control_number_high_res_velovity_prefix = 0x58
+const control_number_high_res_velovity_prefix:int = 0x58
 
-const control_number_reverb_send_level = 0x5B	# Effect 1
-const control_number_tremolo_depth = 0x5C		# Effect 2
-const control_number_chorus_send_level = 0x5D	# Effect 3
-const control_number_celeste_depth = 0x5E		# Effect 4
-const control_number_phaser_depth = 0x5F		# Effect 5
+const control_number_reverb_send_level:int = 0x5B	# Effect 1
+const control_number_tremolo_depth:int = 0x5C		# Effect 2
+const control_number_chorus_send_level:int = 0x5D	# Effect 3
+const control_number_celeste_depth:int = 0x5E		# Effect 4
+const control_number_phaser_depth:int = 0x5F		# Effect 5
 
-const control_number_data_increment = 0x60
-const control_number_data_decrement = 0x61
-const control_number_nrpn_lsb = 0x62
-const control_number_nrpn_msb = 0x63
-const control_number_rpn_lsb = 0x64
-const control_number_rpn_msb = 0x65
-const control_number_tkool_loop_point = 0x6F	# CC111
-const control_number_all_sound_off = 0x78
-const control_number_all_note_off = 0x7B
+const control_number_data_increment:int = 0x60
+const control_number_data_decrement:int = 0x61
+const control_number_nrpn_lsb:int = 0x62
+const control_number_nrpn_msb:int = 0x63
+const control_number_rpn_lsb:int = 0x64
+const control_number_rpn_msb:int = 0x65
+const control_number_tkool_loop_point:int = 0x6F	# CC111
+const control_number_all_sound_off:int = 0x78
+const control_number_all_note_off:int = 0x7B
 
 # RPN Control Numbers: 0x00
-const rpn_control_number_pitch_bend_sensitivity = 0x00
-const rpn_control_number_channel_fine_tune = 0x01
-const rpn_control_number_channel_cource_tune = 0x02
-const rpn_control_number_tune_program_change = 0x03
-const rpn_control_number_tune_bank_select = 0x04
+const rpn_control_number_pitch_bend_sensitivity:int = 0x00
+const rpn_control_number_channel_fine_tune:int = 0x01
+const rpn_control_number_channel_cource_tune:int = 0x02
+const rpn_control_number_tune_program_change:int = 0x03
+const rpn_control_number_tune_bank_select:int = 0x04
 # RPN Control Numbers: 0x3D
-const rpn_control_number_3D_azimuth_angle = 0x00
-const rpn_control_number_3D_elevation_angle = 0x01
-const rpn_control_number_3D_gain = 0x02
-const rpn_control_number_3D_distance_ratio = 0x03
-const rpn_control_number_3D_maximum_distance = 0x04
-const rpn_control_number_3D_gain_at_maximum_distance = 0x05
-const rpn_control_number_3D_referance_distance_raito = 0x06
-const rpn_control_number_3D_pan_spread_angle = 0x07
-const rpn_control_number_3D_roll_angle = 0x08
+const rpn_control_number_3D_azimuth_angle:int = 0x00
+const rpn_control_number_3D_elevation_angle:int = 0x01
+const rpn_control_number_3D_gain:int = 0x02
+const rpn_control_number_3D_distance_ratio:int = 0x03
+const rpn_control_number_3D_maximum_distance:int = 0x04
+const rpn_control_number_3D_gain_at_maximum_distance:int = 0x05
+const rpn_control_number_3D_referance_distance_raito:int = 0x06
+const rpn_control_number_3D_pan_spread_angle:int = 0x07
+const rpn_control_number_3D_roll_angle:int = 0x08
 
 # Manufacture ID
-const manufacture_id_universal_nopn_realtime_sys_ex = 0x7E
-const manufacture_id_universal_realtime_sys_ex = 0x7F
-const manufacture_id_kawai_musical_instruments_mfg_co_ltd = 0x40
-const manufacture_id_roland_corporation = 0x41
-const manufacture_id_korg_inc = 0x42
-const manufacture_id_yamaha_corporation = 0x43
-const manufacture_id_casio_computer_co_ltd = 0x44
-const manufacture_id_kamiya_studio_co_ltd = 0x46
-const manufacture_id_akai_electric_co_ltd = 0x47
+const manufacture_id_universal_nopn_realtime_sys_ex:int = 0x7E
+const manufacture_id_universal_realtime_sys_ex:int = 0x7F
+const manufacture_id_kawai_musical_instruments_mfg_co_ltd:int = 0x40
+const manufacture_id_roland_corporation:int = 0x41
+const manufacture_id_korg_inc:int = 0x42
+const manufacture_id_yamaha_corporation:int = 0x43
+const manufacture_id_casio_computer_co_ltd:int = 0x44
+const manufacture_id_kamiya_studio_co_ltd:int = 0x46
+const manufacture_id_akai_electric_co_ltd:int = 0x47
 
 # 7F
 
