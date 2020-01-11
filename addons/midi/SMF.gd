@@ -552,9 +552,10 @@ func _read_string( stream:StreamPeerBuffer, size:int ) -> String:
 """
 	書き込む
 	@param	smf	SMF structure
+	@param	running_status	use running status
 	@return	PoolByteArray
 """
-func write( smf ):
+func write( smf, running_status:bool = false ):
 	var stream:StreamPeerBuffer = StreamPeerBuffer.new( )
 	stream.big_endian = true
 	
@@ -565,7 +566,7 @@ func write( smf ):
 	stream.put_u16( smf.timebase )
 
 	for t in smf.tracks:
-		self._write_track( stream, t )
+		self._write_track( stream, t, running_status )
 
 	return stream.get_partial_data( stream.get_available_bytes( ) )[1]
 
@@ -597,47 +598,81 @@ func _write_variable_int( stream:StreamPeerBuffer, i:int ):
 	トラックデータを書き込む
 	@param	stream
 	@param	track
+	@param	running_status
 """
-func _write_track( stream:StreamPeerBuffer, track ):
+func _write_track( stream:StreamPeerBuffer, track, running_status:bool ):
 	var events:Array = track.events.duplicate( )
 	events.sort_custom( TrackEventSorter, "sort" )
 
 	var buf:StreamPeerBuffer = StreamPeerBuffer.new( )
 	buf.big_endian = true
 	var time:int = 0
+	var last_event_type:int = -2
 
 	for e in events:
+		var event_omit:bool = false
+		var current_event_type:int = -1
 		self._write_variable_int( buf, e.time - time )
 		time = e.time
 		match e.type:
 			MIDIEventType.note_off:
-				buf.put_u8( 0x80 | e.channel_number )
+				current_event_type = 0x80 | e.channel_number
+				if running_status:
+					event_omit = current_event_type == last_event_type
+				if not event_omit:
+					buf.put_u8( current_event_type )
 				buf.put_u8( e.note )
 				buf.put_u8( e.velocity )
 			MIDIEventType.note_on:
-				buf.put_u8( 0x90 | e.channel_number )
+				current_event_type = 0x90 | e.channel_number
+				if running_status:
+					event_omit = current_event_type == last_event_type
+				if not event_omit:
+					buf.put_u8( current_event_type )
 				buf.put_u8( e.note )
 				buf.put_u8( e.velocity )
 			MIDIEventType.polyphonic_key_pressure:
-				buf.put_u8( 0xA0 | e.channel_number )
+				current_event_type = 0xA0 | e.channel_number
+				if running_status:
+					event_omit = current_event_type == last_event_type
+				if not event_omit:
+					buf.put_u8( current_event_type )
 				buf.put_u8( e.note )
 				buf.put_u8( e.value )
 			MIDIEventType.control_change:
-				buf.put_u8( 0xB0 | e.channel_number )
+				current_event_type = 0xB0 | e.channel_number
+				if running_status:
+					event_omit = current_event_type == last_event_type
+				if not event_omit:
+					buf.put_u8( current_event_type )
 				buf.put_u8( e.number )
 				buf.put_u8( e.value )
 			MIDIEventType.program_change:
-				buf.put_u8( 0xC0 | e.channel_number )
+				current_event_type = 0xC0 | e.channel_number
+				if running_status:
+					event_omit = current_event_type == last_event_type
+				if not event_omit:
+					buf.put_u8( current_event_type )
 				buf.put_u8( e.number )
 			MIDIEventType.channel_pressure:
-				buf.put_u8( 0xD0 | e.channel_number )
+				current_event_type = 0xD0 | e.channel_number
+				if running_status:
+					event_omit = current_event_type == last_event_type
+				if not event_omit:
+					buf.put_u8( current_event_type )
 				buf.put_u8( e.value )
 			MIDIEventType.pitch_bend:
-				buf.put_u8( 0xE0 | e.channel_number )
+				current_event_type = 0xE0 | e.channel_number
+				if running_status:
+					event_omit = current_event_type == last_event_type
+				if not event_omit:
+					buf.put_u8( current_event_type )
 				buf.put_u8( e.value & 0x7f )
 				buf.put_u8( ( e.value >> 7 ) & 0x7f )
 			MIDIEventType.system_event:
 				self._write_system_event( buf, e )
+				current_event_type = -3
+		last_event_type = current_event_type
 
 	var track_size:int = buf.get_available_bytes( )
 	stream.put_utf8_string( "MTrk" )
