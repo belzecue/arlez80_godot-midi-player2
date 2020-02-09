@@ -477,6 +477,11 @@ func set_soundfont( path:String ):
 	if not self.load_all_voices_from_soundfont:
 		voices = self._used_program_numbers
 
+	if is_instance_valid( self.bank ):
+		for i in self.bank.presets:
+			self.bank.presets[i].instruments = []
+			self.bank.presets[i].bags = []
+
 	self.bank = Bank.new( )
 	self.bank.read_soundfont( sf2, voices )
 
