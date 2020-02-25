@@ -638,8 +638,8 @@ func _process_track_event_note_on( channel:GodotMIDIPlayerChannelStatus, note:in
 
 	var key_number:int = note + self.key_shift
 	var preset:Bank.Preset = self.bank.get_preset( channel.program, channel.bank )
+	if preset.instruments[key_number] == null: return
 	var instruments:Array = preset.instruments[key_number]
-	if instruments == null: return
 
 	var assign_group:int = key_number
 	if channel.drum_track:
