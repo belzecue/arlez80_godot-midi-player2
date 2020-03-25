@@ -3,7 +3,6 @@
 """
 
 const drum_track_bank:int = 128
-const ADSR = preload( "ADSR.gd" )
 const SoundFont = preload( "SoundFont.gd" )
 
 class_name Bank
@@ -23,15 +22,25 @@ class Instrument:
 	"""
 	func _init( ):
 		self.ads_state = [
-			ADSR.VolumeState.new( 0.0, 0.0 ),
-			ADSR.VolumeState.new( 0.2, -144.0 )
+			VolumeState.new( 0.0, 0.0 ),
+			VolumeState.new( 0.2, -144.0 )
 		]
 		self.release_state = [
-			ADSR.VolumeState.new( 0.0, 0.0 ),
-			ADSR.VolumeState.new( 0.01, -144.0 )
+			VolumeState.new( 0.0, 0.0 ),
+			VolumeState.new( 0.01, -144.0 )
 		]
 	"""
 
+# VolumeState
+class VolumeState:
+	var time:float = 0.0
+	var volume_db:float = 0.0
+
+	func _init( time:float = 0.0, volume_db:float = 0.0 ):
+		self.time = time
+		self.volume_db = volume_db
+
+# Preset
 class Preset:
 	var name:String = ""
 	var number:int = 0
@@ -351,18 +360,18 @@ func _read_soundfont_preset_compose_sample( sf:SoundFont.SoundFont, preset:Prese
 			var r:float = adsr.release_vol_env_time
 			var volume_db:float = ibag.volume_db
 			var ads_state:Array = [
-				ADSR.VolumeState.new( 0.0, -144.0 ),
-				ADSR.VolumeState.new( a, 0.0 ),
-				ADSR.VolumeState.new( a+d, s ),
+				VolumeState.new( 0.0, -144.0 ),
+				VolumeState.new( a, 0.0 ),
+				VolumeState.new( a+d, s ),
 			]
 			if a <= 0.001:
 				ads_state = [
-					ADSR.VolumeState.new( 0.0, 0.0 ),
-					ADSR.VolumeState.new( d, s ),
+					VolumeState.new( 0.0, 0.0 ),
+					VolumeState.new( d, s ),
 				]
 			var release_state:Array = [
-				ADSR.VolumeState.new( 0.0, s ),
-				ADSR.VolumeState.new( r, -144.0 ),
+				VolumeState.new( 0.0, s ),
+				VolumeState.new( r, -144.0 ),
 			]
 			for key_number in range( key_range.low, key_range.high + 1 ):
 				#if preset.number == drum_track_bank << 7:
