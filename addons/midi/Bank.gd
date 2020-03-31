@@ -86,7 +86,7 @@ class TempSoundFontInstrumentBag:
 	var fine_tune:int = 0
 	var original_key:int = 255
 	var keynum:int = 0
-	var sample_modes:int = 0
+	var sample_modes:int = -1
 	var key_range:TempSoundFontRange = TempSoundFontRange.new( 0, 127 )
 	var vel_range:TempSoundFontRange = TempSoundFontRange.new( 0, 127 )
 	var volume_db:float = 0.0
@@ -336,9 +336,8 @@ func _read_soundfont_preset_compose_sample( sf:SoundFont.SoundFont, preset:Prese
 				ass.stereo = false
 				ass.loop_begin = start_loop - start
 				ass.loop_end = end_loop - start
-				if ibag.sample_modes == SoundFont.sample_mode_no_loop or ibag.sample_modes == SoundFont.sample_mode_unused_no_loop:
-					ass.loop_mode = AudioStreamSample.LOOP_DISABLED
-				else:
+				ass.loop_mode = AudioStreamSample.LOOP_DISABLED
+				if ( ibag.sample_modes == SoundFont.sample_mode_loop_continuously ) or ( ibag.sample_modes == -1 and preset.number != drum_track_bank << 7 ):
 					ass.loop_mode = AudioStreamSample.LOOP_FORWARD
 
 				array_stream.append( ass )

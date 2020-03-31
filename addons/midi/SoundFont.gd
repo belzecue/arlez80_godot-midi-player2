@@ -84,7 +84,7 @@ const gen_oper_end_oper:int = 60
 """
 const sample_mode_no_loop:int = 0
 const sample_mode_loop_continuously:int = 1
-const sample_mode_unused_no_loop:int = 2
+const sample_mode_unused_no_loop:int = 2	# this is unused, but it needs interpreted as no loop
 const sample_mode_loop_ends_by_key_depression:int = 3
 
 """
