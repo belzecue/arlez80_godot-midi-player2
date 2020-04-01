@@ -334,11 +334,11 @@ func _read_soundfont_preset_compose_sample( sf:SoundFont.SoundFont, preset:Prese
 				ass.format = AudioStreamSample.FORMAT_16_BITS
 				ass.mix_rate = sample.sample_rate
 				ass.stereo = false
-				ass.loop_begin = start_loop - start
-				ass.loop_end = end_loop - start
 				ass.loop_mode = AudioStreamSample.LOOP_DISABLED
-				if ( ibag.sample_modes == SoundFont.sample_mode_loop_continuously ) or ( ibag.sample_modes == -1 and preset.number != drum_track_bank << 7 ):
+				if ( ibag.sample_modes == SoundFont.sample_mode_loop_continuously ) or ( start + 64 <= start_loop and ibag.sample_modes == -1 and preset.number != drum_track_bank << 7 ):
 					ass.loop_mode = AudioStreamSample.LOOP_FORWARD
+					ass.loop_begin = start_loop - start
+					ass.loop_end = end_loop - start
 
 				array_stream.append( ass )
 				array_base_pitch.append( base_pitch )
