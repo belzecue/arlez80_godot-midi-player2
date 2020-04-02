@@ -1,6 +1,6 @@
 # Godot MIDI Player
 
-Software MIDI player library for Godot Engine 3.1 later
+Software MIDI player library for Godot Engine 3.2 later
 
 * Changes play speed.
 * Set tempo.
@@ -22,6 +22,7 @@ Software MIDI player library for Godot Engine 3.1 later
 ### Demo
 
 * [download](https://bitbucket.org/arlez80/godot-midi-player/downloads/demo.zip)
+    * This demo can get MIDIInput events. You can play using MIDI keyboards!
 * BGM "failyland_gm.mid" from [IvyMaze]( http://ivymaze.sakura.ne.jp/ )
 
 ## Hint
