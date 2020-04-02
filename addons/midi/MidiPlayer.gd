@@ -263,8 +263,6 @@ func _ready( ):
 		self.channel_status.append( GodotMIDIPlayerChannelStatus.new( i, bank, drum_track ) )
 
 	self.set_max_polyphony( self.max_polyphony )
-	if self.soundfont != "":
-		self.set_soundfont( self.soundfont )
 
 	if self.playing:
 		self.play( )
