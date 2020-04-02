@@ -171,7 +171,7 @@ func get_preset( program_number:int, bank:int = 0 ) -> Preset:
 			# 一番最初のデフォルト音源を読む
 			pc = self.presets.keys( )[0]
 
-	var preset = self.presets[pc]
+	var preset:Preset = self.presets[pc]
 	return preset
 
 """
@@ -393,3 +393,10 @@ func _read_soundfont_preset_compose_sample( sf:SoundFont.SoundFont, preset:Prese
 				instrument.vel_range_min = vel_range.low
 				instrument.vel_range_max = vel_range.high
 				preset.instruments[key_number].append( instrument )
+
+func _notification( what:int ):
+	if what == NOTIFICATION_PREDELETE:
+		for i in self.presets.keys( ):
+			var preset:Preset = self.presets[i]
+			preset.instruments = []
+			preset.bags = []
