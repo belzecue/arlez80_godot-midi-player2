@@ -312,6 +312,7 @@ func _read_soundfont_pdta_inst( sf:SoundFont.SoundFont ) -> Array:
 
 func _read_soundfont_preset_compose_sample( sf:SoundFont.SoundFont, preset:Preset ):
 	var sample_base:PoolByteArray = sf.sdta.smpl
+	var loaded_sample_data:Dictionary = {}
 
 	for pbag_index in range( 0, preset.bags.size( ) ):
 		var pbag:TempSoundFontBag= preset.bags[pbag_index]
@@ -329,16 +330,25 @@ func _read_soundfont_preset_compose_sample( sf:SoundFont.SoundFont, preset:Prese
 				var end_loop:int = sample.end_loop + ibag.sample_end_loop_offset
 				var base_pitch:float = ( pbag.coarse_tune + ibag.coarse_tune ) / 12.0 + ( pbag.fine_tune + ibag.sample.pitch_correction + ibag.fine_tune ) / 1200.0
 
-				var ass:AudioStreamSample = AudioStreamSample.new( )
-				ass.data = sample_base.subarray( start * 2, end * 2 - 1 )
-				ass.format = AudioStreamSample.FORMAT_16_BITS
-				ass.mix_rate = sample.sample_rate
-				ass.stereo = false
-				ass.loop_mode = AudioStreamSample.LOOP_DISABLED
-				if ( ibag.sample_modes == SoundFont.sample_mode_loop_continuously ) or ( start + 64 <= start_loop and ibag.sample_modes == -1 and preset.number != drum_track_bank << 7 ):
-					ass.loop_mode = AudioStreamSample.LOOP_FORWARD
-					ass.loop_begin = start_loop - start
-					ass.loop_end = end_loop - start
+				var dict_key:String = "%d_%d_%d_%d_%d_%f" % [start, end, start_loop, end_loop, sample.sample_rate, base_pitch]
+				var ass:AudioStreamSample
+
+				if dict_key in loaded_sample_data:
+					ass = loaded_sample_data[dict_key]
+				else:
+					ass = AudioStreamSample.new( )
+
+					ass.data = sample_base.subarray( start * 2, end * 2 - 1 )
+					ass.format = AudioStreamSample.FORMAT_16_BITS
+					ass.mix_rate = sample.sample_rate
+					ass.stereo = false
+					ass.loop_mode = AudioStreamSample.LOOP_DISABLED
+					if ( ibag.sample_modes == SoundFont.sample_mode_loop_continuously ) or ( start + 64 <= start_loop and ibag.sample_modes == -1 and preset.number != drum_track_bank << 7 ):
+						ass.loop_mode = AudioStreamSample.LOOP_FORWARD
+						ass.loop_begin = start_loop - start
+						ass.loop_end = end_loop - start
+
+					loaded_sample_data[dict_key] = ass
 
 				array_stream.append( ass )
 				array_base_pitch.append( base_pitch )
