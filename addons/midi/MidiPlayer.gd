@@ -156,9 +156,7 @@ export (bool) var loop:bool = false
 # ループ開始位置
 export (float) var loop_start:float = 0
 # 全ての音をサウンドフォントから読むか？
-export (bool) var load_all_voices_from_soundfont:bool = false
-# サウンドフォントの再読み込みを行わない
-export (bool) var no_reload_soundfont:bool = false
+export (bool) var load_all_voices_from_soundfont:bool = true
 # サウンドフォント
 export (String, FILE, "*.sf2") var soundfont:String = "" setget set_soundfont
 # mix_target same as AudioStreamPlayer's one
@@ -291,9 +289,12 @@ func _prepare_to_play( ):
 	self._analyse_smf( )
 	self._init_channel( )
 
+	# サウンドフォントの再読み込みをさせる
+	if not self.load_all_voices_from_soundfont:
+		self.set_soundfont( self.soundfont )
 	# 楽器
 	if self.bank == null:
-		push_error( "Sound voices not found. Please set soundfont path or set instrument data to bank." )
+		push_error( "Sound voices does not found. Please set soundfont path or set instrument data to bank." )
 
 """
 	トラック初期化
@@ -444,6 +445,7 @@ func send_reset( ):
 """
 func set_file( path:String ):
 	file = path
+	self.stop( )
 	self.smf_data = null
 
 """
@@ -472,10 +474,8 @@ func set_soundfont( path:String ):
 	soundfont = path
 
 	var sf_reader = SoundFont.new( )
-	var sf2 = sf_reader.read_file( self.soundfont )
-	var voices = null
-	if not self.load_all_voices_from_soundfont:
-		voices = self._used_program_numbers
+	var sf2 = sf_reader.read_file( soundfont )
+	var voices = null if self.load_all_voices_from_soundfont else self._used_program_numbers
 
 	self.bank = Bank.new( )
 	self.bank.read_soundfont( sf2, voices )
@@ -485,7 +485,6 @@ func set_soundfont( path:String ):
 """
 func set_smf_data( sd ):
 	smf_data = sd
-	if not self.no_reload_soundfont: self.bank = null
 
 """
 	テンポ設定
