@@ -32,7 +32,7 @@ var timer:float = 0.0
 # 使用時間
 var using_timer:float = 0.0
 # リンク済の音色
-var linked:AudioStreamPlayer = null
+onready var linked:AudioStreamPlayer = $Linked
 var linked_base_pitch:float = 0.0
 # 同時発音数
 var polyphony_count:float = 1.0
@@ -56,22 +56,21 @@ onready var release_state:Array = [
 ]
 
 func _ready( ):
-	self.linked = $Linked
 	self.stop( )
 
 func _check_using_linked( ):
 	return self.instrument != null and 2 <= len( self.instrument.array_stream )
 
-func set_instrument( instrument:Bank.Instrument ):
-	self.instrument = instrument
-	self.base_pitch = instrument.array_base_pitch[0]
-	self.stream = instrument.array_stream[0]
-	self.ads_state = instrument.ads_state
-	self.release_state = instrument.release_state
+func set_instrument( _instrument:Bank.Instrument ):
+	self.instrument = _instrument
+	self.base_pitch = _instrument.array_base_pitch[0]
+	self.stream = _instrument.array_stream[0]
+	self.ads_state = _instrument.ads_state
+	self.release_state = _instrument.release_state
 
 	if self._check_using_linked( ):
-		self.linked_base_pitch = instrument.array_base_pitch[1]
-		self.linked.stream = instrument.array_stream[1]
+		self.linked_base_pitch = _instrument.array_base_pitch[1]
+		self.linked.stream = _instrument.array_stream[1]
 
 func play( from_position:float = 0.0 ):
 	self.releasing = false
@@ -125,11 +124,11 @@ func _update_adsr( delta:float ):
 				self.current_volume_db = pre_state.volume_db * s + state.volume_db * t
 				break
 
-	var pitch_bend:float = self.pitch_bend * self.pitch_bend_sensitivity / 12.0
-	var modulation:float = sin( self.using_timer * 32.0 ) * ( self.modulation * self.modulation_sensitivity / 12.0 )
-	self.pitch_scale = pow( 2.0, self.base_pitch + modulation + pitch_bend )
+	var synthed_pitch_bend:float = self.pitch_bend * self.pitch_bend_sensitivity / 12.0
+	var synthed_modulation:float = sin( self.using_timer * 32.0 ) * ( self.modulation * self.modulation_sensitivity / 12.0 )
+	self.pitch_scale = pow( 2.0, self.base_pitch + synthed_modulation + synthed_pitch_bend )
 	if self._check_using_linked( ):
-		self.linked.pitch_scale = pow( 2.0, self.linked_base_pitch + modulation + pitch_bend )
+		self.linked.pitch_scale = pow( 2.0, self.linked_base_pitch + synthed_modulation + synthed_pitch_bend )
 
 	self._update_volume( )
 

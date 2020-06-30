@@ -36,9 +36,9 @@ class VolumeState:
 	var time:float = 0.0
 	var volume_db:float = 0.0
 
-	func _init( time:float = 0.0, volume_db:float = 0.0 ):
-		self.time = time
-		self.volume_db = volume_db
+	func _init( _time:float = 0.0, _volume_db:float = 0.0 ):
+		self.time = _time
+		self.volume_db = _volume_db
 
 # Preset
 class Preset:
@@ -68,9 +68,9 @@ class TempSoundFontRange:
 	var low:int
 	var high:int
 
-	func _init( low:int = 0, high:int = 127 ):
-		self.low = low
-		self.high = high
+	func _init( _low:int = 0, _high:int = 127 ):
+		self.low = _low
+		self.high = _high
 
 	func duplicate( ) -> TempSoundFontRange:
 		var new:TempSoundFontRange = TempSoundFontRange.new( )
@@ -80,7 +80,7 @@ class TempSoundFontRange:
 		return new
 
 class TempSoundFontInstrumentBag:
-	var sample
+	var sample:SoundFont.SoundFontSampleHeader
 	var sample_id:int = -1
 	var sample_start_offset:int = 0
 	var sample_end_offset:int = 0
@@ -180,7 +180,7 @@ func get_preset( program_number:int, bank:int = 0 ) -> Preset:
 """
 	サウンドフォント読み込み
 """
-func read_soundfont( sf:SoundFont.SoundFont, need_program_numbers = null ):
+func read_soundfont( sf:SoundFont.SoundFontData, need_program_numbers:Array = [] ):
 	var sf_insts:Array = self._read_soundfont_pdta_inst( sf )
 
 	#var times:Array = []
@@ -221,7 +221,7 @@ func read_soundfont( sf:SoundFont.SoundFont, need_program_numbers = null ):
 		bag_index = bag_next
 
 		# 追加するか？
-		if need_program_numbers != null:
+		if 0 < len( need_program_numbers ):
 			if not( program_number in need_program_numbers ) and not( phdr.preset in need_program_numbers ):
 				continue
 		# 追加
@@ -236,7 +236,7 @@ func read_soundfont( sf:SoundFont.SoundFont, need_program_numbers = null ):
 	#		printt( i, diff )
 	#printt( "all", times[-1] - times[0] )
 
-func _read_soundfont_pdta_inst( sf:SoundFont.SoundFont ) -> Array:
+func _read_soundfont_pdta_inst( sf:SoundFont.SoundFontData ) -> Array:
 	var sf_insts:Array = Array( )
 	var bag_index:int = 0
 	var gen_index:int = 0
@@ -321,7 +321,7 @@ func _read_soundfont_pdta_inst( sf:SoundFont.SoundFont ) -> Array:
 
 	return sf_insts
 
-func _read_soundfont_preset_compose_sample( sf:SoundFont.SoundFont, preset:Preset ):
+func _read_soundfont_preset_compose_sample( sf:SoundFont.SoundFontData, preset:Preset ):
 	var sample_base:PoolByteArray = sf.sdta.smpl
 	var loaded_sample_data:Dictionary = Dictionary( )
 	var log2:float = log( 2.0 )
