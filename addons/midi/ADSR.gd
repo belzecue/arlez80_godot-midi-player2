@@ -62,6 +62,9 @@ func _check_using_linked( ):
 	return self.instrument != null and 2 <= len( self.instrument.array_stream )
 
 func set_instrument( _instrument:Bank.Instrument ):
+	if self.instrument == _instrument:
+		return
+
 	self.instrument = _instrument
 	self.base_pitch = _instrument.array_base_pitch[0]
 	self.stream = _instrument.array_stream[0]

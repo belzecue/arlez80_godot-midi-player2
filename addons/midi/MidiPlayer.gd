@@ -679,7 +679,7 @@ func _process_track_event_note_on( channel:GodotMIDIPlayerChannelStatus, note:in
 
 	for instrument in instruments:
 		if instrument.vel_range_min <= key_number and key_number <= instrument.vel_range_max:
-			var note_player:AudioStreamPlayerADSR = self._get_idle_player( )
+			var note_player:AudioStreamPlayerADSR = self._get_idle_player( instrument )
 			if note_player != null:
 				note_player.channel_number = channel.number
 				note_player.key_number = key_number
@@ -692,6 +692,7 @@ func _process_track_event_note_on( channel:GodotMIDIPlayerChannelStatus, note:in
 				note_player.modulation_sensitivity = channel.rpn.modulation_sensitivity
 				note_player.auto_release_mode = channel.drum_track
 				note_player.polyphony_count = float( polyphony_count )
+				note_player.stop( )
 				note_player.set_instrument( instrument )
 				note_player.play( 0.0 )
 
@@ -901,8 +902,8 @@ func _is_same_data( data_a:Array, data_b:Array ) -> bool:
 		id += 1
 	return not incorrect
 
-func _get_idle_player( ) -> AudioStreamPlayerADSR:
-	var stopped_audio_stream_player:AudioStreamPlayerADSR = null
+func _get_idle_player( _instrument:Bank.Instrument ) -> AudioStreamPlayerADSR:
+	var released_audio_stream_player:AudioStreamPlayerADSR = null
 	var minimum_volume_db:float = -100.0
 	var oldest_audio_stream_player:AudioStreamPlayerADSR = null
 	var oldest:float = -1.0
@@ -911,14 +912,14 @@ func _get_idle_player( ) -> AudioStreamPlayerADSR:
 		if not audio_stream_player.playing:
 			return audio_stream_player
 		if audio_stream_player.releasing and audio_stream_player.current_volume_db < minimum_volume_db:
-			stopped_audio_stream_player = audio_stream_player
+			released_audio_stream_player = audio_stream_player
 			minimum_volume_db = audio_stream_player.current_volume_db
 		if oldest < audio_stream_player.using_timer:
 			oldest_audio_stream_player = audio_stream_player
 			oldest = audio_stream_player.using_timer
 
-	if stopped_audio_stream_player != null:
-		return stopped_audio_stream_player
+	if released_audio_stream_player != null:
+		return released_audio_stream_player
 
 	oldest_audio_stream_player.stop( )
 	return oldest_audio_stream_player
