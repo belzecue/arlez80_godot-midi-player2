@@ -78,6 +78,7 @@ func play( from_position:float = 0.0 ):
 	self.timer = 0.0
 	self.using_timer = 0.0
 	self.linked.bus = self.bus
+	self.pitch_scale = 1.0
 
 	.play( from_position )
 	if self._check_using_linked( ):
@@ -87,7 +88,8 @@ func play( from_position:float = 0.0 ):
 
 func stop( ):
 	.stop( )
-	self.linked.stop( )
+	if self.linked != null:
+		self.linked.stop( )
 	self.hold = false
 
 func start_release( ):
