@@ -210,6 +210,8 @@ var reverb_power:float = 0.5
 # コーラスの強さを定義
 var chorus_power:float = 0.7
 
+var _previous_time:float
+
 # -----------------------------------------------------------------------------
 # シグナル
 
@@ -388,6 +390,7 @@ func _init_channel( ):
 	@param	from_position
 """
 func play( from_position:float = 0.0 ):
+	self._previous_time = 0.0
 	self._prepare_to_play( )
 	self.playing = true
 	if from_position == 0.0:
@@ -400,6 +403,7 @@ func play( from_position:float = 0.0 ):
 	シーク
 """
 func seek( to_position:float ):
+	self._previous_time = 0.0
 	self._stop_all_notes( )
 	self.position = to_position
 
@@ -433,6 +437,7 @@ func seek( to_position:float ):
 	停止
 """
 func stop( ):
+	self._previous_time = 0.0
 	self._stop_all_notes( )
 	self.playing = false
 
@@ -518,9 +523,27 @@ func _stop_all_notes( ):
 		channel.note_on = {}
 
 """
-	毎フレーム処理
+	1フレームでシーケンス処理
 """
 func _process( delta:float ):
+	var currently:float = OS.get_ticks_msec( )
+	if 0.0 < self._previous_time:
+		self._sequence( ( currently - self._previous_time ) / 1000.0 )
+	self._previous_time = currently
+
+"""
+	物理1フレームでシーケンス処理
+"""
+func _physics_process( delta:float ):
+	var currently:float = OS.get_ticks_msec( )
+	if 0.0 < self._previous_time:
+		self._sequence( ( currently - self._previous_time ) / 1000.0 )
+	self._previous_time = currently
+
+"""
+	シーケンス処理を行う
+"""
+func _sequence( delta:float ):
 	if self.smf_data != null:
 		if self.playing:
 			self.position += float( self.smf_data.timebase ) * delta * self.seconds_to_timebase * self.play_speed
