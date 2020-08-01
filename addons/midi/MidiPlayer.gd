@@ -679,7 +679,7 @@ func _process_track_event_note_on( channel:GodotMIDIPlayerChannelStatus, note:in
 
 	for instrument in instruments:
 		if instrument.vel_range_min <= key_number and key_number <= instrument.vel_range_max:
-			var note_player:AudioStreamPlayerADSR = self._get_idle_player( instrument )
+			var note_player:AudioStreamPlayerADSR = self._get_idle_player( )
 			if note_player != null:
 				note_player.channel_number = channel.number
 				note_player.key_number = key_number
@@ -902,7 +902,7 @@ func _is_same_data( data_a:Array, data_b:Array ) -> bool:
 		id += 1
 	return not incorrect
 
-func _get_idle_player( _instrument:Bank.Instrument ) -> AudioStreamPlayerADSR:
+func _get_idle_player( ) -> AudioStreamPlayerADSR:
 	var released_audio_stream_player:AudioStreamPlayerADSR = null
 	var minimum_volume_db:float = -100.0
 	var oldest_audio_stream_player:AudioStreamPlayerADSR = null
