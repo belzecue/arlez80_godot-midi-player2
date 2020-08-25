@@ -547,13 +547,13 @@ func _sequence( delta:float ):
 	if delta == 0.0:
 		return
 
-	for asp in self.audio_stream_players:
-		asp._update_adsr( delta )
-
 	if self.smf_data != null:
 		if self.playing:
 			self.position += float( self.smf_data.timebase ) * delta * self.seconds_to_timebase * self.play_speed
 			self._process_track( )
+
+	for asp in self.audio_stream_players:
+		asp._update_adsr( delta )
 
 """
 	トラック処理
