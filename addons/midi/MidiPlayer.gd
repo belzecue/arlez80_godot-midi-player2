@@ -544,13 +544,16 @@ func _physics_process( delta:float ):
 	シーケンス処理を行う
 """
 func _sequence( delta:float ):
+	if delta == 0.0:
+		return
+
+	for asp in self.audio_stream_players:
+		asp._update_adsr( delta )
+
 	if self.smf_data != null:
 		if self.playing:
 			self.position += float( self.smf_data.timebase ) * delta * self.seconds_to_timebase * self.play_speed
 			self._process_track( )
-
-	for asp in self.audio_stream_players:
-		asp._update_adsr( delta )
 
 """
 	トラック処理
@@ -695,6 +698,7 @@ func _process_track_event_note_on( channel:GodotMIDIPlayerChannelStatus, note:in
 				note_player.stop( )
 				note_player.set_instrument( instrument )
 				note_player.play( 0.0 )
+				note_player._update_adsr( 0.0 )
 
 	channel.note_on[ assign_group ] = true
 
@@ -911,9 +915,9 @@ func _get_idle_player( ) -> AudioStreamPlayerADSR:
 	for audio_stream_player in self.audio_stream_players:
 		if not audio_stream_player.playing:
 			return audio_stream_player
-		if audio_stream_player.releasing and audio_stream_player.current_volume_db < minimum_volume_db:
+		if audio_stream_player.releasing and audio_stream_player.volume_db < minimum_volume_db:
 			released_audio_stream_player = audio_stream_player
-			minimum_volume_db = audio_stream_player.current_volume_db
+			minimum_volume_db = audio_stream_player.volume_db
 		if oldest < audio_stream_player.using_timer:
 			oldest_audio_stream_player = audio_stream_player
 			oldest = audio_stream_player.using_timer
@@ -921,7 +925,6 @@ func _get_idle_player( ) -> AudioStreamPlayerADSR:
 	if released_audio_stream_player != null:
 		return released_audio_stream_player
 
-	oldest_audio_stream_player.stop( )
 	return oldest_audio_stream_player
 
 """

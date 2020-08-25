@@ -83,11 +83,12 @@ func play( from_position:float = 0.0 ):
 	self.linked.bus = self.bus
 	self.pitch_scale = 1.0
 
+	self.current_volume_db = self.ads_state[0].volume_db
+	self._update_volume( )
+
 	.play( from_position )
 	if self._check_using_linked( ):
 		self.linked.play( from_position )
-
-	self._update_adsr( 0.0 )
 
 func stop( ):
 	.stop( )
@@ -104,7 +105,6 @@ func _update_adsr( delta:float ):
 
 	self.timer += delta
 	self.using_timer += delta
-	# self.transform.origin.x = self.pan * self.get_viewport( ).size.x
 
 	# ADSR選択
 	var use_state = null
