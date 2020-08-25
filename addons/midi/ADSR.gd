@@ -42,6 +42,9 @@ var current_volume_db:float = 0.0
 # 自動リリースモード？
 var auto_release_mode:bool = false
 
+# 強制アップデート
+var force_update:bool = false
+
 # ADSステート
 onready var ads_state:Array = [
 	Bank.VolumeState.new( 0.0, 0.0 ),
@@ -90,6 +93,10 @@ func play( from_position:float = 0.0 ):
 	if self._check_using_linked( ):
 		self.linked.play( from_position )
 
+	self.force_update = true
+	self._update_adsr( 0.0 )
+	self.force_update = false
+
 func stop( ):
 	.stop( )
 	if self.linked != null:
@@ -100,7 +107,7 @@ func start_release( ):
 	self.request_release = true
 
 func _update_adsr( delta:float ):
-	if not self.playing:
+	if ( not self.playing ) and ( not self.force_update ):
 		return
 
 	self.timer += delta

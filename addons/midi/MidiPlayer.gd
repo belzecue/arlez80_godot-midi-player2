@@ -698,7 +698,6 @@ func _process_track_event_note_on( channel:GodotMIDIPlayerChannelStatus, note:in
 				note_player.stop( )
 				note_player.set_instrument( instrument )
 				note_player.play( 0.0 )
-				note_player._update_adsr( 0.0 )
 
 	channel.note_on[ assign_group ] = true
 
