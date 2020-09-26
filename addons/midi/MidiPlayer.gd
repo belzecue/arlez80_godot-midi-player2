@@ -148,7 +148,7 @@ export (bool) var playing:bool = false
 # 再生速度
 export (float) var play_speed:float = 1.0
 # 音量
-export (float, -1000, 0) var volume_db:float = -20.0 setget set_volume_db
+export (float, -144.0, 0) var volume_db:float = -20.0 setget set_volume_db
 # キーシフト
 export (int) var key_shift:int = 0
 # ループフラグ
