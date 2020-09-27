@@ -818,6 +818,9 @@ func _process_track_event_control_change_rpn_data_entry_msb( channel:GodotMIDIPl
 					channel.rpn.pitch_bend_sensitivity_msb = float( value )
 					if 12 < channel.rpn.pitch_bend_sensitivity_msb: channel.rpn.pitch_bend_sensitivity_msb = 12
 					channel.rpn.pitch_bend_sensitivity = channel.rpn.pitch_bend_sensitivity_msb + channel.rpn.pitch_bend_sensitivity_lsb / 100.0
+				SMF.rpn_control_number_modulation_sensitivity:
+					channel.rpn.modulation_sensitivity_msb = float( value )
+					channel.rpn.modulation_sensitivity = channel.rpn.modulation_sensitivity_msb + channel.rpn.modulation_sensitivity_lsb / 100.0
 				_:
 					pass
 		_:
@@ -830,6 +833,9 @@ func _process_track_event_control_change_rpn_data_entry_lsb( channel:GodotMIDIPl
 				SMF.rpn_control_number_pitch_bend_sensitivity:
 					channel.rpn.pitch_bend_sensitivity_lsb = float( value )
 					channel.rpn.pitch_bend_sensitivity = channel.rpn.pitch_bend_sensitivity_msb + channel.rpn.pitch_bend_sensitivity_lsb / 100.0
+				SMF.rpn_control_number_modulation_sensitivity:
+					channel.rpn.modulation_sensitivity_lsb = float( value )
+					channel.rpn.modulation_sensitivity = channel.rpn.modulation_sensitivity_msb + channel.rpn.modulation_sensitivity_lsb / 100.0
 				_:
 					pass
 		_:

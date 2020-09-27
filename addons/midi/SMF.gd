@@ -74,6 +74,7 @@ const rpn_control_number_channel_fine_tune:int = 0x01
 const rpn_control_number_channel_cource_tune:int = 0x02
 const rpn_control_number_tune_program_change:int = 0x03
 const rpn_control_number_tune_bank_select:int = 0x04
+const rpn_control_number_modulation_sensitivity:int = 0x05
 # RPN Control Numbers: 0x3D
 const rpn_control_number_3D_azimuth_angle:int = 0x00
 const rpn_control_number_3D_elevation_angle:int = 0x01
