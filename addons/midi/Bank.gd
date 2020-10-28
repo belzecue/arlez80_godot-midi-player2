@@ -132,6 +132,10 @@ class TempSoundFontInstrumentBagADSR:
 
 # 音色テーブル
 var presets:Dictionary = Dictionary( )
+# 頭の無音
+const head_silent_samples:int = 44100 / 8
+const head_silent_second:float = 1.0 / 8.0
+var head_silent:PoolByteArray = PoolByteArray([])
 
 """
 	追加
@@ -182,6 +186,12 @@ func get_preset( program_number:int, bank:int = 0 ) -> Preset:
 """
 func read_soundfont( sf:SoundFont.SoundFontData, need_program_numbers:Array = [] ):
 	var sf_insts:Array = self._read_soundfont_pdta_inst( sf )
+
+	if self.head_silent.size( ) == 0:
+		var temp:Array = []
+		for i in range( self.head_silent_samples * 2 ):
+			temp.append( 0 )
+		self.head_silent = PoolByteArray( temp )
 
 	#var times:Array = []
 	#times.append( OS.get_ticks_msec( ) )
@@ -353,15 +363,15 @@ func _read_soundfont_preset_compose_sample( sf:SoundFont.SoundFontData, preset:P
 				else:
 					var ass:AudioStreamSample = AudioStreamSample.new( )
 
-					ass.data = sample_base.subarray( start * 2, end * 2 - 1 )
+					ass.data = self.head_silent + sample_base.subarray( start * 2, end * 2 - 1 )
 					ass.format = AudioStreamSample.FORMAT_16_BITS
 					ass.mix_rate = 44100
 					ass.stereo = false
 					ass.loop_mode = AudioStreamSample.LOOP_DISABLED
 					if ( ibag.sample_modes == SoundFont.sample_mode_loop_continuously ) or ( start + 64 <= start_loop and ibag.sample_modes == -1 and preset.number != drum_track_bank << 7 ):
 						ass.loop_mode = AudioStreamSample.LOOP_FORWARD
-						ass.loop_begin = start_loop - start
-						ass.loop_end = end_loop - start
+						ass.loop_begin = start_loop - start + self.head_silent_samples
+						ass.loop_end = end_loop - start + self.head_silent_samples
 
 					loaded_sample_data[loaded_key] = ass
 

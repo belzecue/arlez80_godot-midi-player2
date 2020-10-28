@@ -3,6 +3,7 @@ extends AudioStreamPlayer
 class_name AudioStreamPlayerADSR
 
 const Bank = preload( "Bank.gd" )
+const gap_second:float = 44100.0 / 1024.0 / 1000.0
 
 """
 	AudioStreamPlayer with ADSR + Linked by Yui Kinomoto @arlez80
@@ -18,6 +19,8 @@ var hold:bool = false
 var releasing:bool = false
 # リリース要求
 var request_release:bool = false
+# リリース開始ズラし
+var request_release_second:float = 0.0
 # 楽器情報
 var instrument:Bank.Instrument = null
 # 合成情報
@@ -85,13 +88,18 @@ func play( from_position:float = 0.0 ):
 	self.using_timer = 0.0
 	self.linked.bus = self.bus
 	self.pitch_scale = 1.0
+	self.linked.pitch_scale = 1.0
 
 	self.current_volume_db = self.ads_state[0].volume_db
 	self._update_volume( )
 
-	.play( from_position )
+	var mix_delay:float = min( self.gap_second, max( self.gap_second - AudioServer.get_time_to_next_mix( ), 0.0 ) )
+	var from_position_skip_silence:float = from_position + Bank.head_silent_second
+	var own_from_position:float = from_position_skip_silence - mix_delay * pow( 2.0, self.base_pitch )
+	.play( max( 0.0, own_from_position ) )
 	if self._check_using_linked( ):
-		self.linked.play( from_position )
+		var linked_from_position:float = from_position_skip_silence - mix_delay * pow( 2.0, self.linked_base_pitch )
+		self.linked.play( max( 0.0, linked_from_position ) )
 
 	self.force_update = true
 	self._update_adsr( 0.0 )
@@ -104,6 +112,7 @@ func stop( ):
 	self.hold = false
 
 func start_release( ):
+	self.request_release_second = self.gap_second - AudioServer.get_time_to_next_mix( )
 	self.request_release = true
 
 func _update_adsr( delta:float ):
@@ -148,9 +157,11 @@ func _update_adsr( delta:float ):
 		pass
 	else:
 		if self.request_release and not self.releasing:
-			self.releasing = true
-			self.current_volume_db = self.release_state[0].volume_db
-			self.timer = 0.0
+			self.request_release_second -= delta
+			if self.request_release_second <= 0.0:
+				self.releasing = true
+				self.current_volume_db = self.release_state[0].volume_db
+				self.timer = 0.0
 
 func _update_volume( ):
 	var v:float = self.current_volume_db + linear2db( float( self.velocity ) / 127.0 )# + self.instrument.volume_db

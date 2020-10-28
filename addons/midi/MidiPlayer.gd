@@ -526,19 +526,20 @@ func _stop_all_notes( ):
 	1フレームでシーケンス処理
 """
 func _process( delta:float ):
-	var currently:float = OS.get_ticks_msec( )
-	if 0.0 < self._previous_time:
-		self._sequence( ( currently - self._previous_time ) / 1000.0 )
-	self._previous_time = currently
+	self._sequence( delta )
+	#var currently:float = OS.get_ticks_msec( )
+	#if 0.0 < self._previous_time:
+	#	self._sequence( ( currently - self._previous_time ) / 1000.0 )
+	#self._previous_time = currently
 
 """
 	物理1フレームでシーケンス処理
 """
-func _physics_process( delta:float ):
-	var currently:float = OS.get_ticks_msec( )
-	if 0.0 < self._previous_time:
-		self._sequence( ( currently - self._previous_time ) / 1000.0 )
-	self._previous_time = currently
+#func _physics_process( delta:float ):
+#	var currently:float = OS.get_ticks_msec( )
+#	if 0.0 < self._previous_time:
+#		self._sequence( ( currently - self._previous_time ) / 1000.0 )
+#	self._previous_time = currently
 
 """
 	シーケンス処理を行う

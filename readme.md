@@ -41,11 +41,6 @@ Software MIDI player library for Godot Engine 3.2 later
 * Supports play format 2
     * SMF.gd can read it. but I will not implement it to MIDI Player.
 
-## Known Problem
-
-* Player's timebase is 1/60 sec.
-    * It probably need 1/240 sec at least.
-
 ## License
 
 MIT License
