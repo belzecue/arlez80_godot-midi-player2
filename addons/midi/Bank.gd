@@ -336,6 +336,9 @@ func _read_soundfont_preset_compose_sample( sf:SoundFont.SoundFontData, preset:P
 	var loaded_sample_data:Dictionary = Dictionary( )
 	var log2:float = log( 2.0 )
 
+	var append_head_silent:PoolByteArray = self.head_silent
+	var append_head_silent_samples:int = self.head_silent_samples
+
 	for pbag_index in range( 0, preset.bags.size( ) ):
 		var pbag:TempSoundFontBag = preset.bags[pbag_index]
 
@@ -363,15 +366,15 @@ func _read_soundfont_preset_compose_sample( sf:SoundFont.SoundFontData, preset:P
 				else:
 					var ass:AudioStreamSample = AudioStreamSample.new( )
 
-					ass.data = self.head_silent + sample_base.subarray( start * 2, end * 2 - 1 )
+					ass.data = append_head_silent + sample_base.subarray( start * 2, end * 2 - 1 )
 					ass.format = AudioStreamSample.FORMAT_16_BITS
 					ass.mix_rate = 44100
 					ass.stereo = false
 					ass.loop_mode = AudioStreamSample.LOOP_DISABLED
 					if ( ibag.sample_modes == SoundFont.sample_mode_loop_continuously ) or ( start + 64 <= start_loop and ibag.sample_modes == -1 and preset.number != drum_track_bank << 7 ):
 						ass.loop_mode = AudioStreamSample.LOOP_FORWARD
-						ass.loop_begin = start_loop - start + self.head_silent_samples
-						ass.loop_end = end_loop - start + self.head_silent_samples
+						ass.loop_begin = start_loop - start + append_head_silent_samples
+						ass.loop_end = end_loop - start + append_head_silent_samples
 
 					loaded_sample_data[loaded_key] = ass
 

@@ -20,7 +20,6 @@ const max_channel:int = 16
 const max_note_number:int = 128
 const max_program_number:int = 128
 const drum_track_channel:int = 0x09
-const drum_track_bank:int = 128
 
 const midi_master_bus_name:String = "arlez80_GMP_MASTER_BUS"
 const midi_channel_bus_name:String = "arlez80_GMP_CHANNEL_BUS%d"
@@ -260,7 +259,7 @@ func _ready( ):
 		var drum_track:bool = ( i == drum_track_channel )
 		var _bank:int = 0
 		if drum_track:
-			_bank = self.drum_track_bank
+			_bank = Bank.drum_track_bank
 		self.channel_status.append( GodotMIDIPlayerChannelStatus.new( i, _bank, drum_track ) )
 
 	self.set_max_polyphony( self.max_polyphony )
@@ -311,8 +310,10 @@ func _init_track( ):
 	else:
 		# Mix multiple tracks to single track
 		var tracks:Array = []
+		var track_id:int = 0
 		for track in self.smf_data.tracks:
-			tracks.append({"pointer":0, "events":track.events, "length": len( track.events )})
+			tracks.append({"track_id": track_id, "pointer":0, "events":track.events, "length": len( track.events )})
+			track_id += 1
 
 		var time:int = 0
 		var finished:bool = false
@@ -325,8 +326,8 @@ func _init_track( ):
 				if track.length <= p: continue
 				finished = false
 				
-				var e = track.events[p]
-				var e_time = e.time
+				var e:SMF.MIDIEventChunk = track.events[p]
+				var e_time:int = e.time
 				if e_time == time:
 					track_status_events.append( e )
 					track.pointer += 1
@@ -347,7 +348,7 @@ func _analyse_smf( ):
 	for i in range( max_channel ):
 		channels.append({ "number": i, "bank": 0, })
 	self.loop_start = 0.0
-	self._used_program_numbers = [0, self.drum_track_bank << 7]	# GrandPiano and Standard Kit
+	self._used_program_numbers = [0, Bank.drum_track_bank << 7]	# GrandPiano and Standard Kit
 
 	for event_chunk in self.track_status.events:
 		var channel_number:int = event_chunk.channel_number
@@ -365,12 +366,12 @@ func _analyse_smf( ):
 				match event.number:
 					SMF.control_number_bank_select_msb:
 						if channel.number == drum_track_channel:
-							channel.bank = self.drum_track_bank
+							channel.bank = Bank.drum_track_bank
 						else:
 							channel.bank = ( channel.bank & 0x7F ) | ( event.value << 7 )
 					SMF.control_number_bank_select_lsb:
 						if channel.number == drum_track_channel:
-							channel.bank = self.drum_track_bank
+							channel.bank = Bank.drum_track_bank
 						else:
 							channel.bank = ( channel.bank & 0x3F80 ) | ( event.value & 0x7F )
 					SMF.control_number_tkool_loop_point:
@@ -739,12 +740,15 @@ func _process_track_event_control_change( channel:GodotMIDIPlayerChannelStatus, 
 			channel.freeze = float( value ) / 127.0
 		SMF.control_number_bank_select_msb:
 			if channel.drum_track:
-				channel.bank = self.drum_track_bank
+				channel.bank = Bank.drum_track_bank
 			else:
+				if value == 1:
+					# SoundFont的にMSB = 1はドラムトラックになっているので避ける
+					value = 0
 				channel.bank = ( channel.bank & 0x7F ) | ( value << 7 )
 		SMF.control_number_bank_select_lsb:
 			if channel.drum_track:
-				channel.bank = self.drum_track_bank
+				channel.bank = Bank.drum_track_bank
 			else:
 				channel.bank = ( channel.bank & 0x3F80 ) | ( value & 0x7F )
 		SMF.control_number_rpn_lsb:

@@ -93,8 +93,8 @@ func play( from_position:float = 0.0 ):
 	self.current_volume_db = self.ads_state[0].volume_db
 	self._update_volume( )
 
-	var mix_delay:float = min( self.gap_second, max( self.gap_second - AudioServer.get_time_to_next_mix( ), 0.0 ) )
 	var from_position_skip_silence:float = from_position + Bank.head_silent_second
+	var mix_delay:float = min( self.gap_second, max( self.gap_second - AudioServer.get_time_to_next_mix( ), 0.0 ) )
 	var own_from_position:float = from_position_skip_silence - mix_delay * pow( 2.0, self.base_pitch )
 	.play( max( 0.0, own_from_position ) )
 	if self._check_using_linked( ):
