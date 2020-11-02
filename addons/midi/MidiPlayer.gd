@@ -788,7 +788,7 @@ func _apply_channel_pitch_bend( channel:GodotMIDIPlayerChannelStatus ):
 	var pbs:float = channel.rpn.pitch_bend_sensitivity
 	var pb:float = channel.pitch_bend
 	for asp in self.audio_stream_players:
-		if asp.channel_number == channel.number:
+		if asp.channel_number == channel.number and ( not asp.request_release ):
 			asp.pitch_bend_sensitivity = pbs
 			asp.pitch_bend = pb
 
@@ -805,14 +805,14 @@ func _apply_channel_modulation( channel:GodotMIDIPlayerChannelStatus ):
 	var ms:float = channel.rpn.modulation_sensitivity
 	var m:float = channel.modulation
 	for asp in self.audio_stream_players:
-		if asp.channel_number == channel.number:
+		if asp.channel_number == channel.number and ( not asp.request_release ):
 			asp.modulation_sensitivity = ms
 			asp.modulation = m
 
 func _apply_channel_hold( channel:GodotMIDIPlayerChannelStatus ):
 	var hold:bool = channel.hold
 	for asp in self.audio_stream_players:
-		if asp.channel_number == channel.number:
+		if asp.channel_number == channel.number and ( not asp.request_release ):
 			asp.hold = hold
 
 func _process_track_event_control_change_rpn_data_entry_msb( channel:GodotMIDIPlayerChannelStatus, value:int ):
@@ -919,6 +919,7 @@ func _is_same_data( data_a:Array, data_b:Array ) -> bool:
 func _get_idle_player( ) -> AudioStreamPlayerADSR:
 	var released_audio_stream_player:AudioStreamPlayerADSR = null
 	var minimum_volume_db:float = -100.0
+	var releasing_audio_stream_player:AudioStreamPlayerADSR = null
 	var oldest_audio_stream_player:AudioStreamPlayerADSR = null
 	var oldest:float = -1.0
 
