@@ -295,8 +295,9 @@ func _prepare_to_play( ):
 	if not self.load_all_voices_from_soundfont:
 		self.set_soundfont( self.soundfont )
 	# 楽器
-	if self.bank == null:
-		push_error( "Sound voices does not found. Please set soundfont path or set instrument data to bank." )
+	#if self.bank == null:
+		#push_error( "Sound voices does not found. Please set soundfont path or set instrument data to bank." )
+		#pass
 
 """
 	トラック初期化
@@ -481,6 +482,10 @@ func set_max_polyphony( mp:int ):
 func set_soundfont( path:String ):
 	soundfont = path
 
+	if path == null or path == "":
+		self.bank = null
+		return
+
 	var sf_reader:SoundFont = SoundFont.new( )
 	var sf2:SoundFont.SoundFontData = sf_reader.read_file( soundfont )
 
@@ -663,6 +668,7 @@ func _process_track_event_note_off( channel:GodotMIDIPlayerChannelStatus, note:i
 
 func _process_track_event_note_on( channel:GodotMIDIPlayerChannelStatus, note:int, velocity:int ):
 	if channel.mute: return
+	if self.bank == null: return
 
 	var key_number:int = note + self.key_shift
 	var preset:Bank.Preset = self.bank.get_preset( channel.program, channel.bank )
