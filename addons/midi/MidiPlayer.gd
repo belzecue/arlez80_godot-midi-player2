@@ -286,11 +286,14 @@ func _notification( what:int ):
 """
 	再生前の初期化
 """
-func _prepare_to_play( ):
+func _prepare_to_play( ) -> bool:
 	# ファイル読み込み
 	if self.smf_data == null:
 		var smf_reader = SMF.new( )
 		self.smf_data = smf_reader.read_file( self.file )
+		if self.smf_data == null:
+			self.playing = false
+			return false
 
 	self._init_track( )
 	self._analyse_smf( )
@@ -303,6 +306,8 @@ func _prepare_to_play( ):
 	#if self.bank == null:
 		#push_error( "Sound voices does not found. Please set soundfont path or set instrument data to bank." )
 		#pass
+
+	return true
 
 """
 	トラック初期化
@@ -398,7 +403,9 @@ func _init_channel( ):
 """
 func play( from_position:float = 0.0 ):
 	self._previous_time = 0.0
-	self._prepare_to_play( )
+	if not self._prepare_to_play( ):
+		self.playing = false
+		return
 	self.playing = true
 	if from_position == 0.0:
 		self.position = 0.0
