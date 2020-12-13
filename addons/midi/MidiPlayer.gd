@@ -87,6 +87,11 @@ class GodotMIDIPlayerChannelStatus:
 		self.rpn = GodotMIDIPlayerChannelStatusRPN.new( )
 		self.initialize( )
 
+
+	func _notification( what:int ):
+		if what == NOTIFICATION_PREDELETE:
+			self.note_on.clear( )
+
 	func initialize( ):
 		self.note_on = {}
 		self.program = 0
@@ -526,7 +531,7 @@ func _stop_all_notes( ):
 		audio_stream_player.stop( )
 
 	for channel in self.channel_status:
-		channel.note_on = {}
+		channel.note_on.clear( )
 
 """
 	1フレームでシーケンス処理
