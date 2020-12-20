@@ -710,13 +710,13 @@ func _process_track_event_note_on( channel:GodotMIDIPlayerChannelStatus, note:in
 				note_player.velocity = velocity
 				note_player.pitch_bend = channel.pitch_bend
 				note_player.pitch_bend_sensitivity = channel.rpn.pitch_bend_sensitivity
-				note_player.hold = channel.hold
 				note_player.modulation = channel.modulation
 				note_player.modulation_sensitivity = channel.rpn.modulation_sensitivity
 				note_player.auto_release_mode = channel.drum_track
 				note_player.polyphony_count = float( polyphony_count )
 				note_player.stop( )
 				note_player.set_instrument( instrument )
+				note_player.hold = channel.hold
 				note_player.play( 0.0 )
 
 	channel.note_on[ assign_group ] = true

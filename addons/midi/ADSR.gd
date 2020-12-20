@@ -14,7 +14,7 @@ var channel_number:int = -1
 # 発音キーナンバー
 var key_number:int = -1
 # Hold 1
-var hold:bool = false setget set_hold
+var hold:bool = false
 # リリース中？
 var releasing:bool = false
 # リリース要求
@@ -114,9 +114,6 @@ func stop( ):
 func start_release( ) -> void:
 	self.request_release_second = self.gap_second - AudioServer.get_time_to_next_mix( )
 	self.request_release = true
-
-func set_hold( _hold:bool ) -> void:
-	hold = _hold
 
 func _update_adsr( delta:float ) -> void:
 	if ( not self.playing ) and ( not self.force_update ):
