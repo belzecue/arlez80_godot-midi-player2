@@ -117,7 +117,6 @@ func start_release( ) -> void:
 
 func set_hold( _hold:bool ) -> void:
 	hold = _hold
-	self.request_release_second = self.gap_second - AudioServer.get_time_to_next_mix( )
 
 func _update_adsr( delta:float ) -> void:
 	if ( not self.playing ) and ( not self.force_update ):

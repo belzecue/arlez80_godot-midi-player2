@@ -830,8 +830,8 @@ func _apply_channel_modulation( channel:GodotMIDIPlayerChannelStatus ) -> void:
 func _apply_channel_hold( channel:GodotMIDIPlayerChannelStatus ) -> void:
 	var hold:bool = channel.hold
 	for asp in self.audio_stream_players:
-		if asp.channel_number == channel.number and ( not asp.request_release ):
-			asp.hold = hold
+		if asp.channel_number == channel.number:
+			asp.hold = hold and ( not asp.request_release )
 
 func _process_track_event_control_change_rpn_data_entry_msb( channel:GodotMIDIPlayerChannelStatus, value:int ) -> void:
 	match channel.rpn.selected_msb:
