@@ -140,7 +140,7 @@ var head_silent:PoolByteArray = PoolByteArray([])
 """
 	追加
 """
-func set_preset_sample( program_number:int, base_sample:int, base_key:int ):
+func set_preset_sample( program_number:int, base_sample:int, base_key:int ) -> void:
 	var preset:Preset = Preset.new( )
 	preset.name = "#%03d" % program_number
 	preset.number = program_number
@@ -156,7 +156,7 @@ func set_preset_sample( program_number:int, base_sample:int, base_key:int ):
 """
 	追加
 """
-func set_preset( program_number:int, preset:Preset ):
+func set_preset( program_number:int, preset:Preset ) -> void:
 	self.presets[program_number] = preset
 
 """
@@ -184,7 +184,7 @@ func get_preset( program_number:int, bank:int = 0 ) -> Preset:
 """
 	サウンドフォント読み込み
 """
-func read_soundfont( sf:SoundFont.SoundFontData, need_program_numbers:Array = [] ):
+func read_soundfont( sf:SoundFont.SoundFontData, need_program_numbers:Array = [] ) -> void:
 	var sf_insts:Array = self._read_soundfont_pdta_inst( sf )
 
 	if self.head_silent.size( ) == 0:
@@ -331,7 +331,7 @@ func _read_soundfont_pdta_inst( sf:SoundFont.SoundFontData ) -> Array:
 
 	return sf_insts
 
-func _read_soundfont_preset_compose_sample( sf:SoundFont.SoundFontData, preset:Preset ):
+func _read_soundfont_preset_compose_sample( sf:SoundFont.SoundFontData, preset:Preset ) -> void:
 	var sample_base:PoolByteArray = sf.sdta.smpl
 	var loaded_sample_data:Dictionary = Dictionary( )
 	var log2:float = log( 2.0 )

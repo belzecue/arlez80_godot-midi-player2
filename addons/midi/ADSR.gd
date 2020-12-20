@@ -14,7 +14,7 @@ var channel_number:int = -1
 # 発音キーナンバー
 var key_number:int = -1
 # Hold 1
-var hold:bool = false
+var hold:bool = false setget set_hold
 # リリース中？
 var releasing:bool = false
 # リリース要求
@@ -64,10 +64,10 @@ onready var release_state:Array = [
 func _ready( ):
 	self.stop( )
 
-func _check_using_linked( ):
+func _check_using_linked( ) -> bool:
 	return self.instrument != null and 2 <= len( self.instrument.array_stream )
 
-func set_instrument( _instrument:Bank.Instrument ):
+func set_instrument( _instrument:Bank.Instrument ) -> void:
 	if self.instrument == _instrument:
 		return
 
@@ -111,11 +111,15 @@ func stop( ):
 		self.linked.stop( )
 	self.hold = false
 
-func start_release( ):
+func start_release( ) -> void:
 	self.request_release_second = self.gap_second - AudioServer.get_time_to_next_mix( )
 	self.request_release = true
 
-func _update_adsr( delta:float ):
+func set_hold( _hold:bool ) -> void:
+	hold = _hold
+	self.request_release_second = self.gap_second - AudioServer.get_time_to_next_mix( )
+
+func _update_adsr( delta:float ) -> void:
 	if ( not self.playing ) and ( not self.force_update ):
 		return
 
@@ -163,7 +167,7 @@ func _update_adsr( delta:float ):
 				self.current_volume_db = self.release_state[0].volume_db
 				self.timer = 0.0
 
-func _update_volume( ):
+func _update_volume( ) -> void:
 	var v:float = self.current_volume_db + linear2db( float( self.velocity ) / 127.0 )# + self.instrument.volume_db
 
 	if self._check_using_linked( ):
