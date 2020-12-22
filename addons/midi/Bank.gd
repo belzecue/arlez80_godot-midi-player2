@@ -306,8 +306,7 @@ func _read_soundfont_pdta_inst( sf:SoundFont.SoundFontData ) -> Array:
 						bag.adsr.release_vol_env_time = pow( 2.0, float( gen.amount ) / 1200.0 )
 					SoundFont.gen_oper_sustain_vol_env:
 						# -144 db == sound font 1440
-						var s:float = min( max( 0.0, float( gen.amount ) ), 1440.0 ) / 10.0
-						bag.adsr.sustain_vol_env_db = -s
+						bag.adsr.sustain_vol_env_db = -clamp( float( gen.amount ), 0.0, 1440.0 ) / 10.0
 					SoundFont.gen_oper_sample_modes:
 						bag.sample_modes = gen.uamount
 					SoundFont.gen_oper_sample_id:
@@ -316,8 +315,7 @@ func _read_soundfont_pdta_inst( sf:SoundFont.SoundFontData ) -> Array:
 						if bag.original_key == 255:
 							bag.original_key = bag.sample.original_key
 					SoundFont.gen_oper_initial_attenuation:
-						var s:float = min( max( 0.0, float( gen.amount ) ), 1440.0 ) / 10.0
-						bag.volume_db = -s
+						bag.volume_db = -clamp( float( gen.amount ), 0.0, 1440.0 ) / 10.0
 					#_:
 					#	print( gen.gen_oper )
 			# global zoneでない場合
