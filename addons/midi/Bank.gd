@@ -10,9 +10,9 @@ class_name Bank
 # 音色
 class Instrument:
 	var array_base_pitch:Array	# これは本当はPoolRealArrayなんだけど、参照型ではなく値型らしく、代入だけでメモリ使用量が爆発してしまう
-	var array_stream:Array
-	var ads_state:Array
-	var release_state:Array
+	var array_stream:Array		# AudioStreamSample[]
+	var ads_state:Array			# VolumeState[]
+	var release_state:Array		# VolumeState[]
 	var volume_db:float = 0.0
 	var vel_range_min:int = 0
 	var vel_range_max:int = 127
@@ -44,8 +44,8 @@ class VolumeState:
 class Preset:
 	var name:String = ""
 	var number:int = 0
-	var instruments:Array = Array( )
-	var bags:Array = Array( )
+	var instruments:Array = Array( )	# Instrument[]
+	var bags:Array = Array( )			# TempSoundFontInstrumentBag[]
 
 	func _init( ):
 		for i in range( 128 ):
@@ -62,7 +62,7 @@ class TempSoundFontBag:
 
 class TempSoundFontInstrument:
 	var name:String = ""
-	var bags:Array = Array( )
+	var bags:Array = Array( )	# TempSoundFontBag[]
 
 class TempSoundFontRange:
 	var low:int
