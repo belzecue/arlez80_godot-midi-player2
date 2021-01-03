@@ -944,7 +944,7 @@ func _is_same_data( data_a:Array, data_b:Array ) -> bool:
 
 func _get_idle_player( ) -> AudioStreamPlayerADSR:
 	var released_audio_stream_player:AudioStreamPlayerADSR = null
-	var minimum_volume_db:float = -100.0
+	var minimum_volume_db:float = -70.0
 	var releasing_audio_stream_player:AudioStreamPlayerADSR = null
 	var oldest_audio_stream_player:AudioStreamPlayerADSR = null
 	var oldest:float = -1.0
