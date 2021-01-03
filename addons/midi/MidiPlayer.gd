@@ -227,8 +227,12 @@ signal appeared_instrument_name( channel_number, name )
 signal appeared_lyric( lyric )
 signal appeared_marker( marker )
 signal appeared_cue_point( cue_point )
+signal appeared_gm_system_on
+signal appeared_gs_reset
+signal appeared_xg_system_on
 signal midi_event( channel, event )
 signal looped
+signal finished
 
 """
 	準備
@@ -592,6 +596,7 @@ func _process_track( ) -> int:
 			self.position += diff
 		else:
 			self.playing = false
+			self.emit_signal( "finished" )
 			return 0
 
 	var execute_event_count:int = 0
@@ -899,14 +904,17 @@ func _process_track_sys_ex( channel:GodotMIDIPlayerChannelStatus, event_args ) -
 		SMF.manufacture_id_universal_nopn_realtime_sys_ex:
 			if self._is_same_data( event_args.data, [0x7f,0x09,0x01,0xf7] ):
 				self.sys_ex.gm_system_on = true
+				self.emit_signal( "appeared_gm_system_on" )
 				self._process_track_sys_ex_reset_all_channels( )
 		SMF.manufacture_id_roland_corporation:
 			if self._is_same_data( event_args.data, [-1,0x42,0x12,0x40,0x00,0x7f,0x00,0x41,0xf7] ):
 				self.sys_ex.gs_reset = true
+				self.emit_signal( "appeared_gs_reset" )
 				self._process_track_sys_ex_reset_all_channels( )
 		SMF.manufacture_id_yamaha_corporation:
 			if self._is_same_data( event_args.data, [-1,0x4c,0x00,0x00,0x7E,0x00,0xf7] ):
 				self.sys_ex.xg_system_on = true
+				self.emit_signal( "appeared_xg_system_on" )
 				self._process_track_sys_ex_reset_all_channels( )
 
 func _process_track_sys_ex_reset_all_channels( ) -> void:

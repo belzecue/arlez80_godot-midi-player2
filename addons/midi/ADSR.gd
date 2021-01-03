@@ -48,6 +48,9 @@ var auto_release_mode:bool = false
 # 強制アップデート
 var force_update:bool = false
 
+# LinkedSampleを使用中
+var is_check_using_linked:bool
+
 # ADSステート
 onready var ads_state:Array = [
 	Bank.VolumeState.new( 0.0, 0.0 ),
@@ -77,7 +80,8 @@ func set_instrument( _instrument:Bank.Instrument ) -> void:
 	self.ads_state = _instrument.ads_state
 	self.release_state = _instrument.release_state
 
-	if self._check_using_linked( ):
+	self.is_check_using_linked = self._check_using_linked( )
+	if self.is_check_using_linked:
 		self.linked_base_pitch = _instrument.array_base_pitch[1]
 		self.linked.stream = _instrument.array_stream[1]
 
@@ -97,7 +101,7 @@ func play( from_position:float = 0.0 ):
 	var mix_delay:float = clamp( self.gap_second - AudioServer.get_time_to_next_mix( ), 0.0, self.gap_second )
 	var own_from_position:float = from_position_skip_silence - mix_delay * pow( 2.0, self.base_pitch )
 	.play( max( 0.0, own_from_position ) )
-	if self._check_using_linked( ):
+	if self.is_check_using_linked:
 		var linked_from_position:float = from_position_skip_silence - mix_delay * pow( 2.0, self.linked_base_pitch )
 		self.linked.play( max( 0.0, linked_from_position ) )
 
@@ -148,7 +152,7 @@ func _update_adsr( delta:float ) -> void:
 	var synthed_pitch_bend:float = self.pitch_bend * self.pitch_bend_sensitivity / 12.0
 	var synthed_modulation:float = sin( self.using_timer * 32.0 ) * ( self.modulation * self.modulation_sensitivity / 12.0 )
 	self.pitch_scale = pow( 2.0, self.base_pitch + synthed_modulation + synthed_pitch_bend )
-	if self._check_using_linked( ):
+	if self.is_check_using_linked:
 		self.linked.pitch_scale = pow( 2.0, self.linked_base_pitch + synthed_modulation + synthed_pitch_bend )
 
 	self._update_volume( )
@@ -166,7 +170,7 @@ func _update_adsr( delta:float ) -> void:
 func _update_volume( ) -> void:
 	var v:float = self.current_volume_db + linear2db( float( self.velocity ) / 127.0 )# + self.instrument.volume_db
 
-	if self._check_using_linked( ):
+	if self.is_check_using_linked:
 		v = linear2db( db2linear( v ) / self.polyphony_count / 2.0 )
 		if v <= -144.0: v = -144.0
 		self.volume_db = v
