@@ -213,7 +213,9 @@ var pan_power:float = 1.0
 var reverb_power:float = 0.5
 # コーラスの強さを定義
 var chorus_power:float = 0.7
-
+# 再生準備ができているか？
+var prepared_to_play:bool = false
+# 
 var _previous_time:float
 
 # -----------------------------------------------------------------------------
@@ -295,10 +297,12 @@ func _prepare_to_play( ) -> bool:
 	if self.smf_data == null:
 		var smf_reader = SMF.new( )
 		self.smf_data = smf_reader.read_file( self.file )
+		self.playing = true
 		if self.smf_data == null:
 			self.playing = false
 			return false
 
+	self.sys_ex.initialize( )
 	self._init_track( )
 	self._analyse_smf( )
 	self._init_channel( )
@@ -318,7 +322,6 @@ func _prepare_to_play( ) -> bool:
 """
 func _init_track( ) -> void:
 	var track_status_events:Array = []
-	self.sys_ex.initialize( )
 
 	if len( self.smf_data.tracks ) == 1:
 		track_status_events = self.smf_data.tracks[0].events
@@ -516,6 +519,7 @@ func set_soundfont( path:String ):
 """
 func set_smf_data( sd:SMF.SMFData ):
 	smf_data = sd
+	self.stop( )
 
 """
 	テンポ設定
