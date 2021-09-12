@@ -1,11 +1,11 @@
 # Godot MIDI Player
 
-Software MIDI player library for Godot Engine 3.2 later
+Software MIDI player library for Godot Engine 3.3 later
 
 * Changes play speed.
 * Set tempo.
 * Emit on some events (tempo change, appears lyric ...)
-* Can ontrol like AudioStreamPlayer.
+* You can control like AudioStreamPlayer.
 
 ## Try it
 
@@ -13,7 +13,7 @@ Software MIDI player library for Godot Engine 3.2 later
 2. Copy *.sf2 under "res://"
 3. Set MIDI path to MidiPlayer "file" parameter.
 4. Set SoundFont path to MidiPlayer "soundfont" parameter.
-5. Play
+5. call play() method
 
 ## How to use
 
