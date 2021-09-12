@@ -24,6 +24,9 @@ Software MIDI player library for Godot Engine 3.2 later
 * [download](https://bitbucket.org/arlez80/godot-midi-player/downloads/demo.zip)
     * This demo can get MIDIInput events. You can play using MIDI keyboards!
 * BGM "failyland_gm.mid" from [IvyMaze]( http://ivymaze.sakura.ne.jp/ )
+* Youtube: [Demo #1](https://www.youtube.com/watch?v=SdrU4uRepVs)
+* Youtube: [Demo #2](https://www.youtube.com/watch?v=nn21P3eI4hs)
+* Youtube: [Demo #3](https://www.youtube.com/watch?v=dAYfFH-Fq2o)
 
 ## Hint
 
