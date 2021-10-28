@@ -705,11 +705,11 @@ func _process_track_event_note_on( channel:GodotMIDIPlayerChannelStatus, note:in
 
 	var polyphony_count:int = 0
 	for instrument in instruments:
-		if instrument.vel_range_min <= key_number and key_number <= instrument.vel_range_max:
+		if instrument.vel_range_min <= velocity and velocity <= instrument.vel_range_max:
 			polyphony_count += 1
 
 	for instrument in instruments:
-		if instrument.vel_range_min <= key_number and key_number <= instrument.vel_range_max:
+		if instrument.vel_range_min <= velocity and velocity <= instrument.vel_range_max:
 			var note_player:AudioStreamPlayerADSR = self._get_idle_player( )
 			if note_player != null:
 				note_player.channel_number = channel.number
