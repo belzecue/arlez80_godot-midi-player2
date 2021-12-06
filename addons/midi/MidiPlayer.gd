@@ -642,23 +642,23 @@ func receive_raw_midi_message( input_event:InputEventMIDI ) -> void:
 	var channel:GodotMIDIPlayerChannelStatus = self.channel_status[input_event.channel]
 
 	match input_event.message:
-		0x08:
+		MIDI_MESSAGE_NOTE_OFF:
 			self._process_track_event_note_off( channel, input_event.pitch )
-		0x09:
+		MIDI_MESSAGE_NOTE_ON:
 			self._process_track_event_note_on( channel, input_event.pitch, input_event.velocity )
-		0x0A:
+		MIDI_MESSAGE_AFTERTOUCH:
 			# polyphonic key pressure プレイヤー自体が未実装
 			pass
-		0x0B:
+		MIDI_MESSAGE_CONTROL_CHANGE:
 			self._process_track_event_control_change( channel, input_event.controller_number, input_event.controller_value )
-		0x0C:
+		MIDI_MESSAGE_PROGRAM_CHANGE:
 			channel.program = input_event.instrument
-		0x0D:
+		MIDI_MESSAGE_CHANNEL_PRESSURE:
 			# channel pressure プレイヤー自体が未実装
 			pass
-		0x0E:
+		MIDI_MESSAGE_PITCH_BEND:
 			# 3.1でおかしい値を返す対応。3.2ではvelocityが0のままのハズなので影響はない
-			var fixed_pitch = ( input_event.velocity << 7 ) | input_event.pitch
+			var fixed_pitch:int = ( input_event.velocity << 7 ) | input_event.pitch
 			self._process_pitch_bend( channel, fixed_pitch )
 		0x0F:
 			# InputEventMIDIはMIDI System Eventを飛ばしてこない！
