@@ -675,8 +675,8 @@ func _process_pitch_bend( channel:GodotMIDIPlayerChannelStatus, value:int ) -> v
 	self._apply_channel_pitch_bend( channel )
 
 func _process_track_event_note_off( channel:GodotMIDIPlayerChannelStatus, note:int, force_disable_hold:bool = false ) -> void:
-	var key_shift:int = self.key_shift if channel.drum_track else 0
-	var key_number:int = note + key_shift
+	var track_key_shift:int = self.key_shift if not channel.drum_track else 0
+	var key_number:int = note + track_key_shift
 	if channel.note_on.erase( key_number ):
 		pass
 
@@ -691,8 +691,8 @@ func _process_track_event_note_on( channel:GodotMIDIPlayerChannelStatus, note:in
 	if channel.mute: return
 	if self.bank == null: return
 
-	var key_shift:int = self.key_shift if channel.drum_track else 0
-	var key_number:int = note + key_shift
+	var track_key_shift:int = self.key_shift if not channel.drum_track else 0
+	var key_number:int = note + track_key_shift
 	var preset:Bank.Preset = self.bank.get_preset( channel.program, channel.bank )
 	if preset.instruments[key_number] == null: return
 	var instruments:Array = preset.instruments[key_number]
