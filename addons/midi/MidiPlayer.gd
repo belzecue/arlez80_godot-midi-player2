@@ -167,6 +167,8 @@ export (String, FILE, "*.sf2") var soundfont:String = "" setget set_soundfont
 export (int, "MIX_TARGET_STEREO", "MIX_TARGET_SURROUND", "MIX_TARGET_CENTER") var mix_target:int = AudioStreamPlayer.MIX_TARGET_STEREO
 # bus same as AudioStreamPlayer's one
 export (String) var bus:String = "Master"
+# 1秒間処理する回数
+export (int, 10, 480) var sequence_per_seconds:int = 120
 
 # -----------------------------------------------------------------------------
 # 変数
@@ -175,8 +177,6 @@ export (String) var bus:String = "Master"
 var thread:Thread = Thread.new()
 var mutex:Mutex = Mutex.new()
 var thread_delete:bool = false
-# 1秒間処理する回数
-var sequence_per_seconds:int = 120
 # MIDIデータ
 var smf_data:SMF.SMFData = null setget set_smf_data
 # MIDIトラックデータ smf_dataを再生用に加工したデータが入る
@@ -598,6 +598,8 @@ func _stop_all_notes( ) -> void:
 func _process( delta:float ):
 	if self.thread == null or ( not self.thread.is_alive( ) ):
 		self._lock( "_process" )
+		if self.thread != null:
+			self.thread.wait_to_finish( )
 		self.thread = Thread.new( )
 		self.thread.start( self, "_thread_process" )
 		self._unlock( "_process" )
