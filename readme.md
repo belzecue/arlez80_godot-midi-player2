@@ -1,6 +1,8 @@
 # Godot MIDI Player
 
-Software MIDI player library for Godot Engine 3.3 later
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/E1E44AWTA)
+
+Software MIDI player library for Godot Engine 3.4 later
 
 * Changes play speed.
 * Set tempo.

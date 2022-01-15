@@ -171,6 +171,12 @@ export (String) var bus:String = "Master"
 # -----------------------------------------------------------------------------
 # 変数
 
+# MIDI Playerスレッド
+var thread:Thread = Thread.new()
+var mutex:Mutex = Mutex.new()
+var thread_delete:bool = false
+# 1秒間処理する回数
+var sequence_per_seconds:int = 120
 # MIDIデータ
 var smf_data:SMF.SMFData = null setget set_smf_data
 # MIDIトラックデータ smf_dataを再生用に加工したデータが入る
@@ -297,16 +303,28 @@ func _ready( ):
 func _notification( what:int ):
 	# 破棄時
 	if what == NOTIFICATION_PREDELETE:
-		pass
+		self.thread_delete = true
+		self.thread.wait_to_finish( )
+		self.thread = null
 		#再利用するので削除しないことにした
 		#AudioServer.remove_bus( AudioServer.get_bus_index( self.midi_master_bus_name ) )
 		#for i in range( 0, 16 ):
 		#	AudioServer.remove_bus( AudioServer.get_bus_index( self.midi_channel_bus_name % i ) )
 
+func _lock( callee:String ) -> void:
+	# print( "locked by %s" % callee )
+	self.mutex.lock( )
+
+func _unlock( callee:String ) -> void:
+	# print( "unlocked by %s" % callee )
+	self.mutex.unlock( )
+
 """
 	再生前の初期化
 """
 func _prepare_to_play( ) -> bool:
+	self._lock( "prepare_to_play" )
+
 	# ファイル読み込み
 	if self.smf_data == null:
 		var smf_reader = SMF.new( )
@@ -314,6 +332,7 @@ func _prepare_to_play( ) -> bool:
 		self.playing = true
 		if self.smf_data == null:
 			self.playing = false
+			self._unlock( "prepare_to_play" )
 			return false
 
 	self.sys_ex.initialize( )
@@ -324,6 +343,8 @@ func _prepare_to_play( ) -> bool:
 	# サウンドフォントの再読み込みをさせる
 	if not self.load_all_voices_from_soundfont:
 		self.set_soundfont( self.soundfont )
+
+	self._unlock( "prepare_to_play" )
 
 	return true
 
@@ -434,6 +455,7 @@ func play( from_position:float = 0.0 ):
 	シーク
 """
 func seek( to_position:float ):
+	self._lock( "seek" )
 	self._previous_time = 0.0
 	self._stop_all_notes( )
 	self.position = to_position
@@ -463,14 +485,19 @@ func seek( to_position:float ):
 				pass
 		pointer += 1
 	self.track_status.event_pointer = pointer
+	self._unlock( "seek" )
 
 """
 	停止
 """
 func stop( ):
+	self._lock( "stop" )
+
 	self._previous_time = 0.0
 	self._stop_all_notes( )
 	self.playing = false
+
+	self._unlock( "stop" )
 
 """
 	リセット命令を強制的に発行する
@@ -509,10 +536,13 @@ func set_max_polyphony( mp:int ):
 	サウンドフォント変更
 """
 func set_soundfont( path:String ):
+	self._lock( "set_soundfont" )
+
 	soundfont = path
 
 	if path == null or path == "":
 		self.bank = null
+		self._unlock( "set_soundfont" )
 		return
 
 	var sf_reader:SoundFont = SoundFont.new( )
@@ -523,6 +553,8 @@ func set_soundfont( path:String ):
 		self.bank.read_soundfont( sf2 )
 	else:
 		self.bank.read_soundfont( sf2, self._used_program_numbers )
+
+	self._unlock( "set_soundfont" )
 
 """
 	SMFデータ更新
@@ -561,16 +593,39 @@ func _stop_all_notes( ) -> void:
 		channel.note_on.clear( )
 
 """
-	1フレームでシーケンス処理
+	毎フレーム処理
 """
 func _process( delta:float ):
-	self._sequence( delta )
+	if self.thread == null or ( not self.thread.is_alive( ) ):
+		self._lock( "_process" )
+		self.thread = Thread.new( )
+		self.thread.start( self, "_thread_process" )
+		self._unlock( "_process" )
+
+"""
+	シーケンス処理
+"""
+func _thread_process( ):
+	var last_time:int = OS.get_ticks_usec( )
+
+	while not self.thread_delete:
+		self._lock( "_thread_process" )
+
+		var current_time:int = OS.get_ticks_usec( )
+		var delta:float = ( current_time - last_time ) / 1000000.0
+		self._sequence( delta )
+
+		self._unlock( "_thread_process" )
+
+		last_time = current_time
+		var msec:int = int( 1000 / self.sequence_per_seconds )
+		OS.delay_msec( msec )
 
 """
 	シーケンス処理を行う
 """
 func _sequence( delta:float ) -> void:
-	if delta == 0.0:
+	if delta <= 0.0:
 		return
 
 	if self.smf_data != null:
