@@ -340,11 +340,11 @@ func _prepare_to_play( ) -> bool:
 	self._analyse_smf( )
 	self._init_channel( )
 
+	self._unlock( "prepare_to_play" )
+
 	# サウンドフォントの再読み込みをさせる
 	if not self.load_all_voices_from_soundfont:
 		self.set_soundfont( self.soundfont )
-
-	self._unlock( "prepare_to_play" )
 
 	return true
 
@@ -517,6 +517,8 @@ func set_file( path:String ):
 	同時発音数変更
 """
 func set_max_polyphony( mp:int ):
+	self._lock( "set_max_polyphony" )
+
 	max_polyphony = mp
 
 	# 削除
@@ -531,6 +533,8 @@ func set_max_polyphony( mp:int ):
 		audio_stream_player.bus = self.bus
 		self.add_child( audio_stream_player )
 		self.audio_stream_players.append( audio_stream_player )
+
+	self._unlock( "set_max_polyphony" )
 
 """
 	サウンドフォント変更
@@ -579,7 +583,10 @@ func set_volume_db( vdb:float ):
 	volume_db = vdb
 	if not self.is_audio_server_inited:
 		return
+
+	self._lock( "set_volume_db" )
 	AudioServer.set_bus_volume_db( AudioServer.get_bus_index( self.midi_master_bus_name ), self.volume_db )
+	self._unlock( "set_volume_db" )
 
 """
 	全音を止める
