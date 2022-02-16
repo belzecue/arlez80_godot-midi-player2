@@ -174,9 +174,10 @@ export (int, 10, 480) var sequence_per_seconds:int = 120
 # 変数
 
 # MIDI Playerスレッド
-var thread:Thread = Thread.new()
+var thread:Thread = null
 var mutex:Mutex = Mutex.new()
 var thread_delete:bool = false
+var no_thread_mode:bool = false
 # MIDIデータ
 var smf_data:SMF.SMFData = null setget set_smf_data
 # MIDIトラックデータ smf_dataを再生用に加工したデータが入る
@@ -257,6 +258,9 @@ signal finished
 	準備
 """
 func _ready( ):
+	if OS.get_name( ) == "HTML5":
+		self.no_thread_mode = true
+
 	if AudioServer.get_bus_index( self.midi_master_bus_name ) == -1:
 		AudioServer.add_bus( -1 )
 		var midi_master_bus_idx:int = AudioServer.get_bus_count( ) - 1
@@ -304,8 +308,9 @@ func _notification( what:int ):
 	# 破棄時
 	if what == NOTIFICATION_PREDELETE:
 		self.thread_delete = true
-		self.thread.wait_to_finish( )
-		self.thread = null
+		if self.thread != null:
+			self.thread.wait_to_finish( )
+			self.thread = null
 		#再利用するので削除しないことにした
 		#AudioServer.remove_bus( AudioServer.get_bus_index( self.midi_master_bus_name ) )
 		#for i in range( 0, 16 ):
@@ -603,13 +608,16 @@ func _stop_all_notes( ) -> void:
 	毎フレーム処理
 """
 func _process( delta:float ):
-	if self.thread == null or ( not self.thread.is_alive( ) ):
-		self._lock( "_process" )
-		if self.thread != null:
-			self.thread.wait_to_finish( )
-		self.thread = Thread.new( )
-		self.thread.start( self, "_thread_process" )
-		self._unlock( "_process" )
+	if self.no_thread_mode:
+		self._sequence( delta )
+	else:
+		if self.thread == null or ( not self.thread.is_alive( ) ):
+			self._lock( "_process" )
+			if self.thread != null:
+				self.thread.wait_to_finish( )
+			self.thread = Thread.new( )
+			self.thread.start( self, "_thread_process" )
+			self._unlock( "_process" )
 
 """
 	シーケンス処理
